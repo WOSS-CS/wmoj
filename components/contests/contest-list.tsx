@@ -1,118 +1,304 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+"use client"
+
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, Users, Trophy } from "lucide-react"
-import Link from "next/link"
-import type { Database } from "@/lib/supabase/types"
+import { Calendar, Clock, Users, Trophy, Star, Plus } from "lucide-react"
+import { useAuth } from "@/components/auth/auth-provider"
 
-type Contest = Database["public"]["Tables"]["contests"]["Row"]
-
-interface ContestListProps {
-  contests: Contest[]
+interface Contest {
+  id: string
+  slug: string
+  title: string
+  description: string | null
+  start_time: string
+  end_time: string
+  registration_start: string
+  registration_end: string
+  max_participants: number | null
+  participant_count?: number
+  is_public: boolean
+  is_rated: boolean
+  contest_type: string
+  difficulty_level: string
+  prize_pool: number
 }
 
-export function ContestList({ contests }: ContestListProps) {
+export function ContestList() {
+  const { user } = useAuth()
+  const [contests, setContests] = useState<Contest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<"all" | "upcoming" | "active" | "ended">("all")
+
+  useEffect(() => {
+    const fetchContests = async () => {
+      try {
+        const response = await fetch("/api/contests")
+        if (response.ok) {
+          const data = await response.json()
+          setContests(data)
+        }
+      } catch (error) {
+        console.error("Failed to fetch contests:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchContests()
+  }, [])
+
   const getContestStatus = (contest: Contest) => {
     const now = new Date()
     const start = new Date(contest.start_time)
     const end = new Date(contest.end_time)
+    const regEnd = new Date(contest.registration_end)
 
-    if (now < start) return "upcoming"
+    if (now < regEnd && now < start) return "upcoming"
+    if (now >= regEnd && now < start) return "registration"
     if (now >= start && now < end) return "active"
     return "ended"
   }
 
-  const getStatusBadge = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case "active":
-        return <Badge className="bg-green-100 text-green-800">Live</Badge>
       case "upcoming":
-        return <Badge className="bg-blue-100 text-blue-800">Upcoming</Badge>
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+      case "registration":
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+      case "active":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300"
       case "ended":
-        return <Badge variant="secondary">Ended</Badge>
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
       default:
-        return null
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
     }
   }
 
-  const formatDuration = (start: string, end: string) => {
-    const duration = new Date(end).getTime() - new Date(start).getTime()
-    const hours = Math.floor(duration / (1000 * 60 * 60))
-    const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60))
-    return `${hours}h ${minutes}m`
+  const getDifficultyColor = (level: string) => {
+    switch (level) {
+      case "beginner":
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+      case "intermediate":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+      case "advanced":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300"
+      case "expert":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
+    }
   }
 
-  if (contests.length === 0) {
+  const filteredContests = contests.filter(contest => {
+    if (filter === "all") return true
+    return getContestStatus(contest) === filter
+  })
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString()
+  }
+
+  const getTimeRemaining = (dateString: string) => {
+    const now = new Date().getTime()
+    const target = new Date(dateString).getTime()
+    const diff = target - now
+
+    if (diff <= 0) return null
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+    if (days > 0) return `${days}d ${hours}h`
+    if (hours > 0) return `${hours}h ${minutes}m`
+    return `${minutes}m`
+  }
+
+  if (loading) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center text-muted-foreground">
-            <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No contests available at the moment.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader>
+              <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     )
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {contests.map((contest) => {
-        const status = getContestStatus(contest)
-        return (
-          <Card key={contest.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <CardTitle className="text-lg">
-                    <Link href={`/contests/${contest.slug}`} className="hover:underline">
-                      {contest.title}
-                    </Link>
-                  </CardTitle>
-                  {getStatusBadge(status)}
-                </div>
-              </div>
-              {contest.description && (
-                <p className="text-sm text-muted-foreground line-clamp-2">{contest.description}</p>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {new Date(contest.start_time).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {formatDuration(contest.start_time, contest.end_time)}
-                  </div>
-                </div>
+    <div className="space-y-6">
+      {/* Header with filter buttons and create button */}
+      <div className="flex flex-wrap justify-between items-center gap-4">
+        <div className="flex flex-wrap gap-2">
+          {["all", "upcoming", "active", "ended"].map((status) => (
+            <Button
+              key={status}
+              variant={filter === status ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter(status as any)}
+            >
+              {status === "all" ? "All Contests" : status.charAt(0).toUpperCase() + status.slice(1)}
+            </Button>
+          ))}
+        </div>
 
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    {contest.max_participants ? `Max ${contest.max_participants}` : "Unlimited"}
-                  </div>
-                </div>
+        {user && (
+          <Link href="/contests/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Contest
+            </Button>
+          </Link>
+        )}
+      </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    {status === "upcoming" && `Starts ${new Date(contest.start_time).toLocaleTimeString()}`}
-                    {status === "active" && `Ends ${new Date(contest.end_time).toLocaleTimeString()}`}
-                    {status === "ended" && `Ended ${new Date(contest.end_time).toLocaleDateString()}`}
-                  </div>
-                  <Button asChild size="sm">
-                    <Link href={`/contests/${contest.slug}`}>
-                      {status === "active" ? "Join" : status === "upcoming" ? "Register" : "View"}
-                    </Link>
+      {/* Contest cards */}
+      <div className="space-y-4">
+        {filteredContests.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No contests found</h3>
+              <p className="text-muted-foreground mb-4">
+                {filter === "all" 
+                  ? "There are no contests available at the moment."
+                  : `There are no ${filter} contests at the moment.`
+                }
+              </p>
+              {user && filter === "all" && (
+                <Link href="/contests/create">
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Contest
                   </Button>
-                </div>
-              </div>
+                </Link>
+              )}
             </CardContent>
           </Card>
-        )
-      })}
+        ) : (
+          filteredContests.map((contest) => {
+            const status = getContestStatus(contest)
+            return (
+              <Card key={contest.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Link 
+                          href={`/contests/${contest.slug}`}
+                          className="hover:underline"
+                        >
+                          {contest.title}
+                        </Link>
+                        {contest.is_rated && <Star className="h-4 w-4 text-yellow-500" />}
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        {contest.description || "No description provided"}
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge className={getStatusColor(status)}>
+                        {status}
+                      </Badge>
+                      <Badge className={getDifficultyColor(contest.difficulty_level)}>
+                        {contest.difficulty_level}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <div className="font-medium">Start Time</div>
+                        <div className="text-muted-foreground">
+                          {formatDateTime(contest.start_time)}
+                        </div>
+                        {status === "upcoming" && getTimeRemaining(contest.start_time) && (
+                          <div className="text-xs text-blue-600 dark:text-blue-400">
+                            In {getTimeRemaining(contest.start_time)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <div className="font-medium">Duration</div>
+                        <div className="text-muted-foreground">
+                          {Math.round(
+                            (new Date(contest.end_time).getTime() - 
+                             new Date(contest.start_time).getTime()) / 
+                            (1000 * 60)
+                          )} minutes
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <div className="font-medium">Participants</div>
+                        <div className="text-muted-foreground">
+                          {contest.participant_count || 0}
+                          {contest.max_participants && ` / ${contest.max_participants}`}
+                        </div>
+                      </div>
+                    </div>
+
+                    {contest.prize_pool > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <div className="font-medium">Prize Pool</div>
+                          <div className="text-muted-foreground">${contest.prize_pool}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center mt-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Badge variant="outline" className="text-xs">
+                        {contest.contest_type.toUpperCase()}
+                      </Badge>
+                      {!contest.is_public && (
+                        <Badge variant="outline" className="text-xs">
+                          Private
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <Link href={`/contests/${contest.slug}`}>
+                      <Button size="sm">
+                        {status === "active" ? "Enter Contest" :
+                         status === "upcoming" ? "View Details" :
+                         status === "registration" ? "Register" :
+                         "View Results"}
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }

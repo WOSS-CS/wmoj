@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Trash2, Play, Save, ArrowLeft } from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useRouter } from "next/navigation"
@@ -20,6 +21,28 @@ interface TestCase {
   points: number
   timeLimit?: number
   memoryLimit?: number
+}
+
+interface ReferenceSolution {
+  language: string
+  code: string
+  description?: string
+  isPrimary: boolean
+}
+
+interface Editorial {
+  title: string
+  content: string
+  complexity?: string
+  hints: string[]
+  relatedTopics: string[]
+  publish: boolean
+}
+
+interface Category {
+  id: string
+  name: string
+  description?: string
 }
 
 export function ProblemCreator() {
@@ -45,10 +68,41 @@ export function ProblemCreator() {
     { input: "", expectedOutput: "", isSample: true, points: 1 }
   ])
   
+  // New state for enhanced features
+  const [referenceSolutions, setReferenceSolutions] = useState<ReferenceSolution[]>([])
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([])
+  const [editorial, setEditorial] = useState<Editorial>({
+    title: "",
+    content: "",
+    complexity: "",
+    hints: [],
+    relatedTopics: [],
+    publish: false
+  })
+  const [newHint, setNewHint] = useState("")
+  const [newTopic, setNewTopic] = useState("")
+  
   const [testCode, setTestCode] = useState("")
   const [testLanguage, setTestLanguage] = useState("python")
   const [testOutput, setTestOutput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+
+  // Load categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories')
+        const data = await response.json()
+        if (response.ok) {
+          setAvailableCategories(data.categories || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+      }
+    }
+    fetchCategories()
+  }, [])
 
   // Generate slug from title
   const handleTitleChange = (value: string) => {
@@ -93,6 +147,86 @@ export function ProblemCreator() {
       i === index ? { ...tc, [field]: value } : tc
     )
     setTestCases(updated)
+  }
+
+  // Reference solution functions
+  const addReferenceSolution = () => {
+    setReferenceSolutions([...referenceSolutions, {
+      language: "python",
+      code: "",
+      description: "",
+      isPrimary: referenceSolutions.length === 0 // First solution is primary
+    }])
+  }
+
+  const removeReferenceSolution = (index: number) => {
+    const updated = referenceSolutions.filter((_, i) => i !== index)
+    // If we removed the primary solution, make the first one primary
+    if (updated.length > 0 && !updated.some(sol => sol.isPrimary)) {
+      updated[0].isPrimary = true
+    }
+    setReferenceSolutions(updated)
+  }
+
+  const updateReferenceSolution = (index: number, field: keyof ReferenceSolution, value: any) => {
+    const updated = referenceSolutions.map((sol, i) => {
+      if (i === index) {
+        // If setting this as primary, unset others
+        if (field === 'isPrimary' && value === true) {
+          return { ...sol, [field]: value }
+        }
+        return { ...sol, [field]: value }
+      } else if (field === 'isPrimary' && value === true) {
+        // Unset primary for others
+        return { ...sol, isPrimary: false }
+      }
+      return sol
+    })
+    setReferenceSolutions(updated)
+  }
+
+  // Editorial functions
+  const addHint = () => {
+    if (newHint.trim() && !editorial.hints.includes(newHint.trim())) {
+      setEditorial({
+        ...editorial,
+        hints: [...editorial.hints, newHint.trim()]
+      })
+      setNewHint("")
+    }
+  }
+
+  const removeHint = (hintToRemove: string) => {
+    setEditorial({
+      ...editorial,
+      hints: editorial.hints.filter(hint => hint !== hintToRemove)
+    })
+  }
+
+  const addTopic = () => {
+    if (newTopic.trim() && !editorial.relatedTopics.includes(newTopic.trim())) {
+      setEditorial({
+        ...editorial,
+        relatedTopics: [...editorial.relatedTopics, newTopic.trim()]
+      })
+      setNewTopic("")
+    }
+  }
+
+  const removeTopic = (topicToRemove: string) => {
+    setEditorial({
+      ...editorial,
+      relatedTopics: editorial.relatedTopics.filter(topic => topic !== topicToRemove)
+    })
+  }
+
+  // Category functions
+  const toggleCategory = (categoryId: string) => {
+    if (selectedCategories.includes(categoryId)) {
+      setSelectedCategories(selectedCategories.filter(id => id !== categoryId))
+    } else {
+      setSelectedCategories([...selectedCategories, categoryId])
+    }
   }
 
   const testSolution = async () => {
@@ -147,6 +281,9 @@ export function ProblemCreator() {
         timeLimit,
         memoryLimit,
         testCases,
+        referenceSolutions,
+        categories: selectedCategories,
+        editorial: editorial.title && editorial.content ? editorial : null
       }
 
       const response = await fetch("/api/problems", {
@@ -157,7 +294,11 @@ export function ProblemCreator() {
 
       if (response.ok) {
         const result = await response.json()
-        alert("Problem created successfully!")
+        alert(`Problem created successfully! ${result.stats ? `
+Test cases: ${result.stats.testCases}
+Reference solutions: ${result.stats.referenceSolutions}
+Categories: ${result.stats.categories}
+Editorial: ${result.stats.hasEditorial ? 'Yes' : 'No'}` : ''}`)
         router.push(`/problems/${result.problem.slug}`)
       } else {
         const error = await response.json()
@@ -186,10 +327,13 @@ export function ProblemCreator() {
       </div>
 
       <Tabs defaultValue="details" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="details">Problem Details</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="testcases">Test Cases</TabsTrigger>
-          <TabsTrigger value="test">Test Solution</TabsTrigger>
+          <TabsTrigger value="solutions">Solutions</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
+          <TabsTrigger value="editorial">Editorial</TabsTrigger>
+          <TabsTrigger value="test">Test</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
         </TabsList>
 
@@ -455,6 +599,251 @@ export function ProblemCreator() {
                   </div>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="solutions" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Reference Solutions</CardTitle>
+                <Button onClick={addReferenceSolution} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Solution
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {referenceSolutions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No reference solutions added yet.</p>
+                  <p className="text-sm mt-1">Add solutions to help users understand your problem.</p>
+                </div>
+              ) : (
+                referenceSolutions.map((solution, index) => (
+                  <div key={index} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium">Solution {index + 1}</h4>
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={solution.isPrimary}
+                            onCheckedChange={(checked: boolean) => updateReferenceSolution(index, 'isPrimary', checked)}
+                          />
+                          Primary
+                        </label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeReferenceSolution(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4">
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div>
+                          <Label>Language</Label>
+                          <Select 
+                            value={solution.language} 
+                            onValueChange={(value: string) => updateReferenceSolution(index, 'language', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="python">Python</SelectItem>
+                              <SelectItem value="javascript">JavaScript</SelectItem>
+                              <SelectItem value="java">Java</SelectItem>
+                              <SelectItem value="cpp">C++</SelectItem>
+                              <SelectItem value="c">C</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Description (optional)</Label>
+                          <Input
+                            value={solution.description || ""}
+                            onChange={(e) => updateReferenceSolution(index, 'description', e.target.value)}
+                            placeholder="Brief description of this approach..."
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Code</Label>
+                        <Textarea
+                          value={solution.code}
+                          onChange={(e) => updateReferenceSolution(index, 'code', e.target.value)}
+                          className="font-mono text-sm min-h-[200px]"
+                          placeholder="Enter the reference solution code..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="categories" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Problem Categories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {availableCategories.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>Loading categories...</p>
+                </div>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {availableCategories.map((category) => (
+                    <div key={category.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={category.id}
+                        checked={selectedCategories.includes(category.id)}
+                        onCheckedChange={() => toggleCategory(category.id)}
+                      />
+                      <Label htmlFor={category.id} className="flex-1 cursor-pointer">
+                        <div>
+                          <div className="font-medium">{category.name}</div>
+                          {category.description && (
+                            <div className="text-sm text-muted-foreground">{category.description}</div>
+                          )}
+                        </div>
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {selectedCategories.length > 0 && (
+                <div className="mt-4 pt-4 border-t">
+                  <Label className="text-sm font-medium">Selected Categories:</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedCategories.map(categoryId => {
+                      const category = availableCategories.find(c => c.id === categoryId)
+                      return category ? (
+                        <Badge key={categoryId} variant="secondary">
+                          {category.name}
+                        </Badge>
+                      ) : null
+                    })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="editorial" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Problem Editorial</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div>
+                  <Label>Title</Label>
+                  <Input
+                    value={editorial.title}
+                    onChange={(e) => setEditorial({...editorial, title: e.target.value})}
+                    placeholder="Editorial title..."
+                  />
+                </div>
+                <div>
+                  <Label>Time/Space Complexity</Label>
+                  <Input
+                    value={editorial.complexity || ""}
+                    onChange={(e) => setEditorial({...editorial, complexity: e.target.value})}
+                    placeholder="O(n), O(1) space..."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Editorial Content (Markdown supported)</Label>
+                <Textarea
+                  value={editorial.content}
+                  onChange={(e) => setEditorial({...editorial, content: e.target.value})}
+                  className="min-h-[200px]"
+                  placeholder="Write a detailed explanation of the solution approach..."
+                />
+              </div>
+
+              <div>
+                <Label>Hints</Label>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    value={newHint}
+                    onChange={(e) => setNewHint(e.target.value)}
+                    placeholder="Add a hint..."
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addHint())}
+                  />
+                  <Button type="button" onClick={addHint} size="sm">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {editorial.hints.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {editorial.hints.map((hint, index) => (
+                      <Badge key={index} variant="outline" className="flex items-center gap-1">
+                        {hint}
+                        <button
+                          type="button"
+                          onClick={() => removeHint(hint)}
+                          className="ml-1 hover:bg-muted rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label>Related Topics</Label>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    value={newTopic}
+                    onChange={(e) => setNewTopic(e.target.value)}
+                    placeholder="Add a related topic..."
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTopic())}
+                  />
+                  <Button type="button" onClick={addTopic} size="sm">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {editorial.relatedTopics.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {editorial.relatedTopics.map((topic, index) => (
+                      <Badge key={index} variant="outline" className="flex items-center gap-1">
+                        {topic}
+                        <button
+                          type="button"
+                          onClick={() => removeTopic(topic)}
+                          className="ml-1 hover:bg-muted rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="publish"
+                  checked={editorial.publish}
+                  onCheckedChange={(checked: boolean) => setEditorial({...editorial, publish: !!checked})}
+                />
+                <Label htmlFor="publish">Publish editorial immediately</Label>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
