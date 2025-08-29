@@ -303,6 +303,164 @@ export type Database = {
           updated_at?: string
         }
       }
+      learning_resources: {
+        Row: {
+          id: string
+          title: string
+          slug: string
+          description: string
+          content: string
+          category: "tutorial" | "algorithm" | "data_structure" | "concept"
+          difficulty: "Beginner" | "Intermediate" | "Advanced"
+          tags: string[]
+          estimated_time: number
+          prerequisites: string[]
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          is_published: boolean
+        }
+        Insert: {
+          id?: string
+          title: string
+          slug: string
+          description: string
+          content: string
+          category: "tutorial" | "algorithm" | "data_structure" | "concept"
+          difficulty?: "Beginner" | "Intermediate" | "Advanced"
+          tags?: string[]
+          estimated_time?: number
+          prerequisites?: string[]
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          is_published?: boolean
+        }
+        Update: {
+          id?: string
+          title?: string
+          slug?: string
+          description?: string
+          content?: string
+          category?: "tutorial" | "algorithm" | "data_structure" | "concept"
+          difficulty?: "Beginner" | "Intermediate" | "Advanced"
+          tags?: string[]
+          estimated_time?: number
+          prerequisites?: string[]
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          is_published?: boolean
+        }
+      }
+      user_learning_progress: {
+        Row: {
+          id: string
+          user_id: string
+          resource_id: string
+          status: "not_started" | "in_progress" | "completed"
+          progress_percentage: number
+          time_spent: number
+          started_at: string | null
+          completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          resource_id: string
+          status?: "not_started" | "in_progress" | "completed"
+          progress_percentage?: number
+          time_spent?: number
+          started_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          resource_id?: string
+          status?: "not_started" | "in_progress" | "completed"
+          progress_percentage?: number
+          time_spent?: number
+          started_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      calendar_events: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          event_type: "contest" | "workshop" | "deadline" | "announcement" | "other"
+          start_time: string
+          end_time: string | null
+          location: string | null
+          is_public: boolean
+          created_by: string
+          contest_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          event_type: "contest" | "workshop" | "deadline" | "announcement" | "other"
+          start_time: string
+          end_time?: string | null
+          location?: string | null
+          is_public?: boolean
+          created_by: string
+          contest_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          event_type?: "contest" | "workshop" | "deadline" | "announcement" | "other"
+          start_time?: string
+          end_time?: string | null
+          location?: string | null
+          is_public?: boolean
+          created_by?: string
+          contest_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      event_registrations: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string
+          registration_status: "registered" | "waitlisted" | "cancelled"
+          registered_at: string
+          notes: string | null
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          user_id: string
+          registration_status?: "registered" | "waitlisted" | "cancelled"
+          registered_at?: string
+          notes?: string | null
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          user_id?: string
+          registration_status?: "registered" | "waitlisted" | "cancelled"
+          registered_at?: string
+          notes?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never

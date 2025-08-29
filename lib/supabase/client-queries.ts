@@ -1,4 +1,4 @@
-import { createClient } from "./server"
+import { createClient } from "./client"
 import type { Database } from "./types"
 
 type Tables = Database["public"]["Tables"]
@@ -10,7 +10,7 @@ type UserProblemStats = Tables["user_problem_stats"]["Row"]
 
 // Profile queries
 export async function getProfile(userId: string): Promise<Profile | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
 
   if (error) {
@@ -22,7 +22,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 }
 
 export async function updateProfile(userId: string, updates: Tables["profiles"]["Update"]): Promise<Profile | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase.from("profiles").update(updates).eq("id", userId).select().single()
 
   if (error) {
@@ -39,7 +39,7 @@ export async function getProblems(filters?: {
   tags?: string[]
   search?: string
 }): Promise<Problem[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   let query = supabase.from("problems").select("*").eq("is_active", true).order("created_at", { ascending: false })
 
   if (filters?.difficulty) {
@@ -65,7 +65,7 @@ export async function getProblems(filters?: {
 }
 
 export async function getProblem(slug: string): Promise<Problem | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase.from("problems").select("*").eq("slug", slug).eq("is_active", true).single()
 
   if (error) {
@@ -78,7 +78,7 @@ export async function getProblem(slug: string): Promise<Problem | null> {
 
 // Contest queries
 export async function getContests(): Promise<Contest[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("contests")
     .select("*")
@@ -94,7 +94,7 @@ export async function getContests(): Promise<Contest[]> {
 }
 
 export async function getContest(slug: string): Promise<Contest | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase.from("contests").select("*").eq("slug", slug).eq("is_public", true).single()
 
   if (error) {
@@ -108,7 +108,7 @@ export async function getContest(slug: string): Promise<Contest | null> {
 export async function getContestProblems(
   contestId: string,
 ): Promise<(Problem & { points: number; order_index: number })[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("contest_problems")
     .select(`
@@ -134,7 +134,7 @@ export async function getContestProblems(
 }
 
 export async function getContestRegistrations(contestId: string): Promise<any[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("contest_registrations")
     .select(`
@@ -153,7 +153,7 @@ export async function getContestRegistrations(contestId: string): Promise<any[]>
 }
 
 export async function getContestLeaderboard(contestId: string): Promise<any[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("submissions")
     .select(`
@@ -196,7 +196,7 @@ export async function getContestLeaderboard(contestId: string): Promise<any[]> {
 }
 
 export async function isUserRegisteredForContest(userId: string, contestId: string): Promise<boolean> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("contest_registrations")
     .select("id")
@@ -209,7 +209,7 @@ export async function isUserRegisteredForContest(userId: string, contestId: stri
 
 // Submission queries
 export async function getUserSubmissions(userId: string, problemId?: string): Promise<Submission[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   let query = supabase.from("submissions").select("*").eq("user_id", userId).order("submitted_at", { ascending: false })
 
   if (problemId) {
@@ -227,7 +227,7 @@ export async function getUserSubmissions(userId: string, problemId?: string): Pr
 }
 
 export async function createSubmission(submission: Tables["submissions"]["Insert"]): Promise<Submission | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase.from("submissions").insert(submission).select().single()
 
   if (error) {
@@ -239,7 +239,7 @@ export async function createSubmission(submission: Tables["submissions"]["Insert
 }
 
 export async function getSubmission(submissionId: string): Promise<Submission | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("submissions")
     .select(`
@@ -260,7 +260,7 @@ export async function getSubmission(submissionId: string): Promise<Submission | 
 
 // User stats queries
 export async function getUserProblemStats(userId: string): Promise<UserProblemStats[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase.from("user_problem_stats").select("*").eq("user_id", userId)
 
   if (error) {
@@ -272,7 +272,7 @@ export async function getUserProblemStats(userId: string): Promise<UserProblemSt
 }
 
 export async function updateUserProblemStats(userId: string, problemId: string, status: string): Promise<void> {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   // Upsert user problem stats
   await supabase
@@ -288,7 +288,7 @@ export async function updateUserProblemStats(userId: string, problemId: string, 
 }
 
 export async function getUserStats(userId: string) {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   // Get problem stats
   const { data: problemStats } = await supabase
@@ -320,7 +320,7 @@ export async function getLearningResources(filters?: {
   tags?: string[]
   search?: string
 }): Promise<Tables["learning_resources"]["Row"][]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   let query = supabase
     .from("learning_resources")
     .select("*")
@@ -354,7 +354,7 @@ export async function getLearningResources(filters?: {
 }
 
 export async function getLearningResource(slug: string): Promise<Tables["learning_resources"]["Row"] | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("learning_resources")
     .select("*")
@@ -371,7 +371,7 @@ export async function getLearningResource(slug: string): Promise<Tables["learnin
 }
 
 export async function getUserLearningProgress(userId: string): Promise<Tables["user_learning_progress"]["Row"][]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("user_learning_progress")
     .select(`
@@ -391,7 +391,7 @@ export async function getUserLearningProgress(userId: string): Promise<Tables["u
 
 // Global leaderboard queries
 export async function getGlobalLeaderboard(): Promise<any[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   
   // Get user stats with problem counts
   const { data, error } = await supabase
@@ -447,7 +447,7 @@ export async function getGlobalLeaderboard(): Promise<any[]> {
 
 // Calendar and Event queries
 export async function getCalendarEvents(startDate?: string, endDate?: string): Promise<Tables["calendar_events"]["Row"][]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   
   let query = supabase
     .from("calendar_events")
@@ -474,7 +474,7 @@ export async function getCalendarEvents(startDate?: string, endDate?: string): P
 }
 
 export async function getUpcomingEvents(limit: number = 10): Promise<Tables["calendar_events"]["Row"][]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   
   const { data, error } = await supabase
     .from("calendar_events")
@@ -493,7 +493,7 @@ export async function getUpcomingEvents(limit: number = 10): Promise<Tables["cal
 }
 
 export async function getUserEventRegistrations(userId: string): Promise<any[]> {
-  const supabase = await createClient()
+  const supabase = createClient()
   
   const { data, error } = await supabase
     .from("event_registrations")
@@ -513,7 +513,7 @@ export async function getUserEventRegistrations(userId: string): Promise<any[]> 
 }
 
 export async function registerForEvent(eventId: string, userId: string, notes?: string): Promise<Tables["event_registrations"]["Row"] | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
   
   const { data, error } = await supabase
     .from("event_registrations")
@@ -535,7 +535,7 @@ export async function registerForEvent(eventId: string, userId: string, notes?: 
 }
 
 export async function cancelEventRegistration(eventId: string, userId: string): Promise<Tables["event_registrations"]["Row"] | null> {
-  const supabase = await createClient()
+  const supabase = createClient()
   
   const { data, error } = await supabase
     .from("event_registrations")

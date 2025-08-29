@@ -1,63 +1,95 @@
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Palette } from "lucide-react";
 import { Button } from "./ui/button";
 import { useEffect, useState } from "react";
 
-interface DarkModeToggleProps {
+interface ThemeToggleProps {
   className?: string;
 }
 
-export function DarkModeToggle({ className = "" }: DarkModeToggleProps) {
-  const [isDark, setIsDark] = useState(false);
+type Theme = "light" | "dark" | "dark-green";
+
+export function ThemeToggle({ className = "" }: ThemeToggleProps) {
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    // Check if dark mode is already enabled
-    const isDarkMode = document.documentElement.classList.contains('dark');
-    setIsDark(isDarkMode);
+    // Check current theme
+    const html = document.documentElement;
+    if (html.classList.contains('dark-green')) {
+      setTheme('dark-green');
+    } else if (html.classList.contains('dark')) {
+      setTheme('dark');
+    } else {
+      setTheme('light');
+    }
   }, []);
 
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDark;
-    setIsDark(newDarkMode);
+  const applyTheme = (newTheme: Theme) => {
+    const html = document.documentElement;
     
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('darkMode', 'true');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('darkMode', 'false');
+    // Remove all theme classes
+    html.classList.remove('dark', 'dark-green');
+    
+    // Apply new theme
+    if (newTheme !== 'light') {
+      html.classList.add(newTheme);
     }
+    
+    // Save to localStorage
+    localStorage.setItem('theme', newTheme);
+    setTheme(newTheme);
   };
 
-  // Initialize dark mode from localStorage on mount
+  // Initialize theme from localStorage on mount
   useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode');
-    if (savedDarkMode === 'true') {
-      document.documentElement.classList.add('dark');
-      setIsDark(true);
-    } else if (savedDarkMode === 'false') {
-      document.documentElement.classList.remove('dark');
-      setIsDark(false);
+    const savedTheme = localStorage.getItem('theme') as Theme;
+    if (savedTheme && ['light', 'dark', 'dark-green'].includes(savedTheme)) {
+      applyTheme(savedTheme);
     } else {
       // Default to system preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        document.documentElement.classList.add('dark');
-        setIsDark(true);
-      }
+      applyTheme(prefersDark ? 'dark' : 'light');
     }
   }, []);
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={toggleDarkMode}
-      className={`relative transition-all duration-200 hover:bg-accent ${isDark ? 'hover:shadow-md hover:shadow-green-500/20' : ''} ${className}`}
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-    >
-      <Sun className={`w-4 h-4 transition-all duration-300 ${isDark ? 'scale-0 rotate-90' : 'scale-100 rotate-0'}`} />
-      <Moon className={`absolute w-4 h-4 transition-all duration-300 ${isDark ? 'scale-100 rotate-0' : 'scale-0 -rotate-90'}`} />
-      <span className="sr-only">Toggle dark mode</span>
-    </Button>
+    <div className={`flex items-center gap-1 ${className}`}>
+      <Button
+        variant={theme === 'light' ? 'default' : 'ghost'}
+        size="sm"
+        onClick={() => applyTheme('light')}
+        className="relative transition-all duration-200"
+        title="Light theme"
+      >
+        <Sun className="w-4 h-4" />
+        <span className="sr-only">Light theme</span>
+      </Button>
+      
+      <Button
+        variant={theme === 'dark' ? 'default' : 'ghost'}
+        size="sm"
+        onClick={() => applyTheme('dark')}
+        className="relative transition-all duration-200"
+        title="Dark theme"
+      >
+        <Moon className="w-4 h-4" />
+        <span className="sr-only">Dark theme</span>
+      </Button>
+      
+      <Button
+        variant={theme === 'dark-green' ? 'default' : 'ghost'}
+        size="sm"
+        onClick={() => applyTheme('dark-green')}
+        className={`relative transition-all duration-200 ${theme === 'dark-green' ? 'hover:shadow-md hover:shadow-green-500/20' : ''}`}
+        title="Dark green theme"
+      >
+        <Palette className="w-4 h-4 text-green-400" />
+        <span className="sr-only">Dark green theme</span>
+      </Button>
+    </div>
   );
+}
+
+// Keep the old export name for backward compatibility
+export function DarkModeToggle(props: ThemeToggleProps) {
+  return <ThemeToggle {...props} />;
 }
