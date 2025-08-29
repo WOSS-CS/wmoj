@@ -74,6 +74,41 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+.dark-green {
+  --background: oklch(0.11 0.02 152);
+  --foreground: oklch(0.92 0.015 152);
+  --card: oklch(0.13 0.025 152);
+  --card-foreground: oklch(0.92 0.015 152);
+  --popover: oklch(0.13 0.025 152);
+  --popover-foreground: oklch(0.92 0.015 152);
+  --primary: oklch(0.65 0.15 152);
+  --primary-foreground: oklch(0.11 0.02 152);
+  --secondary: oklch(0.18 0.03 152);
+  --secondary-foreground: oklch(0.92 0.015 152);
+  --muted: oklch(0.16 0.025 152);
+  --muted-foreground: oklch(0.7 0.02 152);
+  --accent: oklch(0.2 0.035 152);
+  --accent-foreground: oklch(0.92 0.015 152);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.92 0.015 152);
+  --border: oklch(0.22 0.04 152);
+  --input: oklch(0.18 0.03 152);
+  --ring: oklch(0.65 0.15 152);
+  --chart-1: oklch(0.65 0.15 152);
+  --chart-2: oklch(0.6 0.12 162);
+  --chart-3: oklch(0.55 0.1 172);
+  --chart-4: oklch(0.7 0.18 142);
+  --chart-5: oklch(0.58 0.13 132);
+  --sidebar: oklch(0.08 0.015 152);
+  --sidebar-foreground: oklch(0.92 0.015 152);
+  --sidebar-primary: oklch(0.65 0.15 152);
+  --sidebar-primary-foreground: oklch(0.08 0.015 152);
+  --sidebar-accent: oklch(0.16 0.025 152);
+  --sidebar-accent-foreground: oklch(0.92 0.015 152);
+  --sidebar-border: oklch(0.22 0.04 152);
+  --sidebar-ring: oklch(0.65 0.15 152);
+}
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -121,5 +156,35 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Dark Green theme specific enhancements */
+  .dark-green {
+    /* Enhance the green glow effects */
+    .hover\:shadow-green-500\/20:hover {
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+    }
+    
+    /* Green accent for buttons and interactive elements */
+    .bg-primary {
+      background-color: oklch(0.65 0.15 152);
+    }
+    
+    /* Subtle green tint for cards */
+    .bg-card {
+      background-color: oklch(0.13 0.025 152);
+      border: 1px solid oklch(0.22 0.04 152);
+    }
+    
+    /* Green progress bars and indicators */
+    .bg-green-500 {
+      background-color: oklch(0.65 0.15 152);
+    }
+    
+    /* Enhance syntax highlighting for code blocks */
+    pre, code {
+      background-color: oklch(0.11 0.02 152);
+      border: 1px solid oklch(0.22 0.04 152);
+    }
   }
 }

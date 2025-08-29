@@ -18,6 +18,7 @@ import { Code, Search, Bell, User, Settings, Trophy, Target } from "lucide-react
 import Link from "next/link"
 import { useAuth } from "@/components/auth/auth-provider"
 import { LogoutButton } from "@/components/auth/logout-button"
+import { ThemeToggle } from "@/components/DarkModeToggle"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -77,6 +78,8 @@ export function Header() {
 
         {/* User Menu */}
         <div className="flex items-center gap-4">
+          <ThemeToggle />
+          
           {loading ? (
             <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
           ) : user ? (
