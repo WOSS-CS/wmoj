@@ -1,0 +1,317 @@
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string
+          username: string
+          display_name: string | null
+          bio: string | null
+          avatar_url: string | null
+          github_username: string | null
+          website_url: string | null
+          location: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          username: string
+          display_name?: string | null
+          bio?: string | null
+          avatar_url?: string | null
+          github_username?: string | null
+          website_url?: string | null
+          location?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          username?: string
+          display_name?: string | null
+          bio?: string | null
+          avatar_url?: string | null
+          github_username?: string | null
+          website_url?: string | null
+          location?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      problems: {
+        Row: {
+          id: string
+          title: string
+          slug: string
+          description: string
+          difficulty: "Easy" | "Medium" | "Hard"
+          tags: string[]
+          input_format: string | null
+          output_format: string | null
+          constraints: string | null
+          sample_input: string | null
+          sample_output: string | null
+          explanation: string | null
+          time_limit: number
+          memory_limit: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          is_active: boolean
+        }
+        Insert: {
+          id?: string
+          title: string
+          slug: string
+          description: string
+          difficulty: "Easy" | "Medium" | "Hard"
+          tags?: string[]
+          input_format?: string | null
+          output_format?: string | null
+          constraints?: string | null
+          sample_input?: string | null
+          sample_output?: string | null
+          explanation?: string | null
+          time_limit?: number
+          memory_limit?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          is_active?: boolean
+        }
+        Update: {
+          id?: string
+          title?: string
+          slug?: string
+          description?: string
+          difficulty?: "Easy" | "Medium" | "Hard"
+          tags?: string[]
+          input_format?: string | null
+          output_format?: string | null
+          constraints?: string | null
+          sample_input?: string | null
+          sample_output?: string | null
+          explanation?: string | null
+          time_limit?: number
+          memory_limit?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          is_active?: boolean
+        }
+      }
+      contests: {
+        Row: {
+          id: string
+          title: string
+          slug: string
+          description: string | null
+          start_time: string
+          end_time: string
+          registration_start: string | null
+          registration_end: string | null
+          max_participants: number | null
+          is_public: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          slug: string
+          description?: string | null
+          start_time: string
+          end_time: string
+          registration_start?: string | null
+          registration_end?: string | null
+          max_participants?: number | null
+          is_public?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          slug?: string
+          description?: string | null
+          start_time?: string
+          end_time?: string
+          registration_start?: string | null
+          registration_end?: string | null
+          max_participants?: number | null
+          is_public?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      contest_problems: {
+        Row: {
+          id: string
+          contest_id: string
+          problem_id: string
+          points: number
+          order_index: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          contest_id: string
+          problem_id: string
+          points?: number
+          order_index: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          contest_id?: string
+          problem_id?: string
+          points?: number
+          order_index?: number
+          created_at?: string
+        }
+      }
+      contest_registrations: {
+        Row: {
+          id: string
+          contest_id: string
+          user_id: string
+          registered_at: string
+        }
+        Insert: {
+          id?: string
+          contest_id: string
+          user_id: string
+          registered_at?: string
+        }
+        Update: {
+          id?: string
+          contest_id?: string
+          user_id?: string
+          registered_at?: string
+        }
+      }
+      submissions: {
+        Row: {
+          id: string
+          problem_id: string
+          contest_id: string | null
+          user_id: string
+          language: string
+          code: string
+          status:
+            | "pending"
+            | "running"
+            | "accepted"
+            | "wrong_answer"
+            | "time_limit_exceeded"
+            | "memory_limit_exceeded"
+            | "runtime_error"
+            | "compilation_error"
+          runtime: number | null
+          memory_used: number | null
+          score: number
+          test_cases_passed: number
+          total_test_cases: number
+          error_message: string | null
+          submitted_at: string
+        }
+        Insert: {
+          id?: string
+          problem_id: string
+          contest_id?: string | null
+          user_id: string
+          language: string
+          code: string
+          status?:
+            | "pending"
+            | "running"
+            | "accepted"
+            | "wrong_answer"
+            | "time_limit_exceeded"
+            | "memory_limit_exceeded"
+            | "runtime_error"
+            | "compilation_error"
+          runtime?: number | null
+          memory_used?: number | null
+          score?: number
+          test_cases_passed?: number
+          total_test_cases?: number
+          error_message?: string | null
+          submitted_at?: string
+        }
+        Update: {
+          id?: string
+          problem_id?: string
+          contest_id?: string | null
+          user_id?: string
+          language?: string
+          code?: string
+          status?:
+            | "pending"
+            | "running"
+            | "accepted"
+            | "wrong_answer"
+            | "time_limit_exceeded"
+            | "memory_limit_exceeded"
+            | "runtime_error"
+            | "compilation_error"
+          runtime?: number | null
+          memory_used?: number | null
+          score?: number
+          test_cases_passed?: number
+          total_test_cases?: number
+          error_message?: string | null
+          submitted_at?: string
+        }
+      }
+      user_problem_stats: {
+        Row: {
+          id: string
+          user_id: string
+          problem_id: string
+          status: "not_attempted" | "attempted" | "solved"
+          best_submission_id: string | null
+          attempts: number
+          first_solved_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          problem_id: string
+          status?: "not_attempted" | "attempted" | "solved"
+          best_submission_id?: string | null
+          attempts?: number
+          first_solved_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          problem_id?: string
+          status?: "not_attempted" | "attempted" | "solved"
+          best_submission_id?: string | null
+          attempts?: number
+          first_solved_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+  }
+}
