@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
-import { judge0Service } from "@/lib/judge/judge0"
+import { customJudgeService } from "@/lib/judge/customJudge"
 
 export async function GET() {
   try {
-    const connectionTest = await judge0Service.testConnection()
+    const connectionTest = await customJudgeService.testConnection()
     
     return NextResponse.json({
-      judge0: connectionTest,
+      customAPI: connectionTest,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error('Judge0 health check failed:', error)
+    console.error('Custom API health check failed:', error)
     return NextResponse.json(
       {
-        judge0: {
+        customAPI: {
           connected: false,
           endpoint: 'none',
           error: (error as Error).message

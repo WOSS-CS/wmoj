@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WMOJ platform now supports user-generated problems with comprehensive test case management and real-time code execution validation. Users can create their own programming problems and test them with our Judge0 integration.
+The WMOJ platform now supports user-generated problems with comprehensive test case management and real-time code execution validation. Users can create their own programming problems and test them with our custom code execution API.
 
 ## Features
 
@@ -21,7 +21,7 @@ The WMOJ platform now supports user-generated problems with comprehensive test c
 ### Real-Time Testing
 - **Code Testing**: Test solutions against sample inputs before publishing
 - **Multi-Language Support**: Support for 15+ programming languages
-- **Judge0 Integration**: Real code execution and output comparison
+- **Custom API Integration**: Real code execution and output comparison
 - **Instant Feedback**: See execution results immediately
 
 ### Problem Management
@@ -55,7 +55,7 @@ CREATE TABLE test_cases (
 CREATE TABLE supported_languages (
   id UUID PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
-  judge0_id INTEGER, -- Judge0 language ID
+  custom_api_id INTEGER, -- Custom API language ID
   display_name TEXT NOT NULL,
   file_extension TEXT NOT NULL,
   is_active BOOLEAN DEFAULT true,
@@ -137,7 +137,7 @@ Main component for creating problems with tabbed interface:
 **Key Features:**
 - Auto-slug generation from title
 - Dynamic test case management
-- Real-time code testing with Judge0
+- Real-time code testing with custom API
 - Form validation and error handling
 
 ### Usage in Pages
@@ -165,7 +165,7 @@ export default function CreateProblemPage() {
 
 ## Integration with Code Execution
 
-### Judge0 Integration
+### Custom API Integration
 Problems created through this system automatically work with the existing code execution infrastructure:
 
 1. **Test Case Validation**: Submissions are tested against all test cases
@@ -245,10 +245,10 @@ Problems created through this system work seamlessly with the existing code edit
 - Check: Whitespace, newlines, output format
 - Solution: Use exact string matching, verify output format
 
-#### Judge0 Integration
+#### Custom API Integration
 - Issue: Code execution fails
 - Check: `.env.local` configuration
-- Verify: Judge0 API credentials and endpoints
+- Verify: Custom API credentials and endpoints
 
 #### Permission Errors
 - Issue: Cannot create problems
@@ -259,7 +259,7 @@ Problems created through this system work seamlessly with the existing code edit
 - Check console logs for detailed error messages
 - Verify database schema is up to date
 - Ensure all environment variables are configured
-- Test Judge0 integration separately if needed
+- Test custom API integration separately if needed
 
 ## Future Enhancements
 
