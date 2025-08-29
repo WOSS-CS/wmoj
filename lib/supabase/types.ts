@@ -115,11 +115,16 @@ export type Database = {
           description: string | null
           start_time: string
           end_time: string
-          registration_start: string | null
-          registration_end: string | null
+          registration_start: string
+          registration_end: string
           max_participants: number | null
           is_public: boolean
-          created_by: string | null
+          is_rated: boolean
+          contest_type: "icpc" | "ioi" | "atcoder" | "codeforces"
+          difficulty_level: "beginner" | "intermediate" | "advanced" | "expert"
+          prize_pool: number
+          rules: string | null
+          created_by: string
           created_at: string
           updated_at: string
         }
@@ -130,11 +135,16 @@ export type Database = {
           description?: string | null
           start_time: string
           end_time: string
-          registration_start?: string | null
-          registration_end?: string | null
+          registration_start?: string
+          registration_end: string
           max_participants?: number | null
           is_public?: boolean
-          created_by?: string | null
+          is_rated?: boolean
+          contest_type?: "icpc" | "ioi" | "atcoder" | "codeforces"
+          difficulty_level?: "beginner" | "intermediate" | "advanced" | "expert"
+          prize_pool?: number
+          rules?: string | null
+          created_by: string
           created_at?: string
           updated_at?: string
         }
@@ -145,11 +155,16 @@ export type Database = {
           description?: string | null
           start_time?: string
           end_time?: string
-          registration_start?: string | null
-          registration_end?: string | null
+          registration_start?: string
+          registration_end?: string
           max_participants?: number | null
           is_public?: boolean
-          created_by?: string | null
+          is_rated?: boolean
+          contest_type?: "icpc" | "ioi" | "atcoder" | "codeforces"
+          difficulty_level?: "beginner" | "intermediate" | "advanced" | "expert"
+          prize_pool?: number
+          rules?: string | null
+          created_by?: string
           created_at?: string
           updated_at?: string
         }
@@ -159,7 +174,9 @@ export type Database = {
           id: string
           contest_id: string
           problem_id: string
+          problem_index: string
           points: number
+          penalty_minutes: number
           order_index: number
           created_at: string
         }
@@ -167,7 +184,9 @@ export type Database = {
           id?: string
           contest_id: string
           problem_id: string
+          problem_index: string
           points?: number
+          penalty_minutes?: number
           order_index: number
           created_at?: string
         }
@@ -175,7 +194,9 @@ export type Database = {
           id?: string
           contest_id?: string
           problem_id?: string
+          problem_index?: string
           points?: number
+          penalty_minutes?: number
           order_index?: number
           created_at?: string
         }
@@ -185,19 +206,25 @@ export type Database = {
           id: string
           contest_id: string
           user_id: string
-          registered_at: string
+          registration_time: string
+          team_name: string | null
+          is_official: boolean
         }
         Insert: {
           id?: string
           contest_id: string
           user_id: string
-          registered_at?: string
+          registration_time?: string
+          team_name?: string | null
+          is_official?: boolean
         }
         Update: {
           id?: string
           contest_id?: string
           user_id?: string
-          registered_at?: string
+          registration_time?: string
+          team_name?: string | null
+          is_official?: boolean
         }
       }
       submissions: {
@@ -373,6 +400,125 @@ export type Database = {
           display_name?: string
           file_extension?: string
           is_active?: boolean
+          created_at?: string
+        }
+      }
+      reference_solutions: {
+        Row: {
+          id: string
+          problem_id: string
+          language: string
+          code: string
+          description: string | null
+          is_primary: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          problem_id: string
+          language: string
+          code: string
+          description?: string | null
+          is_primary?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          problem_id?: string
+          language?: string
+          code?: string
+          description?: string | null
+          is_primary?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      problem_editorials: {
+        Row: {
+          id: string
+          problem_id: string
+          title: string
+          content: string
+          approach_complexity: string | null
+          hints: string[]
+          related_topics: string[]
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          is_published: boolean
+        }
+        Insert: {
+          id?: string
+          problem_id: string
+          title: string
+          content: string
+          approach_complexity?: string | null
+          hints?: string[]
+          related_topics?: string[]
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          is_published?: boolean
+        }
+        Update: {
+          id?: string
+          problem_id?: string
+          title?: string
+          content?: string
+          approach_complexity?: string | null
+          hints?: string[]
+          related_topics?: string[]
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          is_published?: boolean
+        }
+      }
+      problem_categories: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          parent_category_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          parent_category_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          parent_category_id?: string | null
+          created_at?: string
+        }
+      }
+      problem_category_mappings: {
+        Row: {
+          id: string
+          problem_id: string
+          category_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          problem_id: string
+          category_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          problem_id?: string
+          category_id?: string
           created_at?: string
         }
       }
