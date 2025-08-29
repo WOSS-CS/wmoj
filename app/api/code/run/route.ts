@@ -16,14 +16,37 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { language, code, input = "" } = body
+    const { language, code, input = "", timeLimit, memoryLimit } = body
 
     if (!language || !code) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Execute code
-    const result = await executeCode(language, code, input)
+    console.log('Code execution request:', {
+      language,
+      codeLength: code.length,
+      hasInput: !!input,
+      timeLimit,
+      memoryLimit,
+      userId: user.id
+    })
+
+    // Execute code with optional limits
+    const result = await executeCode(
+      language, 
+      code, 
+      input, 
+      timeLimit || 5, 
+      memoryLimit || 128000
+    )
+
+    console.log('Code execution result:', {
+      passed: result.passed,
+      hasOutput: !!result.output,
+      hasError: !!result.error,
+      runtime: result.runtime,
+      memory: result.memory
+    })
 
     return NextResponse.json({
       success: result.passed || result.error === null,
@@ -31,6 +54,9 @@ export async function POST(request: NextRequest) {
       error: result.error,
       runtime: result.runtime,
       memory: result.memory,
+      status: result.status || 'Unknown',
+      details: result.details || {},
+      timestamp: new Date().toISOString(),
     })
   } catch (error) {
     console.error("Code execution error:", error)
@@ -38,7 +64,15 @@ export async function POST(request: NextRequest) {
       { 
         success: false, 
         error: error instanceof Error ? error.message : "Internal server error",
-        output: ""
+        output: "",
+        runtime: 0,
+        memory: 0,
+        status: 'Error',
+        details: {
+          errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+          stack: error instanceof Error ? error.stack : undefined
+        },
+        timestamp: new Date().toISOString(),
       }, 
       { status: 500 }
     )

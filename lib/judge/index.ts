@@ -95,6 +95,8 @@ export interface ExecutionResult {
   memory: number
   output: string
   error: string | null
+  status?: string
+  details?: any
 }
 
 export interface JudgeResult {
@@ -109,19 +111,27 @@ export interface JudgeResult {
 }
 
 // Mock execution function - In production, this would use Docker containers
-export async function executeCode(language: string, code: string, input: string, timeLimit?: number): Promise<ExecutionResult> {
+export async function executeCode(
+  language: string, 
+  code: string, 
+  input: string, 
+  timeLimit?: number, 
+  memoryLimit?: number
+): Promise<ExecutionResult> {
   // Check if we should use real execution or mock
   const useRealExecution = process.env.JUDGE0_API_URL && !process.env.NODE_ENV?.includes('test')
   
   if (useRealExecution) {
     try {
-      const result = await judge0Service.executeCode(code, language, input, timeLimit)
+      const result = await judge0Service.executeCode(code, language, input, timeLimit, memoryLimit)
       return {
         passed: result.success,
         runtime: result.runtime,
         memory: result.memory,
         output: result.output,
         error: result.error,
+        status: result.status,
+        details: result.details,
       }
     } catch (error) {
       console.error('Real execution failed, falling back to mock:', error)
@@ -145,6 +155,8 @@ export async function executeCode(language: string, code: string, input: string,
       memory: 0,
       output: "",
       error: "Compilation Error: Syntax error in your code",
+      status: 'Compilation Error (Mock)',
+      details: { mock: true },
     }
   }
 
@@ -156,6 +168,8 @@ export async function executeCode(language: string, code: string, input: string,
       memory: Math.floor(Math.random() * 5000) + 1000,
       output: "",
       error: "Runtime Error: Your program crashed during execution",
+      status: 'Runtime Error (Mock)',
+      details: { mock: true },
     }
   }
 
@@ -167,6 +181,8 @@ export async function executeCode(language: string, code: string, input: string,
       memory: Math.floor(Math.random() * 10000) + 5000,
       output: "",
       error: "Time Limit Exceeded",
+      status: 'Time Limit Exceeded (Mock)',
+      details: { mock: true },
     }
   }
 
@@ -178,6 +194,8 @@ export async function executeCode(language: string, code: string, input: string,
       memory: config.memoryLimit,
       output: "",
       error: "Memory Limit Exceeded",
+      status: 'Memory Limit Exceeded (Mock)',
+      details: { mock: true },
     }
   }
 
@@ -318,6 +336,8 @@ export async function executeCode(language: string, code: string, input: string,
         memory,
         output: "Wrong output",
         error: "Wrong Answer",
+        status: 'Wrong Answer (Mock)',
+        details: { mock: true },
       }
     }
 
@@ -327,6 +347,8 @@ export async function executeCode(language: string, code: string, input: string,
       memory,
       output,
       error: null,
+      status: 'Accepted (Mock)',
+      details: { mock: true },
     }
   } catch (error) {
     return {
@@ -335,11 +357,33 @@ export async function executeCode(language: string, code: string, input: string,
       memory,
       output: "",
       error: `Execution Error: ${error}`,
+      status: 'Runtime Error (Mock)',
+      details: { mock: true, error: String(error) },
     }
   }
 }
 
 export async function executeTestCase(language: string, code: string, testCase: TestCase): Promise<ExecutionResult> {
+  // Check if we should use real execution
+  const useRealExecution = process.env.JUDGE0_API_URL && !process.env.NODE_ENV?.includes('test')
+  
+  if (useRealExecution) {
+    try {
+      const result = await judge0Service.executeTestCase(
+        code, 
+        language, 
+        { input: testCase.input, expected: testCase.expected },
+        testCase.timeLimit,
+        testCase.memoryLimit
+      )
+      return result
+    } catch (error) {
+      console.error('Real test case execution failed, falling back to mock:', error)
+      // Fall through to mock execution
+    }
+  }
+
+  // Mock execution fallback
   const config = LANGUAGE_CONFIGS[language as keyof typeof LANGUAGE_CONFIGS]
   const timeLimit = testCase.timeLimit || config.timeout
   const memoryLimit = testCase.memoryLimit || config.memoryLimit
