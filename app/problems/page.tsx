@@ -2,7 +2,9 @@ import { getProblems } from "@/lib/supabase/queries"
 import { ProblemList } from "@/components/problems/problem-list"
 import { ProblemFilters } from "@/components/problems/problem-filters"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Target, Clock, CheckCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Target, Clock, CheckCircle, Plus } from "lucide-react"
+import Link from "next/link"
 
 interface ProblemsPageProps {
   searchParams: {
@@ -31,9 +33,17 @@ export default async function ProblemsPage({ searchParams }: ProblemsPageProps) 
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Problems</h1>
-        <p className="text-muted-foreground">Practice coding problems and improve your skills</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Problems</h1>
+          <p className="text-muted-foreground">Practice coding problems and improve your skills</p>
+        </div>
+        <Link href="/problems/create">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Problem
+          </Button>
+        </Link>
       </div>
 
       {/* Stats Cards */}

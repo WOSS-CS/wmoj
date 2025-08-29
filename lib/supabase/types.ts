@@ -56,9 +56,11 @@ export type Database = {
           time_limit: number
           memory_limit: number
           created_by: string | null
+          user_id: string | null
           created_at: string
           updated_at: string
           is_active: boolean
+          is_public: boolean
         }
         Insert: {
           id?: string
@@ -76,9 +78,11 @@ export type Database = {
           time_limit?: number
           memory_limit?: number
           created_by?: string | null
+          user_id?: string | null
           created_at?: string
           updated_at?: string
           is_active?: boolean
+          is_public?: boolean
         }
         Update: {
           id?: string
@@ -96,9 +100,11 @@ export type Database = {
           time_limit?: number
           memory_limit?: number
           created_by?: string | null
+          user_id?: string | null
           created_at?: string
           updated_at?: string
           is_active?: boolean
+          is_public?: boolean
         }
       }
       contests: {
@@ -301,6 +307,73 @@ export type Database = {
           first_solved_at?: string | null
           created_at?: string
           updated_at?: string
+        }
+      }
+      test_cases: {
+        Row: {
+          id: string
+          problem_id: string
+          input: string
+          expected_output: string
+          is_sample: boolean
+          points: number
+          time_limit: number | null
+          memory_limit: number | null
+          order_index: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          problem_id: string
+          input: string
+          expected_output: string
+          is_sample?: boolean
+          points?: number
+          time_limit?: number | null
+          memory_limit?: number | null
+          order_index?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          problem_id?: string
+          input?: string
+          expected_output?: string
+          is_sample?: boolean
+          points?: number
+          time_limit?: number | null
+          memory_limit?: number | null
+          order_index?: number
+          created_at?: string
+        }
+      }
+      supported_languages: {
+        Row: {
+          id: string
+          name: string
+          judge0_id: number | null
+          display_name: string
+          file_extension: string
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          judge0_id?: number | null
+          display_name: string
+          file_extension: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          judge0_id?: number | null
+          display_name?: string
+          file_extension?: string
+          is_active?: boolean
+          created_at?: string
         }
       }
       learning_resources: {
