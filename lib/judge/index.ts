@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { judge0Service } from "./judge0"
+import { customJudgeService } from "./customJudge"
 
 // Language configurations for code execution
 export const LANGUAGE_CONFIGS = {
@@ -110,7 +110,7 @@ export interface JudgeResult {
   testCaseResults: any[]
 }
 
-// Mock execution function - In production, this would use Docker containers
+// Execute code with custom judge API
 export async function executeCode(
   language: string, 
   code: string, 
@@ -118,12 +118,12 @@ export async function executeCode(
   timeLimit?: number, 
   memoryLimit?: number
 ): Promise<ExecutionResult> {
-  // Check if we should use real execution or mock
-  const useRealExecution = process.env.JUDGE0_API_URL && !process.env.NODE_ENV?.includes('test')
+  // Use custom judge API
+  const useCustomJudge = process.env.CUSTOM_JUDGE_API_URL && !process.env.NODE_ENV?.includes('test')
   
-  if (useRealExecution) {
+  if (useCustomJudge) {
     try {
-      const result = await judge0Service.executeCode(code, language, input, timeLimit, memoryLimit)
+      const result = await customJudgeService.executeCode(code, language, input, timeLimit, memoryLimit)
       return {
         passed: result.success,
         runtime: result.runtime,
@@ -134,7 +134,7 @@ export async function executeCode(
         details: result.details,
       }
     } catch (error) {
-      console.error('Real execution failed, falling back to mock:', error)
+      console.error('Custom judge execution failed, falling back to mock:', error)
       // Fall through to mock execution
     }
   }
@@ -364,12 +364,12 @@ export async function executeCode(
 }
 
 export async function executeTestCase(language: string, code: string, testCase: TestCase): Promise<ExecutionResult> {
-  // Check if we should use real execution
-  const useRealExecution = process.env.JUDGE0_API_URL && !process.env.NODE_ENV?.includes('test')
+  // Use custom judge API
+  const useCustomJudge = process.env.CUSTOM_JUDGE_API_URL && !process.env.NODE_ENV?.includes('test')
   
-  if (useRealExecution) {
+  if (useCustomJudge) {
     try {
-      const result = await judge0Service.executeTestCase(
+      const result = await customJudgeService.executeTestCase(
         code, 
         language, 
         { input: testCase.input, expected: testCase.expected },
@@ -378,7 +378,7 @@ export async function executeTestCase(language: string, code: string, testCase: 
       )
       return result
     } catch (error) {
-      console.error('Real test case execution failed, falling back to mock:', error)
+      console.error('Custom judge test case execution failed, falling back to mock:', error)
       // Fall through to mock execution
     }
   }
