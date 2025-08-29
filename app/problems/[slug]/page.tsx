@@ -145,7 +145,16 @@ export default async function ProblemPage({ params }: ProblemPageProps) {
 
         {/* Code Editor */}
         <div className="space-y-6">
-          <CodeEditor problemId={problem.id} />
+          <CodeEditor 
+            problemId={problem.id} 
+            problem={{
+              title: problem.title,
+              sample_input: problem.sample_input,
+              sample_output: problem.sample_output,
+              time_limit: problem.time_limit,
+              memory_limit: problem.memory_limit,
+            }}
+          />
         </div>
       </div>
     </div>
