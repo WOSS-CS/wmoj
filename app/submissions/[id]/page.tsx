@@ -135,7 +135,59 @@ export default async function SubmissionPage({ params }: SubmissionPageProps) {
               {submission.error_message && (
                 <div className="bg-red-50 border border-red-200 rounded-md p-3">
                   <div className="text-sm font-medium text-red-800 mb-1">Error Message</div>
-                  <p className="text-sm text-red-700">{submission.error_message}</p>
+                  <p className="text-sm text-red-700 font-mono">{submission.error_message}</p>
+                </div>
+              )}
+
+              {/* Test Case Results */}
+              {submission.test_case_results && Array.isArray(submission.test_case_results) && (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Test Case Details:</div>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {submission.test_case_results.slice(0, 10).map((testCase: any, index: number) => (
+                      <div 
+                        key={index} 
+                        className={`border rounded-md p-3 text-sm ${
+                          testCase.passed 
+                            ? "border-green-200 bg-green-50" 
+                            : "border-red-200 bg-red-50"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium">Test Case {index + 1}</span>
+                          <Badge 
+                            variant="outline" 
+                            className={testCase.passed ? "text-green-700 border-green-300" : "text-red-700 border-red-300"}
+                          >
+                            {testCase.passed ? "✓ Passed" : "✗ Failed"}
+                          </Badge>
+                        </div>
+                        {testCase.runtime && (
+                          <div className="text-xs text-muted-foreground mb-1">
+                            Runtime: {testCase.runtime}ms | Memory: {Math.round((testCase.memory || 0) / 1024)}KB
+                          </div>
+                        )}
+                        {!testCase.passed && (
+                          <div className="space-y-1 font-mono text-xs">
+                            <div className="truncate">
+                              <span className="font-medium">Input:</span> {testCase.input.length > 50 ? testCase.input.substring(0, 50) + '...' : testCase.input}
+                            </div>
+                            <div className="truncate">
+                              <span className="font-medium">Expected:</span> {testCase.expected.length > 50 ? testCase.expected.substring(0, 50) + '...' : testCase.expected}
+                            </div>
+                            <div className="truncate">
+                              <span className="font-medium">Got:</span> {testCase.actual.length > 50 ? testCase.actual.substring(0, 50) + '...' : testCase.actual}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {submission.test_case_results.length > 10 && (
+                      <div className="text-sm text-muted-foreground text-center py-2">
+                        ... and {submission.test_case_results.length - 10} more test cases
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>

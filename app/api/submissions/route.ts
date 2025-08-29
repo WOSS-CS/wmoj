@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
+import { judgeSubmission, LANGUAGE_CONFIGS } from "@/lib/judge"
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
+    // Validate language
+    if (!LANGUAGE_CONFIGS[language as keyof typeof LANGUAGE_CONFIGS]) {
+      return NextResponse.json({ error: "Unsupported language" }, { status: 400 })
+    }
+
     // Create submission record
     const { data: submission, error: submissionError } = await supabase
       .from("submissions")
@@ -40,31 +46,65 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create submission" }, { status: 500 })
     }
 
-    // Simulate judge processing (in real app, this would be handled by a separate judge service)
+    // Start judging process asynchronously
     setTimeout(async () => {
-      const isAccepted = Math.random() > 0.3 // 70% acceptance rate for demo
-      const status = isAccepted
-        ? "accepted"
-        : ["wrong_answer", "runtime_error", "time_limit_exceeded"][Math.floor(Math.random() * 3)]
-      const runtime = isAccepted ? Math.floor(Math.random() * 1000) + 50 : null
-      const memoryUsed = isAccepted ? Math.floor(Math.random() * 50000) + 10000 : null
-      const testCasesPassed = isAccepted ? 10 : Math.floor(Math.random() * 8)
-      const totalTestCases = 10
-      const score = isAccepted ? 100 : 0
+      try {
+        // Update status to running
+        await supabase
+          .from("submissions")
+          .update({ status: "running" })
+          .eq("id", submission.id)
 
-      await supabase
-        .from("submissions")
-        .update({
-          status,
-          runtime,
-          memory_used: memoryUsed,
-          test_cases_passed: testCasesPassed,
-          total_test_cases: totalTestCases,
-          score,
-          error_message: !isAccepted ? "Test case failed: expected output does not match actual output" : null,
-        })
-        .eq("id", submission.id)
-    }, 2000)
+        // Judge the submission
+        const judgeResult = await judgeSubmission(language, code, problemId)
+
+        // Update submission with results
+        await supabase
+          .from("submissions")
+          .update({
+            status: judgeResult.status,
+            runtime: judgeResult.runtime,
+            memory_used: judgeResult.memoryUsed,
+            test_cases_passed: judgeResult.testCasesPassed,
+            total_test_cases: judgeResult.totalTestCases,
+            score: judgeResult.score,
+            error_message: judgeResult.errorMessage,
+            // Store test case results as JSON (you might want to create a separate table for this)
+            test_case_results: judgeResult.testCaseResults,
+          })
+          .eq("id", submission.id)
+
+        // Update user problem stats
+        if (judgeResult.status === "accepted") {
+          await supabase.from("user_problem_stats").upsert({
+            user_id: user.id,
+            problem_id: problemId,
+            status: "solved",
+            best_submission_id: submission.id,
+            first_solved_at: new Date().toISOString(),
+            attempts: 1, // This should be incremented properly
+            updated_at: new Date().toISOString(),
+          })
+        } else {
+          await supabase.from("user_problem_stats").upsert({
+            user_id: user.id,
+            problem_id: problemId,
+            status: "attempted",
+            attempts: 1, // This should be incremented properly
+            updated_at: new Date().toISOString(),
+          })
+        }
+      } catch (error) {
+        console.error("Judge error:", error)
+        await supabase
+          .from("submissions")
+          .update({
+            status: "runtime_error",
+            error_message: "Internal judging error",
+          })
+          .eq("id", submission.id)
+      }
+    }, 1000)
 
     return NextResponse.json({ submission })
   } catch (error) {

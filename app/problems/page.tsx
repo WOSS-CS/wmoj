@@ -13,10 +13,11 @@ interface ProblemsPageProps {
 }
 
 export default async function ProblemsPage({ searchParams }: ProblemsPageProps) {
+  const params = await searchParams
   const filters = {
-    difficulty: searchParams.difficulty,
-    tags: searchParams.tags?.split(",").filter(Boolean),
-    search: searchParams.search,
+    difficulty: params.difficulty,
+    tags: params.tags?.split(",").filter(Boolean),
+    search: params.search,
   }
 
   const problems = await getProblems(filters)
