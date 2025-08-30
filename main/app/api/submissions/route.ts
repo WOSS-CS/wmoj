@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unsupported language" }, { status: 400 })
     }
 
-    // Create submission record
+    // Create submission record (pending)
     const { data: submission, error: submissionError } = await supabase
       .from("submissions")
       .insert({
@@ -36,77 +36,66 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         language,
         code,
-        status: "pending",
+        status: "running",
       })
       .select()
       .single()
 
-    if (submissionError) {
+    if (submissionError || !submission) {
       console.error("Submission error:", submissionError)
       return NextResponse.json({ error: "Failed to create submission" }, { status: 500 })
     }
 
-    // Start judging process asynchronously
-    setTimeout(async () => {
-      try {
-        // Update status to running
-        await supabase
-          .from("submissions")
-          .update({ status: "running" })
-          .eq("id", submission.id)
+    // Judge synchronously (serverless-safe)
+    const judgeResult = await judgeSubmission(language, code, problemId)
 
-        // Judge the submission
-        const judgeResult = await judgeSubmission(language, code, problemId)
+    // Update submission with results
+    const { data: updatedSubmission, error: updateError } = await supabase
+      .from("submissions")
+      .update({
+        status: judgeResult.status,
+        runtime: judgeResult.runtime,
+        memory_used: judgeResult.memoryUsed,
+        test_cases_passed: judgeResult.testCasesPassed,
+        total_test_cases: judgeResult.totalTestCases,
+        score: judgeResult.score,
+        error_message: judgeResult.errorMessage,
+        test_case_results: judgeResult.testCaseResults,
+      })
+      .eq("id", submission.id)
+      .select()
+      .single()
 
-        // Update submission with results
-        await supabase
-          .from("submissions")
-          .update({
-            status: judgeResult.status,
-            runtime: judgeResult.runtime,
-            memory_used: judgeResult.memoryUsed,
-            test_cases_passed: judgeResult.testCasesPassed,
-            total_test_cases: judgeResult.totalTestCases,
-            score: judgeResult.score,
-            error_message: judgeResult.errorMessage,
-            // Store test case results as JSON (you might want to create a separate table for this)
-            test_case_results: judgeResult.testCaseResults,
-          })
-          .eq("id", submission.id)
+    if (updateError) {
+      console.error("Submission update error:", updateError)
+    }
 
-        // Update user problem stats
-        if (judgeResult.status === "accepted") {
-          await supabase.from("user_problem_stats").upsert({
-            user_id: user.id,
-            problem_id: problemId,
-            status: "solved",
-            best_submission_id: submission.id,
-            first_solved_at: new Date().toISOString(),
-            attempts: 1, // This should be incremented properly
-            updated_at: new Date().toISOString(),
-          })
-        } else {
-          await supabase.from("user_problem_stats").upsert({
-            user_id: user.id,
-            problem_id: problemId,
-            status: "attempted",
-            attempts: 1, // This should be incremented properly
-            updated_at: new Date().toISOString(),
-          })
-        }
-      } catch (error) {
-        console.error("Judge error:", error)
-        await supabase
-          .from("submissions")
-          .update({
-            status: "runtime_error",
-            error_message: "Internal judging error",
-          })
-          .eq("id", submission.id)
+    // Update user problem stats
+    try {
+      if (judgeResult.status === "accepted") {
+        await supabase.from("user_problem_stats").upsert({
+          user_id: user.id,
+          problem_id: problemId,
+          status: "solved",
+          best_submission_id: submission.id,
+          first_solved_at: new Date().toISOString(),
+          attempts: 1,
+          updated_at: new Date().toISOString(),
+        })
+      } else {
+        await supabase.from("user_problem_stats").upsert({
+          user_id: user.id,
+          problem_id: problemId,
+          status: "attempted",
+          attempts: 1,
+          updated_at: new Date().toISOString(),
+        })
       }
-    }, 1000)
+    } catch (e) {
+      console.error("Stats update error:", e)
+    }
 
-    return NextResponse.json({ submission })
+    return NextResponse.json({ submission: updatedSubmission || submission })
   } catch (error) {
     console.error("API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

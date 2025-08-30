@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Play, Send, Clock, CheckCircle, XCircle, ExternalLink, Download, Upload, RotateCcw, Copy, Check } from "lucide-react"
+import { Play, Send, Clock, CheckCircle, XCircle } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useSearchParams } from "next/navigation"
@@ -241,7 +241,6 @@ export function CodeEditor({ problemId, problem }: CodeEditorProps) {
       passed: boolean
     }>
   } | null>(null)
-  const [copied, setCopied] = useState(false)
   const [activeTab, setActiveTab] = useState("code")
 
   // Load saved code from localStorage
@@ -277,39 +276,7 @@ export function CodeEditor({ problemId, problem }: CodeEditorProps) {
     localStorage.removeItem(`code_${problemId}_${language}`)
   }
 
-  const handleCopyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(code)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy code:', err)
-    }
-  }
-
-  const handleDownloadCode = () => {
-    const languageConfig = LANGUAGES.find(l => l.value === language)
-    const filename = `solution.${languageConfig?.extension || 'txt'}`
-    const blob = new Blob([code], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const content = e.target?.result as string
-        setCode(content)
-      }
-      reader.readAsText(file)
-    }
-  }
+  // Removed copy, download, and upload utilities to simplify UI
 
   const handleRun = async () => {
     if (!user) return
@@ -490,25 +457,7 @@ export function CodeEditor({ problemId, problem }: CodeEditorProps) {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" size="sm" onClick={handleCopyCode}>
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleDownloadCode}>
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => document.getElementById('file-upload')?.click()}>
-                    <Upload className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleReset}>
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept=".py,.js,.java,.cpp,.c,.go,.rs,.kt,.swift,.cs,.txt"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
+                  <Button variant="outline" size="sm" onClick={handleReset}>Reset</Button>
                 </div>
               </div>
             </CardHeader>
