@@ -38,8 +38,8 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <Code className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">CodeContest</span>
+          <img src="/logo.png" alt="WMOJ" className="h-6 w-6" />
+          <span className="text-xl font-bold">WMOJ</span>
         </Link>
 
         {/* Navigation */}

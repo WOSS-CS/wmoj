@@ -8,9 +8,14 @@ import { Suspense } from "react"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "CodeContest - Programming Contest Platform",
+  title: "WMOJ - Programming Contest Platform",
   description: "Practice coding problems and compete in programming contests",
   generator: "v0.app",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 }
 
 export default function RootLayout({
