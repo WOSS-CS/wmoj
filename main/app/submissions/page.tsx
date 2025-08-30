@@ -31,9 +31,7 @@ export default async function SubmissionsPage({ searchParams }: SubmissionsPageP
     .eq("user_id", data.user.id)
     .order("submitted_at", { ascending: false })
 
-  if (searchParams.status) {
-    query = query.eq("status", searchParams.status)
-  }
+  // status filter removed (status column dropped)
 
   if (searchParams.language) {
     query = query.eq("language", searchParams.language)
@@ -47,9 +45,9 @@ export default async function SubmissionsPage({ searchParams }: SubmissionsPageP
 
   const stats = {
     total: submissions?.length || 0,
-    accepted: submissions?.filter((s) => s.status === "accepted").length || 0,
-    rejected: submissions?.filter((s) => s.status !== "accepted" && s.status !== "pending").length || 0,
-    pending: submissions?.filter((s) => s.status === "pending").length || 0,
+    accepted: submissions?.filter((s: any) => (s.total_test_cases && s.test_cases_passed === s.total_test_cases) || s.score === 100).length || 0,
+    rejected: submissions?.filter((s: any) => !((s.total_test_cases && s.test_cases_passed === s.total_test_cases) || s.score === 100)).length || 0,
+    pending: 0,
   }
 
   return (
