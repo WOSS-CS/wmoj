@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
         description,
         difficulty,
         tags: tags || [],
-        -- explanation removed per schema update
+        // explanation removed per schema update
         time_limit: timeLimit || 2000,
         memory_limit: memoryLimit || 256,
         created_by: user.id,
