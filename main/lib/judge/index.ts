@@ -524,69 +524,15 @@ export async function judgeSubmission(language: string, code: string, problemId:
     }
   }
 
-  const results = [] as any[]
-  let totalRuntime = 0
-  let maxMemory = 0
-  let passedCount = 0
-  let totalScore = 0
-  const maxScore = formattedTestCases.reduce((sum, tc) => sum + (tc.points || 1), 0)
-  
-  for (const testCase of formattedTestCases) {
-    const result = await executeTestCase(language, code, testCase)
-    results.push({
-      input: testCase.input,
-      expected: testCase.expected,
-      actual: result.output,
-      passed: result.passed,
-      runtime: result.runtime,
-      memory: result.memory,
-      error: result.error,
-      points: result.passed ? (testCase.points || 1) : 0,
-    })
-    
-    if (result.passed) {
-      passedCount++
-      totalScore += testCase.points || 1
-    }
-    
-    totalRuntime += result.runtime
-    maxMemory = Math.max(maxMemory, result.memory)
-    
-    // Stop execution on first failure for certain errors
-    if (!result.passed && result.error && !result.error.includes("Wrong Answer")) {
-      break
-    }
-  }
-  
-  const allPassed = passedCount === formattedTestCases.length
-  let status = "accepted"
-  let errorMessage = null
-  
-  if (!allPassed) {
-    const failedResult = results.find(r => !r.passed)
-    if (failedResult?.error === "Time Limit Exceeded") {
-      status = "time_limit_exceeded"
-      errorMessage = "Your solution exceeded the time limit"
-    } else if (failedResult?.error === "Memory Limit Exceeded") {
-      status = "memory_limit_exceeded"
-      errorMessage = "Your solution exceeded the memory limit"
-    } else if (failedResult?.error && failedResult.error !== "Wrong Answer") {
-      status = "runtime_error"
-      errorMessage = failedResult.error
-    } else {
-      status = "wrong_answer"
-      errorMessage = `Wrong answer on test case ${results.findIndex(r => !r.passed) + 1}`
-    }
-  }
-  
+  // If custom judge is not configured or failed above, surface an explicit error
   return {
-    status,
-    runtime: Math.floor(totalRuntime / formattedTestCases.length),
-    memoryUsed: maxMemory,
-    testCasesPassed: passedCount,
+    status: "runtime_error",
+    runtime: 0,
+    memoryUsed: 0,
+    testCasesPassed: 0,
     totalTestCases: formattedTestCases.length,
-    score: Math.floor((totalScore / maxScore) * 100),
-    errorMessage,
-    testCaseResults: results,
+    score: 0,
+    errorMessage: "Custom judge not configured or unavailable",
+    testCaseResults: []
   }
 }
