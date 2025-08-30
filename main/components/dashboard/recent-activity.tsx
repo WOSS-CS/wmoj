@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle, XCircle, Clock, Trophy, Target, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { getRecentActivity } from "@/lib/supabase/queries"
 import { useAuth } from "@/components/auth/auth-provider"
 
 interface Activity {
@@ -32,8 +31,14 @@ export function RecentActivity() {
           return
         }
 
-        const realActivities = await getRecentActivity(user.id, 10)
-        setActivities(realActivities)
+        const response = await fetch("/api/user/recent-activity?limit=10")
+        if (response.ok) {
+          const realActivities = await response.json()
+          setActivities(realActivities)
+        } else {
+          console.error('Failed to fetch recent activity')
+          setActivities([])
+        }
       } catch (error) {
         console.error('Error fetching recent activity:', error)
         // Fallback to empty array if fetch fails
