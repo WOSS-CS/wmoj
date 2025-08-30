@@ -16,8 +16,6 @@ interface CodeEditorProps {
   problemId: string
   problem?: {
     title: string
-    sample_input?: string
-    sample_output?: string
     time_limit?: number
     memory_limit?: number
   }
@@ -221,11 +219,7 @@ export function CodeEditor({ problemId, problem }: CodeEditorProps) {
 
   const [language, setLanguage] = useState("python")
   const [code, setCode] = useState(DEFAULT_CODE.python)
-  const [customInput, setCustomInput] = useState("")
-  const [isRunning, setIsRunning] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [runOutput, setRunOutput] = useState<string | null>(null)
-  const [runError, setRunError] = useState<string | null>(null)
   const [submissionId, setSubmissionId] = useState<string | null>(null)
   const [submissionResult, setSubmissionResult] = useState<{
     status: string
@@ -278,46 +272,7 @@ export function CodeEditor({ problemId, problem }: CodeEditorProps) {
 
   // Removed copy, download, and upload utilities to simplify UI
 
-  const handleRun = async () => {
-    if (!user) return
-
-    setIsRunning(true)
-    setRunOutput(null)
-    setRunError(null)
-
-    try {
-      const response = await fetch("/api/code/run", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          language,
-          code,
-          input: customInput || problem?.sample_input || "",
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setRunError(data.error || "Failed to run code")
-        return
-      }
-
-      if (data.success) {
-        setRunOutput(data.output)
-        setRunError(data.error || null)
-      } else {
-        setRunError(data.error || "Code execution failed")
-      }
-    } catch (error) {
-      console.error("Run error:", error)
-      setRunError("Failed to execute code")
-    } finally {
-      setIsRunning(false)
-    }
-  }
+  // Removed Run & Test functionality
 
   const handleSubmit = async () => {
     if (!user) return
@@ -433,9 +388,8 @@ export function CodeEditor({ problemId, problem }: CodeEditorProps) {
   return (
     <div className="space-y-4">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="code">Code Editor</TabsTrigger>
-          <TabsTrigger value="run">Run & Test</TabsTrigger>
           <TabsTrigger value="submit">Submit</TabsTrigger>
         </TabsList>
 
@@ -486,63 +440,7 @@ export function CodeEditor({ problemId, problem }: CodeEditorProps) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="run" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Test Your Code</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Custom Input</label>
-                <Textarea
-                  value={customInput}
-                  onChange={(e) => setCustomInput(e.target.value)}
-                  className="font-mono text-sm min-h-[100px]"
-                  placeholder={problem?.sample_input || "Enter test input..."}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  {problem?.sample_input && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setCustomInput(problem.sample_input || "")}
-                    >
-                      Use Sample Input
-                    </Button>
-                  )}
-                </div>
-                <Button onClick={handleRun} disabled={isRunning || !user}>
-                  <Play className="h-4 w-4 mr-2" />
-                  {isRunning ? "Running..." : "Run Code"}
-                </Button>
-              </div>
-
-              {(runOutput || runError) && (
-                <div className="space-y-2">
-                  <div className="text-sm font-medium">Output:</div>
-                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
-                    {runError ? (
-                      <div className="text-red-600">{runError}</div>
-                    ) : (
-                      <pre className="whitespace-pre-wrap">{runOutput}</pre>
-                    )}
-                  </div>
-                  {problem?.sample_output && (
-                    <div>
-                      <div className="text-sm font-medium mb-1">Expected Output:</div>
-                      <div className="bg-muted rounded-md p-3 font-mono text-sm">
-                        <pre className="whitespace-pre-wrap">{problem.sample_output}</pre>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {/* Run & Test tab removed */}
 
         <TabsContent value="submit" className="space-y-4">
           <Card>

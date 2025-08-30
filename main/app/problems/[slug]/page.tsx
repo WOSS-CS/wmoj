@@ -118,29 +118,7 @@ export default async function ProblemPage({ params }: ProblemPageProps) {
             </Card>
           )}
 
-          {problem.sample_input && problem.sample_output && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Sample</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Input:</h4>
-                  <pre className="bg-muted p-3 rounded-md text-sm overflow-x-auto">{problem.sample_input}</pre>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Output:</h4>
-                  <pre className="bg-muted p-3 rounded-md text-sm overflow-x-auto">{problem.sample_output}</pre>
-                </div>
-                {problem.explanation && (
-                  <div>
-                    <h4 className="font-medium mb-2">Explanation:</h4>
-                    <p className="text-sm text-muted-foreground">{problem.explanation}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+          {/* Sample input/output section removed; authors can include examples inside description */}
         </div>
 
         {/* Code Editor */}
@@ -149,8 +127,6 @@ export default async function ProblemPage({ params }: ProblemPageProps) {
             problemId={problem.id} 
             problem={{
               title: problem.title,
-              sample_input: problem.sample_input,
-              sample_output: problem.sample_output,
               time_limit: problem.time_limit,
               memory_limit: problem.memory_limit,
             }}

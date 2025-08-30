@@ -208,9 +208,12 @@ export class CodeExecutor {
         stderr += data.toString();
       });
 
-      // Send input to the process
-      if (input && process.stdin) {
-        process.stdin.write(input);
+      // Send input to the process and ALWAYS close stdin
+      // Important: even when input is empty, close stdin so programs waiting on EOF don't hang
+      if (process.stdin) {
+        if (typeof input === 'string' && input.length > 0) {
+          process.stdin.write(input);
+        }
         process.stdin.end();
       }
 
