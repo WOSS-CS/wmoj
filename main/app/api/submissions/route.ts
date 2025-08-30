@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { problemId, contestId, language, code } = body
+    const { problemId, contestId, contestSlug, language, code } = body
 
     if (!problemId || !language || !code) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -27,6 +27,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unsupported language" }, { status: 400 })
     }
 
+    // Resolve contest UUID if a slug was passed from the client
+    let contestUuid: string | null = null
+    const maybeContest = (contestId || contestSlug) as string | undefined
+    const isUuid = (v: string) => /^(\{)?[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[1-5][0-9a-fA-F]{3}\-[89abAB][0-9a-fA-F]{3}\-[0-9a-fA-F]{12}(\})?$/.test(v)
+    if (maybeContest) {
+      try {
+        if (isUuid(maybeContest)) {
+          contestUuid = maybeContest
+        } else {
+          const { data: c } = await supabase.from('contests').select('id').eq('slug', maybeContest).single()
+          contestUuid = c?.id || null
+        }
+      } catch {
+        contestUuid = null
+      }
+    }
+
     // Judge synchronously (serverless-safe) BEFORE inserting
     const judgeResult = await judgeSubmission(language, code, problemId)
 
@@ -35,7 +52,7 @@ export async function POST(request: NextRequest) {
       .from("submissions")
       .insert({
         problem_id: problemId,
-        contest_id: contestId || null,
+        contest_id: contestUuid,
         user_id: user.id,
         language,
         code,

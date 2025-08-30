@@ -288,7 +288,7 @@ export function CodeEditor({ problemId, problem }: CodeEditorProps) {
         },
         body: JSON.stringify({
           problemId,
-          contestId: contestSlug ? contestSlug : null,
+          contestSlug: contestSlug ? contestSlug : null,
           language,
           code,
         }),
