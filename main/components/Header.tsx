@@ -4,7 +4,6 @@ import { Input } from "./ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { SpinningDuck } from "./SpinningDuck";
-import { ThemeToggle } from "./DarkModeToggle";
 
 export function Header() {
   return (
@@ -41,7 +40,7 @@ export function Header() {
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full"></span>
           </Button>
 
-          <ThemeToggle />
+          
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
