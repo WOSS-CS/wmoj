@@ -118,7 +118,7 @@ export default async function ProblemPage({ params }: ProblemPageProps) {
             </Card>
           )}
 
-          {/* Sample input/output section removed; authors can include examples inside description */}
+          {/* Input/Output format and constraints removed per schema; authors can include examples in description */}
         </div>
 
         {/* Code Editor */}

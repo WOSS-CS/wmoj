@@ -24,18 +24,13 @@ interface Contest {
   max_participants: number | null
   participant_count: number
   is_public: boolean
-  is_rated: boolean
-  contest_type: string
-  difficulty_level: string
-  prize_pool: number
-  rules: string | null
+  // removed fields from schema
 }
 
 interface ContestProblem {
   problem_id: string
   problem_index: string
   points: number
-  penalty_minutes: number
   order_index: number
   problem_title?: string
   problem_difficulty?: string
@@ -214,18 +209,13 @@ export default function ContestDetailPage() {
           <div>
             <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
               {contest.title}
-              {contest.is_rated && <Star className="h-6 w-6 text-yellow-500" />}
+              {/* rated removed */}
             </h1>
             <div className="flex gap-2 mb-3">
               <Badge className={getStatusColor(status)}>
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </Badge>
-              <Badge className={getDifficultyColor(contest.difficulty_level)}>
-                {contest.difficulty_level.charAt(0).toUpperCase() + contest.difficulty_level.slice(1)}
-              </Badge>
-              <Badge variant="outline">
-                {contest.contest_type.toUpperCase()}
-              </Badge>
+              {/* difficulty/type removed */}
               {!contest.is_public && (
                 <Badge variant="outline">Private</Badge>
               )}
@@ -286,15 +276,7 @@ export default function ContestDetailPage() {
           </CardContent>
         </Card>
         
-        {contest.prize_pool > 0 && (
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <Trophy className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <div className="text-sm font-medium mb-1">Prize Pool</div>
-              <div className="text-sm text-muted-foreground">${contest.prize_pool}</div>
-            </CardContent>
-          </Card>
-        )}
+        {/* prize pool removed */}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -304,7 +286,6 @@ export default function ContestDetailPage() {
             <TabsList>
               <TabsTrigger value="problems">Problems</TabsTrigger>
               <TabsTrigger value="standings">Standings</TabsTrigger>
-              <TabsTrigger value="details">Details</TabsTrigger>
             </TabsList>
 
             <TabsContent value="problems">
@@ -342,7 +323,7 @@ export default function ContestDetailPage() {
                               </div>
                               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 <span>Points: {problem.points}</span>
-                                <span>Penalty: {problem.penalty_minutes} min</span>
+                                {/* penalty removed */}
                               </div>
                             </div>
                             
@@ -418,43 +399,7 @@ export default function ContestDetailPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="details">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contest Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="font-medium mb-2">Schedule</h3>
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                      <div>Registration: {formatDateTime(contest.registration_start)} - {formatDateTime(contest.registration_end)}</div>
-                      <div>Contest: {formatDateTime(contest.start_time)} - {formatDateTime(contest.end_time)}</div>
-                      <div>Duration: {Math.round((new Date(contest.end_time).getTime() - new Date(contest.start_time).getTime()) / (1000 * 60))} minutes</div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium mb-2">Contest Settings</h3>
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                      <div>Type: {contest.contest_type.toUpperCase()} Style</div>
-                      <div>Difficulty: {contest.difficulty_level.charAt(0).toUpperCase() + contest.difficulty_level.slice(1)}</div>
-                      <div>Rating: {contest.is_rated ? "Rated" : "Unrated"}</div>
-                      <div>Visibility: {contest.is_public ? "Public" : "Private"}</div>
-                      {contest.max_participants && <div>Max Participants: {contest.max_participants}</div>}
-                    </div>
-                  </div>
-
-                  {contest.rules && (
-                    <div>
-                      <h3 className="font-medium mb-2">Rules & Guidelines</h3>
-                      <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {contest.rules}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+            {/* details tab removed */}
           </Tabs>
         </div>
 
