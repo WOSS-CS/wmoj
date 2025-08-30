@@ -1,20 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import {
-  Home,
-  Target,
-  Trophy,
-  Code,
-  User,
-  Settings,
-  BarChart3,
-  Calendar,
-  BookOpen,
-  Award,
-  TrendingUp,
-} from "lucide-react"
+import { Home, Target, Trophy, Code, User, Settings } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -62,26 +49,7 @@ const secondaryNavigation = [
   },
 ]
 
-const quickStats = [
-  {
-    name: "Problems Solved",
-    value: "42",
-    icon: Target,
-    color: "text-green-600",
-  },
-  {
-    name: "Contest Rank",
-    value: "#1,234",
-    icon: Award,
-    color: "text-blue-600",
-  },
-  {
-    name: "Streak",
-    value: "7 days",
-    icon: TrendingUp,
-    color: "text-orange-600",
-  },
-]
+// Removed quick stats to simplify UI
 
 interface SidebarProps {
   className?: string
@@ -137,50 +105,10 @@ export function Sidebar({ className }: SidebarProps) {
               </div>
             </div>
 
-            <div className="px-3 py-2">
-              <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">Quick Stats</h2>
-              <div className="space-y-3">
-                {quickStats.map((stat) => (
-                  <div key={stat.name} className="px-4 py-2 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <stat.icon className={cn("h-4 w-4", stat.color)} />
-                        <span className="text-sm font-medium">{stat.name}</span>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {stat.value}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Quick stats removed */}
           </>
         )}
-
-        <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">Resources</h2>
-          <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link href="/learn">
-                <BookOpen className="mr-2 h-4 w-4" />
-                Learn
-              </Link>
-            </Button>
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link href="/leaderboard">
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Leaderboard
-              </Link>
-            </Button>
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link href="/calendar">
-                <Calendar className="mr-2 h-4 w-4" />
-                Calendar
-              </Link>
-            </Button>
-          </div>
-        </div>
+        {/* Resources section removed to reduce clutter */}
       </div>
     </div>
   )

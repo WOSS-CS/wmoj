@@ -111,6 +111,13 @@ export interface JudgeResult {
 }
 
 // Execute code with custom judge API
+const isCustomJudgeEnabled = (): boolean => {
+  // Guard against missing Node typings by reading via globalThis
+  const env = (globalThis as any)?.process?.env || {} as Record<string, string | undefined>
+  const nodeEnv = (globalThis as any)?.process?.env?.NODE_ENV as string | undefined
+  return Boolean(env.CUSTOM_JUDGE_API_URL) && !(nodeEnv && nodeEnv.includes('test'))
+}
+
 export async function executeCode(
   language: string, 
   code: string, 
@@ -119,7 +126,7 @@ export async function executeCode(
   memoryLimit?: number
 ): Promise<ExecutionResult> {
   // Use custom judge API
-  const useCustomJudge = process.env.CUSTOM_JUDGE_API_URL && !process.env.NODE_ENV?.includes('test')
+  const useCustomJudge = isCustomJudgeEnabled()
   
   if (useCustomJudge) {
     try {
@@ -365,7 +372,7 @@ export async function executeCode(
 
 export async function executeTestCase(language: string, code: string, testCase: TestCase): Promise<ExecutionResult> {
   // Use custom judge API
-  const useCustomJudge = process.env.CUSTOM_JUDGE_API_URL && !process.env.NODE_ENV?.includes('test')
+  const useCustomJudge = isCustomJudgeEnabled()
   
   if (useCustomJudge) {
     try {
@@ -458,7 +465,56 @@ export async function judgeSubmission(language: string, code: string, problemId:
     }))
   }
 
-  const results = []
+  // If a custom judge API is configured, use its batch /judge endpoint for efficiency
+  const useCustomJudge = isCustomJudgeEnabled()
+  if (useCustomJudge) {
+    try {
+      const cjResult = await customJudgeService.judgeSubmission(
+        code,
+        language,
+        formattedTestCases
+      )
+
+      // Map custom judge status to our internal status values
+      const mapStatus = (status?: string, success?: boolean) => {
+        switch ((status || '').toUpperCase()) {
+          case 'SUCCESS':
+            return 'accepted'
+          case 'WRONG_ANSWER':
+            return 'wrong_answer'
+          case 'RUNTIME_ERROR':
+            return 'runtime_error'
+          case 'COMPILATION_ERROR':
+            return 'compilation_error'
+          case 'TIME_LIMIT_EXCEEDED':
+            return 'time_limit_exceeded'
+          case 'MEMORY_LIMIT_EXCEEDED':
+            return 'memory_limit_exceeded'
+          default:
+            return success ? 'accepted' : 'runtime_error'
+        }
+      }
+
+      const maxScore = cjResult.maxScore || formattedTestCases.reduce((sum, tc) => sum + (tc.points || 1), 0)
+      const calcScore = maxScore > 0 ? Math.floor(((cjResult.totalScore || 0) / maxScore) * 100) : 0
+
+      return {
+        status: mapStatus(cjResult.status, cjResult.success),
+        runtime: Math.floor(cjResult.averageRuntime || 0),
+        memoryUsed: cjResult.maxMemory || 0,
+        testCasesPassed: cjResult.testCasesPassed || 0,
+        totalTestCases: cjResult.totalTestCases || formattedTestCases.length,
+        score: calcScore,
+        errorMessage: cjResult.error || null,
+        testCaseResults: cjResult.testCaseResults || [],
+      }
+    } catch (error) {
+      console.error('Custom judge submission error, falling back to mock:', error)
+      // Fall through to mock per-test execution below
+    }
+  }
+
+  const results = [] as any[]
   let totalRuntime = 0
   let maxMemory = 0
   let passedCount = 0
