@@ -1,5 +1,4 @@
 // Custom Judge API Service - the sole code execution backend for WMOJ
-import { ExecutionResult, TestCaseResult, JudgeResult, ExecutionStatus } from "./types"
 
 export interface CustomJudgeConfig {
   apiUrl: string
@@ -18,10 +17,11 @@ class CustomJudgeService {
   private defaultTimeout = 30000 // 30 seconds
 
   constructor() {
+    const env = (globalThis as any)?.process?.env || {} as Record<string, string | undefined>
     this.config = {
-      apiUrl: process.env.CUSTOM_JUDGE_API_URL || 'http://localhost:3002',
-      apiKey: process.env.CUSTOM_JUDGE_API_KEY,
-      timeout: parseInt(process.env.CUSTOM_JUDGE_TIMEOUT || '30000')
+      apiUrl: env.CUSTOM_JUDGE_API_URL || 'http://localhost:3002',
+      apiKey: env.CUSTOM_JUDGE_API_KEY,
+      timeout: parseInt(env.CUSTOM_JUDGE_TIMEOUT || '30000')
     }
   }
 
@@ -53,10 +53,8 @@ class CustomJudgeService {
       }
 
       const result = await response.json()
-      if (!result.success) {
-        throw new Error(`Custom Judge API error: ${result.error || 'Unknown error'}`)
-      }
-
+      // Important: the API sets success=false for non-accepted results (e.g., wrong answers).
+      // That's not a transport error. Return the data regardless and let callers interpret status.
       return result.data
     } catch (error) {
       clearTimeout(timeoutId)
@@ -134,12 +132,13 @@ class CustomJudgeService {
         memoryLimit
       })
 
+      // The /test endpoint returns success=false when the output is wrong. Treat as a valid response.
       return {
-        passed: result.passed || false,
+        passed: Boolean(result.passed),
         runtime: result.runtime || 0,
         memory: result.memory || 0,
         output: result.output || '',
-        error: result.error,
+        error: result.error || null,
         details: {
           customJudge: true,
           expectedOutput: result.expectedOutput,
@@ -188,8 +187,9 @@ class CustomJudgeService {
         memoryLimit
       })
 
+      // Do not treat success=false as transport error; it's a legitimate judged outcome
       return {
-        success: result.success || false,
+        success: Boolean(result.success),
         status: result.status || 'UNKNOWN',
         totalScore: result.totalScore || 0,
         maxScore: result.maxScore || 0,
