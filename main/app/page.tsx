@@ -24,8 +24,8 @@ export default async function HomePage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-16">
           <div className="flex items-center gap-2">
-            <Code className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">CodeContest</span>
+            <img src="/logo.png" alt="WMOJ" className="h-8 w-8" />
+            <span className="text-2xl font-bold">WMOJ</span>
           </div>
           <div className="flex items-center gap-4">
             <Button asChild variant="ghost">
