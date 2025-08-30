@@ -2,7 +2,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
-import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Suspense } from "react"
@@ -27,7 +26,6 @@ export default function RootLayout({
             <MainLayout>{children}</MainLayout>
           </AuthProvider>
         </Suspense>
-        <Analytics />
       </body>
     </html>
   )
