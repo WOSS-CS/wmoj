@@ -509,8 +509,18 @@ export async function judgeSubmission(language: string, code: string, problemId:
         testCaseResults: cjResult.testCaseResults || [],
       }
     } catch (error) {
-      console.error('Custom judge submission error, falling back to mock:', error)
-      // Fall through to mock per-test execution below
+      console.error('Custom judge submission error:', error)
+      // Do not fall back to per-test calls to avoid long loops; surface error immediately
+      return {
+        status: 'runtime_error',
+        runtime: 0,
+        memoryUsed: 0,
+        testCasesPassed: 0,
+        totalTestCases: formattedTestCases.length,
+        score: 0,
+        errorMessage: error instanceof Error ? error.message : 'Custom judge failed',
+        testCaseResults: []
+      }
     }
   }
 
