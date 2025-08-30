@@ -26,7 +26,11 @@ interface Contest {
   prize_pool: number
 }
 
-export function ContestList() {
+interface ContestListProps {
+  isAdmin?: boolean
+}
+
+export function ContestList({ isAdmin = false }: ContestListProps) {
   const { user } = useAuth()
   const [contests, setContests] = useState<Contest[]>([])
   const [loading, setLoading] = useState(true)
@@ -155,7 +159,7 @@ export function ContestList() {
           ))}
         </div>
 
-        {user && (
+        {user && isAdmin && (
           <Link href="/contests/create">
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -178,7 +182,7 @@ export function ContestList() {
                   : `There are no ${filter} contests at the moment.`
                 }
               </p>
-              {user && filter === "all" && (
+              {user && isAdmin && filter === "all" && (
                 <Link href="/contests/create">
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />

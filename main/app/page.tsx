@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getGlobalStats } from "@/lib/supabase/queries"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Code, Trophy, Users, Target } from "lucide-react"
@@ -13,6 +14,9 @@ export default async function HomePage() {
   if (data?.user) {
     redirect("/dashboard")
   }
+
+  // Fetch real global stats
+  const globalStats = await getGlobalStats()
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -92,7 +96,7 @@ export default async function HomePage() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-primary mb-2">1,000+</div>
+                <div className="text-3xl font-bold text-primary mb-2">{globalStats.totalProblems.toLocaleString()}+</div>
                 <div className="text-muted-foreground">Problems Available</div>
               </div>
             </CardContent>
@@ -101,7 +105,7 @@ export default async function HomePage() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-primary mb-2">50,000+</div>
+                <div className="text-3xl font-bold text-primary mb-2">{globalStats.totalUsers.toLocaleString()}+</div>
                 <div className="text-muted-foreground">Active Users</div>
               </div>
             </CardContent>
@@ -110,7 +114,7 @@ export default async function HomePage() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-primary mb-2">100+</div>
+                <div className="text-3xl font-bold text-primary mb-2">{globalStats.totalContests}+</div>
                 <div className="text-muted-foreground">Contests Held</div>
               </div>
             </CardContent>

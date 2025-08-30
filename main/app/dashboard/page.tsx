@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { getUserStats } from "@/lib/supabase/queries"
+import { getUserStats, getDashboardStats, getUpcomingContests } from "@/lib/supabase/queries"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RecentActivity } from "@/components/dashboard/recent-activity"
@@ -16,6 +16,8 @@ export default async function DashboardPage() {
   }
 
   const stats = await getUserStats(data.user.id)
+  const dashboardStats = await getDashboardStats(data.user.id)
+  const upcomingContests = await getUpcomingContests(3)
 
   return (
     <div className="container mx-auto p-6">
@@ -58,7 +60,7 @@ export default async function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">7</div>
+            <div className="text-2xl font-bold">{dashboardStats.currentStreak}</div>
             <p className="text-xs text-muted-foreground">days active</p>
           </CardContent>
         </Card>
@@ -69,8 +71,8 @@ export default async function DashboardPage() {
             <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">#1,234</div>
-            <p className="text-xs text-muted-foreground">out of 50,000 users</p>
+            <div className="text-2xl font-bold">#{dashboardStats.globalRank}</div>
+            <p className="text-xs text-muted-foreground">out of {dashboardStats.totalUsers} users</p>
           </CardContent>
         </Card>
       </div>
@@ -173,26 +175,27 @@ export default async function DashboardPage() {
               <CardDescription>Don't miss these upcoming competitions</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium">Weekly Contest 2</p>
-                    <p className="text-xs text-muted-foreground">Tomorrow at 2:00 PM</p>
-                  </div>
-                  <Button size="sm" variant="outline" className="bg-transparent">
-                    Register
-                  </Button>
+              {upcomingContests.length > 0 ? (
+                <div className="space-y-3">
+                  {upcomingContests.map((contest) => (
+                    <div key={contest.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium">{contest.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(contest.start_time).toLocaleDateString()} at {new Date(contest.start_time).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <Button size="sm" variant="outline" className="bg-transparent" asChild>
+                        <Link href={`/contests/${contest.slug}`}>View</Link>
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium">Monthly Challenge</p>
-                    <p className="text-xs text-muted-foreground">In 3 days</p>
-                  </div>
-                  <Button size="sm" variant="outline" className="bg-transparent">
-                    Register
-                  </Button>
+              ) : (
+                <div className="text-center text-muted-foreground py-4">
+                  <p className="text-sm">No upcoming contests</p>
                 </div>
-              </div>
+              )}
               <div className="pt-4">
                 <Button asChild variant="ghost" size="sm" className="w-full">
                   <Link href="/contests">View All Contests</Link>

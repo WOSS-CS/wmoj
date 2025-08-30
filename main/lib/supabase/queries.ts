@@ -552,3 +552,201 @@ export async function cancelEventRegistration(eventId: string, userId: string): 
   
   return data
 }
+
+// Dashboard and homepage queries
+export async function getDashboardStats(userId: string) {
+  const supabase = await createClient()
+
+  // Get user's current streak
+  const { data: recentSubmissions } = await supabase
+    .from("submissions")
+    .select("submitted_at")
+    .eq("user_id", userId)
+    .gte("submitted_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+    .order("submitted_at", { ascending: false })
+
+  // Calculate streak
+  let currentStreak = 0
+  if (recentSubmissions && recentSubmissions.length > 0) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    let currentDate = today
+    for (const submission of recentSubmissions) {
+      const submissionDate = new Date(submission.submitted_at)
+      submissionDate.setHours(0, 0, 0, 0)
+      
+      if (submissionDate.getTime() === currentDate.getTime()) {
+        currentStreak++
+        currentDate.setDate(currentDate.getDate() - 1)
+      } else if (submissionDate.getTime() < currentDate.getTime()) {
+        break
+      }
+    }
+  }
+
+  // Get global rank
+  const { data: allUsers } = await supabase
+    .from("user_problem_stats")
+    .select(`
+      user_id,
+      status,
+      problems!inner (difficulty)
+    `)
+
+  const userStats = new Map()
+  allUsers?.forEach((stat) => {
+    const userId = stat.user_id
+    if (!userStats.has(userId)) {
+      userStats.set(userId, { total_solved: 0, hard_solved: 0, medium_solved: 0, easy_solved: 0 })
+    }
+    if (stat.status === "solved") {
+      const userStat = userStats.get(userId)
+      userStat.total_solved++
+      if (stat.problems.difficulty === "Hard") userStat.hard_solved++
+      if (stat.problems.difficulty === "Medium") userStat.medium_solved++
+      if (stat.problems.difficulty === "Easy") userStat.easy_solved++
+    }
+  })
+
+  const sortedUsers = Array.from(userStats.entries())
+    .map(([userId, stats]) => ({ userId, ...stats }))
+    .sort((a, b) => {
+      if (b.total_solved !== a.total_solved) return b.total_solved - a.total_solved
+      if (b.hard_solved !== a.hard_solved) return b.hard_solved - a.hard_solved
+      if (b.medium_solved !== a.medium_solved) return b.medium_solved - a.medium_solved
+      return b.easy_solved - a.easy_solved
+    })
+
+  const userRank = sortedUsers.findIndex(user => user.userId === userId) + 1
+  const totalUsers = sortedUsers.length
+
+  return {
+    currentStreak,
+    globalRank: userRank,
+    totalUsers,
+  }
+}
+
+export async function getRecentActivity(userId: string, limit: number = 10) {
+  const supabase = await createClient()
+
+  // Get recent submissions
+  const { data: submissions } = await supabase
+    .from("submissions")
+    .select(`
+      id,
+      status,
+      submitted_at,
+      problems (title, slug)
+    `)
+    .eq("user_id", userId)
+    .order("submitted_at", { ascending: false })
+    .limit(limit)
+
+  // Get recent contest registrations
+  const { data: contestRegistrations } = await supabase
+    .from("contest_registrations")
+    .select(`
+      registered_at,
+      contests (title, slug)
+    `)
+    .eq("user_id", userId)
+    .order("registered_at", { ascending: false })
+    .limit(5)
+
+  const activities = []
+
+  // Add submissions
+  submissions?.forEach((submission) => {
+    activities.push({
+      id: submission.id,
+      type: "submission",
+      title: submission.problems.title,
+      description: `Submitted solution`,
+      status: submission.status,
+      timestamp: submission.submitted_at,
+      href: `/submissions/${submission.id}`,
+    })
+  })
+
+  // Add contest registrations
+  contestRegistrations?.forEach((registration) => {
+    activities.push({
+      id: `contest-${registration.contests.slug}`,
+      type: "contest",
+      title: registration.contests.title,
+      description: "Registered for contest",
+      timestamp: registration.registered_at,
+      href: `/contests/${registration.contests.slug}`,
+    })
+  })
+
+  // Sort by timestamp and return limited results
+  return activities
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, limit)
+}
+
+export async function getUpcomingContests(limit: number = 5) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("contests")
+    .select("*")
+    .eq("is_public", true)
+    .gte("start_time", new Date().toISOString())
+    .order("start_time", { ascending: true })
+    .limit(limit)
+
+  if (error) {
+    console.error("Error fetching upcoming contests:", error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function getGlobalStats() {
+  const supabase = await createClient()
+
+  // Get total problems
+  const { count: totalProblems } = await supabase
+    .from("problems")
+    .select("*", { count: "exact", head: true })
+    .eq("is_active", true)
+
+  // Get total users
+  const { count: totalUsers } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+
+  // Get total contests
+  const { count: totalContests } = await supabase
+    .from("contests")
+    .select("*", { count: "exact", head: true })
+    .eq("is_public", true)
+
+  return {
+    totalProblems: totalProblems || 0,
+    totalUsers: totalUsers || 0,
+    totalContests: totalContests || 0,
+  }
+}
+
+export async function getUserRole(userId: string): Promise<string> {
+  const supabase = await createClient()
+  
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single()
+  
+  if (error) {
+    console.error("Error fetching user role:", error)
+    return "user" // Default to regular user
+  }
+  
+  return data?.role || "user"
+}
