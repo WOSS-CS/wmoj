@@ -1,4 +1,5 @@
-import { getProblems } from "@/lib/supabase/queries"
+import { getProblems, getUserRole } from "@/lib/supabase/queries"
+import { createClient } from "@/lib/supabase/server"
 import { ProblemList } from "@/components/problems/problem-list"
 import { ProblemFilters } from "@/components/problems/problem-filters"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +25,12 @@ export default async function ProblemsPage({ searchParams }: ProblemsPageProps) 
 
   const problems = await getProblems(filters)
 
+  // Check if user is admin
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const userRole = user ? await getUserRole(user.id) : "user"
+  const isAdmin = userRole === "admin"
+
   const stats = {
     total: problems.length,
     easy: problems.filter((p) => p.difficulty === "Easy").length,
@@ -38,12 +45,14 @@ export default async function ProblemsPage({ searchParams }: ProblemsPageProps) 
           <h1 className="text-3xl font-bold mb-2">Problems</h1>
           <p className="text-muted-foreground">Practice coding problems and improve your skills</p>
         </div>
-        <Link href="/problems/create">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Problem
-          </Button>
-        </Link>
+        {isAdmin && (
+          <Link href="/problems/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Problem
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Stats Cards */}

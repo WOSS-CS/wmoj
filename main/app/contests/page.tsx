@@ -1,6 +1,14 @@
+import { createClient } from "@/lib/supabase/server"
+import { getUserRole } from "@/lib/supabase/queries"
 import { ContestList } from "@/components/contests/contest-list"
 
-export default function ContestsPage() {
+export default async function ContestsPage() {
+  // Check if user is admin
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const userRole = user ? await getUserRole(user.id) : "user"
+  const isAdmin = userRole === "admin"
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
@@ -10,7 +18,7 @@ export default function ContestsPage() {
         </p>
       </div>
       
-      <ContestList />
+      <ContestList isAdmin={isAdmin} />
     </div>
   )
 }

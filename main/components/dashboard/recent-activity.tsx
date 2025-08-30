@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle, XCircle, Clock, Trophy, Target, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { getRecentActivity } from "@/lib/supabase/queries"
+import { useAuth } from "@/components/auth/auth-provider"
 
 interface Activity {
   id: string
@@ -18,50 +20,31 @@ interface Activity {
 }
 
 export function RecentActivity() {
+  const { user } = useAuth()
   const [activities, setActivities] = useState<Activity[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate fetching recent activity
-    setTimeout(() => {
-      setActivities([
-        {
-          id: "1",
-          type: "submission",
-          title: "Two Sum",
-          description: "Submitted solution in Python",
-          status: "accepted",
-          timestamp: "2 hours ago",
-          href: "/submissions/1",
-        },
-        {
-          id: "2",
-          type: "contest",
-          title: "Weekly Contest 1",
-          description: "Registered for contest",
-          timestamp: "1 day ago",
-          href: "/contests/weekly-contest-1",
-        },
-        {
-          id: "3",
-          type: "submission",
-          title: "Add Two Numbers",
-          description: "Submitted solution in JavaScript",
-          status: "wrong_answer",
-          timestamp: "2 days ago",
-          href: "/submissions/3",
-        },
-        {
-          id: "4",
-          type: "achievement",
-          title: "First Submission",
-          description: "Made your first code submission",
-          timestamp: "3 days ago",
-        },
-      ])
-      setIsLoading(false)
-    }, 1000)
-  }, [])
+    const fetchActivities = async () => {
+      try {
+        if (!user?.id) {
+          setIsLoading(false)
+          return
+        }
+
+        const realActivities = await getRecentActivity(user.id, 10)
+        setActivities(realActivities)
+      } catch (error) {
+        console.error('Error fetching recent activity:', error)
+        // Fallback to empty array if fetch fails
+        setActivities([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchActivities()
+  }, [user?.id])
 
   const getActivityIcon = (activity: Activity) => {
     switch (activity.type) {
@@ -95,6 +78,20 @@ export function RecentActivity() {
         {status.replace("_", " ").toUpperCase()}
       </Badge>
     )
+  }
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    
+    if (diffInHours < 1) return "Just now"
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`
+    
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`
+    
+    return date.toLocaleDateString()
   }
 
   if (isLoading) {
@@ -140,7 +137,7 @@ export function RecentActivity() {
                   </div>
                   <p className="text-xs text-muted-foreground mb-1">{activity.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{activity.timestamp}</span>
+                    <span className="text-xs text-muted-foreground">{formatTimestamp(activity.timestamp)}</span>
                     {activity.href && (
                       <Button asChild size="sm" variant="ghost" className="h-6 px-2">
                         <Link href={activity.href}>
