@@ -15,10 +15,8 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
         title,
         start_time,
         end_time,
-        contest_type,
         contest_problems(
           id,
-          problem_index,
           points,
           problems(id, title, slug)
         )
@@ -54,75 +52,50 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
       }
     }
 
-    // Get standings
-    const { data: standings, error: standingsError } = await supabase
-      .from('contest_standings')
-      .select(`
-        rank,
-        total_score,
-        total_penalty,
-        problems_solved,
-        last_submission_time,
-        profiles(id, username, display_name, avatar_url)
-      `)
-      .eq('contest_id', contest.id)
-      .order('rank', { ascending: true })
-
-    if (standingsError) {
-      console.error('Error fetching standings:', standingsError)
-      return NextResponse.json({ 
-        error: 'Failed to fetch standings',
-        details: standingsError.message 
-      }, { status: 500 })
-    }
-
-    // Get detailed problem results for each participant
-    const { data: problemResults, error: resultsError } = await supabase
-      .from('contest_problem_results')
-      .select(`
-        user_id,
-        problem_id,
-        attempts,
-        is_solved,
-        first_ac_time,
-        points_earned,
-        penalty_time
-      `)
+    // Compute standings from submissions
+    const { data: subs, error: subsError } = await supabase
+      .from('submissions')
+      .select(`user_id, score, submitted_at, test_cases_passed, total_test_cases, profiles(id, username, display_name, avatar_url)`)
       .eq('contest_id', contest.id)
 
-    if (resultsError) {
-      console.error('Error fetching problem results:', resultsError)
+    if (subsError) {
+      console.error('Error fetching submissions for standings:', subsError)
+      return NextResponse.json({ error: 'Failed to fetch standings' }, { status: 500 })
     }
 
-    // Organize problem results by user
-    const problemResultsByUser = problemResults?.reduce((acc, result) => {
-      if (!acc[result.user_id]) {
-        acc[result.user_id] = {}
+    const byUser = new Map<string, any>()
+    subs?.forEach((s) => {
+      const accepted = (s.total_test_cases && s.test_cases_passed === s.total_test_cases) || s.score > 0
+      if (!byUser.has(s.user_id)) {
+        byUser.set(s.user_id, {
+          user_id: s.user_id,
+          username: s.profiles?.username,
+          display_name: s.profiles?.display_name,
+          avatar_url: s.profiles?.avatar_url,
+          total_score: 0,
+          last_submission_time: s.submitted_at,
+        })
       }
-      acc[result.user_id][result.problem_id] = result
-      return acc
-    }, {} as Record<string, Record<string, any>>) || {}
+      if (accepted) byUser.get(s.user_id).total_score += s.score
+      const last = byUser.get(s.user_id).last_submission_time
+      if (!last || new Date(s.submitted_at).getTime() < new Date(last).getTime()) {
+        byUser.get(s.user_id).last_submission_time = s.submitted_at
+      }
+    })
 
-    // Enhanced standings with problem-wise results
-    const enhancedStandings = standings?.map(standing => ({
-      ...standing,
-      problemResults: contest.contest_problems?.map(cp => {
-        const userResults = problemResultsByUser[standing.profiles?.id || '']
-        const result = userResults?.[cp.problems?.id || '']
-        
-        return {
-          problemId: cp.problems?.id,
-          problemIndex: cp.problem_index,
-          problemTitle: cp.problems?.title,
-          attempts: result?.attempts || 0,
-          isSolved: result?.is_solved || false,
-          firstAcTime: result?.first_ac_time || null,
-          pointsEarned: result?.points_earned || 0,
-          penaltyTime: result?.penalty_time || 0,
-          maxPoints: cp.points
-        }
-      }) || []
-    })) || []
+    const standings = Array.from(byUser.values())
+      .sort((a, b) => {
+        if (b.total_score !== a.total_score) return b.total_score - a.total_score
+        return new Date(a.last_submission_time).getTime() - new Date(b.last_submission_time).getTime()
+      })
+      .map((u, idx) => ({
+        rank: idx + 1,
+        username: u.username,
+        display_name: u.display_name,
+        avatar_url: u.avatar_url,
+        total_score: u.total_score,
+        total_penalty: 0,
+      }))
 
     return NextResponse.json({
       contest: {
@@ -130,15 +103,14 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
         title: contest.title,
         startTime: contest.start_time,
         endTime: contest.end_time,
-        type: contest.contest_type,
         problems: contest.contest_problems?.map(cp => ({
           id: cp.problems?.id,
-          index: cp.problem_index,
+          index: '',
           title: cp.problems?.title,
           maxPoints: cp.points
         })) || []
       },
-      standings: enhancedStandings,
+      standings,
       stats: {
         totalParticipants: standings?.length || 0,
         lastUpdated: new Date().toISOString()

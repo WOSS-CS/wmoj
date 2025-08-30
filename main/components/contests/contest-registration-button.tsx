@@ -20,10 +20,7 @@ interface Contest {
   max_participants: number | null
   participant_count: number
   is_public: boolean
-  is_rated: boolean
-  contest_type: string
-  difficulty_level: string
-  prize_pool: number
+  // removed fields from schema
 }
 
 interface ContestRegistrationButtonProps {
@@ -170,10 +167,6 @@ export function ContestRegistrationButton({
               </div>
               <div className="text-muted-foreground">Minutes</div>
             </div>
-            <div className="text-center">
-              <div className="font-bold text-lg">${contest.prize_pool}</div>
-              <div className="text-muted-foreground">Prize</div>
-            </div>
           </div>
 
           <Button 
@@ -195,16 +188,7 @@ export function ContestRegistrationButton({
               <Clock className="h-3 w-3" />
               <span>Duration: {Math.round((new Date(contest.end_time).getTime() - new Date(contest.start_time).getTime()) / (1000 * 60))} minutes</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Star className="h-3 w-3" />
-              <span>{contest.is_rated ? "Rated" : "Unrated"} • {contest.contest_type.toUpperCase()} Style</span>
-            </div>
-            {contest.prize_pool > 0 && (
-              <div className="flex items-center gap-2">
-                <Trophy className="h-3 w-3" />
-                <span>Prize Pool: ${contest.prize_pool}</span>
-              </div>
-            )}
+            {/* rated/type/prize removed */}
           </div>
         </CardContent>
       </Card>

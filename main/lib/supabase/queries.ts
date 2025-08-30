@@ -160,11 +160,11 @@ export async function getContestLeaderboard(contestId: string): Promise<any[]> {
       user_id,
       score,
       submitted_at,
+      test_cases_passed,
+      total_test_cases,
       profiles!inner (username, display_name, avatar_url)
     `)
     .eq("contest_id", contestId)
-    .eq("status", "accepted")
-    .order("score", { ascending: false })
     .order("submitted_at", { ascending: true })
 
   if (error) {
@@ -186,7 +186,9 @@ export async function getContestLeaderboard(contestId: string): Promise<any[]> {
         last_submission: submission.submitted_at,
       })
     }
-    userScores.get(userId).total_score += submission.score
+    // Only count submissions that passed all tests or have score points
+    const isAccepted = (submission.total_test_cases && submission.test_cases_passed === submission.total_test_cases) || submission.score > 0
+    userScores.get(userId).total_score += isAccepted ? submission.score : 0
   })
 
   return Array.from(userScores.values()).sort((a, b) => {
@@ -640,7 +642,9 @@ export async function getRecentActivity(userId: string, limit: number = 10) {
     .from("submissions")
     .select(`
       id,
-      status,
+      score,
+      test_cases_passed,
+      total_test_cases,
       submitted_at,
       problems (title, slug)
     `)
@@ -663,12 +667,13 @@ export async function getRecentActivity(userId: string, limit: number = 10) {
 
   // Add submissions
   submissions?.forEach((submission) => {
+    const isAccepted = (submission.total_test_cases && submission.test_cases_passed === submission.total_test_cases) || submission.score === 100
     activities.push({
       id: submission.id,
       type: "submission",
       title: submission.problems.title,
       description: `Submitted solution`,
-      status: submission.status,
+      status: isAccepted ? "accepted" : "rejected",
       timestamp: submission.submitted_at,
       href: `/submissions/${submission.id}`,
     })

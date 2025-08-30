@@ -22,13 +22,11 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
       .from('contest_registrations')
       .select(`
         id,
-        registration_time,
-        team_name,
-        is_official,
+        registered_at,
         profiles(id, username, display_name, avatar_url)
       `)
       .eq('contest_id', contest.id)
-      .order('registration_time', { ascending: true })
+      .order('registered_at', { ascending: true })
 
     if (error) {
       console.error('Error fetching registrations:', error)
@@ -146,15 +144,11 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
       .from('contest_registrations')
       .insert({
         contest_id: contest.id,
-        user_id: user.id,
-        team_name: teamName || null,
-        is_official: isOfficial
+        user_id: user.id
       })
       .select(`
         id,
-        registration_time,
-        team_name,
-        is_official,
+        registered_at,
         profiles(username, display_name, avatar_url)
       `)
       .single()

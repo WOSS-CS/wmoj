@@ -60,7 +60,7 @@ export function ProblemCreator() {
   const [constraints, setConstraints] = useState("")
   const [sampleInput, setSampleInput] = useState("")
   const [sampleOutput, setSampleOutput] = useState("")
-  const [explanation, setExplanation] = useState("")
+  // explanation removed per schema
   const [timeLimit, setTimeLimit] = useState(2000)
   const [memoryLimit, setMemoryLimit] = useState(256)
   
@@ -272,12 +272,10 @@ export function ProblemCreator() {
         description,
         difficulty,
         tags,
-        inputFormat,
-        outputFormat,
-        constraints,
+        // input/output format and constraints removed
         sampleInput,
         sampleOutput,
-        explanation,
+        // explanation removed
         timeLimit,
         memoryLimit,
         testCases,
@@ -439,35 +437,7 @@ Editorial: ${result.stats.hasEditorial ? 'Yes' : 'No'}` : ''}`)
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="inputFormat">Input Format</Label>
-                  <Textarea
-                    id="inputFormat"
-                    value={inputFormat}
-                    onChange={(e) => setInputFormat(e.target.value)}
-                    placeholder="Describe the input format..."
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="outputFormat">Output Format</Label>
-                  <Textarea
-                    id="outputFormat"
-                    value={outputFormat}
-                    onChange={(e) => setOutputFormat(e.target.value)}
-                    placeholder="Describe the output format..."
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="constraints">Constraints</Label>
-                  <Textarea
-                    id="constraints"
-                    value={constraints}
-                    onChange={(e) => setConstraints(e.target.value)}
-                    placeholder="List the constraints..."
-                  />
-                </div>
+                {/* Input/Output format and constraints removed per schema */}
               </CardContent>
             </Card>
           </div>
@@ -497,15 +467,7 @@ Editorial: ${result.stats.hasEditorial ? 'Yes' : 'No'}` : ''}`)
                   placeholder="Expected output..."
                 />
               </div>
-              <div>
-                <Label htmlFor="explanation">Explanation</Label>
-                <Textarea
-                  id="explanation"
-                  value={explanation}
-                  onChange={(e) => setExplanation(e.target.value)}
-                  placeholder="Explain the sample..."
-                />
-              </div>
+              {/* Sample explanation removed per schema */}
             </CardContent>
           </Card>
         </TabsContent>
@@ -949,12 +911,7 @@ Editorial: ${result.stats.hasEditorial ? 'Yes' : 'No'}` : ''}`)
                       </div>
                     )}
                   </div>
-                  {explanation && (
-                    <div className="mt-2">
-                      <h4 className="text-sm font-medium mb-1">Explanation:</h4>
-                      <p className="text-sm text-muted-foreground">{explanation}</p>
-                    </div>
-                  )}
+                  {/* Explanation preview removed */}
                 </div>
               )}
 

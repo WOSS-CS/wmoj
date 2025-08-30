@@ -7,8 +7,6 @@ export async function GET(request: NextRequest) {
   const page = parseInt(url.searchParams.get('page') || '1')
   const limit = parseInt(url.searchParams.get('limit') || '20')
   const status = url.searchParams.get('status') // upcoming, live, past, all
-  const difficulty = url.searchParams.get('difficulty')
-  const type = url.searchParams.get('type')
   const search = url.searchParams.get('search')
 
   try {
@@ -25,10 +23,6 @@ export async function GET(request: NextRequest) {
         registration_end,
         max_participants,
         is_public,
-        is_rated,
-        contest_type,
-        difficulty_level,
-        prize_pool,
         created_at,
         profiles(username, display_name),
         contest_registrations(count)
@@ -45,15 +39,7 @@ export async function GET(request: NextRequest) {
       query = query.lt('end_time', now)
     }
 
-    // Filter by difficulty
-    if (difficulty) {
-      query = query.eq('difficulty_level', difficulty)
-    }
-
-    // Filter by type
-    if (type) {
-      query = query.eq('contest_type', type)
-    }
+    // Note: difficulty/type fields removed from schema
 
     // Search filter
     if (search) {
@@ -112,12 +98,7 @@ export async function POST(request: NextRequest) {
       registrationEnd,
       maxParticipants,
       isPublic,
-      isRated,
-      contestType,
-      difficultyLevel,
-      prizePool,
-      rules,
-      problems // Array of {problemId, problemIndex, points, penaltyMinutes}
+      problems // Array of {problemId, points, orderIndex}
     } = body
 
     // Validate required fields
@@ -151,7 +132,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'A contest with this slug already exists' }, { status: 409 })
     }
 
-    console.log('Creating contest:', { title, slug, contestType, difficultyLevel })
+    console.log('Creating contest:', { title, slug })
 
     // Create the contest
     const { data: contest, error: contestError } = await supabase
@@ -166,11 +147,6 @@ export async function POST(request: NextRequest) {
         registration_end: registrationEnd,
         max_participants: maxParticipants || null,
         is_public: isPublic !== undefined ? isPublic : true,
-        is_rated: isRated !== undefined ? isRated : true,
-        contest_type: contestType || 'icpc',
-        difficulty_level: difficultyLevel || 'beginner',
-        prize_pool: prizePool || 0,
-        rules: rules || null,
         created_by: user.id
       })
       .select()
@@ -191,9 +167,7 @@ export async function POST(request: NextRequest) {
       const contestProblemsData = problems.map((problem: any, index: number) => ({
         contest_id: contest.id,
         problem_id: problem.problemId,
-        problem_index: problem.problemIndex || String.fromCharCode(65 + index), // A, B, C...
         points: problem.points || 100,
-        penalty_minutes: problem.penaltyMinutes || 20,
         order_index: problem.orderIndex !== undefined ? problem.orderIndex : index
       }))
 
@@ -218,9 +192,7 @@ export async function POST(request: NextRequest) {
         profiles(username, display_name),
         contest_problems(
           id,
-          problem_index,
           points,
-          penalty_minutes,
           order_index,
           problems(id, title, slug, difficulty)
         )

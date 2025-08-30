@@ -24,9 +24,7 @@ export async function GET(
       .from("contest_problems")
       .select(`
         problem_id,
-        problem_index,
         points,
-        penalty_minutes,
         order_index,
         problems (
           title,
@@ -42,15 +40,17 @@ export async function GET(
     }
 
     // Format the response
-    const formattedProblems = (problems || []).map(problem => ({
-      problem_id: problem.problem_id,
-      problem_index: problem.problem_index,
-      points: problem.points,
-      penalty_minutes: problem.penalty_minutes,
-      order_index: problem.order_index,
-      problem_title: problem.problems?.title || `Problem ${problem.problem_index}`,
-      problem_difficulty: problem.problems?.difficulty || null
-    }))
+    const formattedProblems = (problems || []).map((problem, idx) => {
+      const indexChar = String.fromCharCode(65 + (problem.order_index ?? idx))
+      return {
+        problem_id: problem.problem_id,
+        problem_index: indexChar,
+        points: problem.points,
+        order_index: problem.order_index,
+        problem_title: problem.problems?.title || `Problem ${indexChar}`,
+        problem_difficulty: problem.problems?.difficulty || null
+      }
+    })
 
     return Response.json(formattedProblems)
   } catch (error) {

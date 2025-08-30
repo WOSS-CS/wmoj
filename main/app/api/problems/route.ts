@@ -19,10 +19,9 @@ export async function GET(request: NextRequest) {
       difficulty,
       tags,
       created_at,
-      user_id,
+      created_by,
       profiles(username, display_name)
     `)
-    .eq('is_public', true)
     .order('created_at', { ascending: false })
 
   if (difficulty) {
@@ -77,11 +76,6 @@ export async function POST(request: NextRequest) {
       description,
       difficulty,
       tags,
-      inputFormat,
-      outputFormat,
-      constraints,
-      sampleInput,
-      sampleOutput,
       explanation,
       timeLimit,
       memoryLimit,
@@ -91,17 +85,14 @@ export async function POST(request: NextRequest) {
       editorial
     } = body
 
-    // Validate required fields
     if (!title || !slug || !description) {
       return NextResponse.json({ error: 'Title, slug, and description are required' }, { status: 400 })
     }
 
-    // Validate test cases
     if (!testCases || testCases.length === 0) {
       return NextResponse.json({ error: 'At least one test case is required' }, { status: 400 })
     }
 
-    // Check if slug is unique
     const { data: existingProblem } = await supabase
       .from('problems')
       .select('id')
@@ -112,10 +103,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'A problem with this slug already exists' }, { status: 409 })
     }
 
-    // Start a transaction-like operation
     console.log('Creating problem:', { title, slug, difficulty, testCasesCount: testCases.length })
 
-    // Create the problem
     const { data: problem, error: problemError } = await supabase
       .from('problems')
       .insert({
@@ -124,16 +113,11 @@ export async function POST(request: NextRequest) {
         description,
         difficulty,
         tags: tags || [],
-        input_format: inputFormat,
-        output_format: outputFormat,
-        constraints,
-        sample_input: sampleInput,
-        sample_output: sampleOutput,
-        explanation,
+        -- explanation removed per schema update
         time_limit: timeLimit || 2000,
         memory_limit: memoryLimit || 256,
-        user_id: user.id,
-        is_public: true
+        created_by: user.id,
+        is_active: true
       })
       .select()
       .single()
@@ -148,7 +132,6 @@ export async function POST(request: NextRequest) {
 
     console.log('Problem created successfully:', problem.id)
 
-    // Create test cases
     if (testCases && testCases.length > 0) {
       const testCaseData = testCases.map((testCase: any, index: number) => ({
         problem_id: problem.id,
@@ -168,20 +151,18 @@ export async function POST(request: NextRequest) {
 
       if (testCaseError) {
         console.error('Error creating test cases:', testCaseError)
-        // Don't fail the entire request, but log the error
       } else {
         console.log(`Created ${createdTestCases?.length || 0} test cases`)
       }
     }
 
-    // Create reference solutions if provided
     if (referenceSolutions && referenceSolutions.length > 0) {
       const solutionData = referenceSolutions.map((solution: any, index: number) => ({
         problem_id: problem.id,
         language: solution.language,
         code: solution.code,
         description: solution.description || null,
-        is_primary: index === 0 || solution.isPrimary, // First solution is primary by default
+        is_primary: index === 0 || solution.isPrimary,
         created_by: user.id
       }))
 
@@ -197,7 +178,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create category mappings if provided
     if (categories && categories.length > 0) {
       const categoryMappings = categories.map((categoryId: string) => ({
         problem_id: problem.id,
@@ -216,7 +196,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create editorial if provided
     if (editorial && editorial.title && editorial.content) {
       const { error: editorialError, data: createdEditorial } = await supabase
         .from('problem_editorials')
@@ -239,7 +218,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fetch the complete problem data with related information
     const { data: completeProblem, error: fetchError } = await supabase
       .from('problems')
       .select(`

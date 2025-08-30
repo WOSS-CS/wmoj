@@ -435,16 +435,48 @@ export async function executeTestCase(language: string, code: string, testCase: 
 export async function judgeSubmission(language: string, code: string, problemId: string): Promise<JudgeResult> {
   const supabase = await createClient()
   
-  // Fetch test cases from database
-  const { data: testCases, error: testCaseError } = await supabase
-    .from("test_cases")
-    .select("*")
-    .eq("problem_id", problemId)
-    .order("order_index")
+  // Prefer problem-level testcase arrays when present
+  const { data: problem, error: problemError } = await supabase
+    .from("problems")
+    .select("id, time_limit, memory_limit, testcase_inputs, testcase_outputs")
+    .eq("id", problemId)
+    .single()
 
-  let formattedTestCases: TestCase[]
+  let formattedTestCases: TestCase[] = []
 
-  if (testCaseError || !testCases || testCases.length === 0) {
+  if (!problemError && problem && Array.isArray(problem.testcase_inputs) && Array.isArray(problem.testcase_outputs) && problem.testcase_inputs.length > 0) {
+    const n = Math.min(problem.testcase_inputs.length, problem.testcase_outputs.length)
+    for (let i = 0; i < n; i++) {
+      formattedTestCases.push({
+        input: String(problem.testcase_inputs[i] ?? ''),
+        expected: String(problem.testcase_outputs[i] ?? ''),
+        timeLimit: problem.time_limit,
+        memoryLimit: problem.memory_limit,
+        points: 1,
+      })
+    }
+  }
+
+  // Fallback to legacy test_cases table if arrays not present
+  if (formattedTestCases.length === 0) {
+    const { data: testCases, error: testCaseError } = await supabase
+      .from("test_cases")
+      .select("*")
+      .eq("problem_id", problemId)
+      .order("order_index")
+
+    if (!testCaseError && testCases && testCases.length > 0) {
+      formattedTestCases = testCases.map((tc: any) => ({
+        input: tc.input,
+        expected: tc.expected_output,
+        points: tc.points || 1,
+        timeLimit: tc.time_limit,
+        memoryLimit: tc.memory_limit,
+      }))
+    }
+  }
+
+  if (formattedTestCases.length === 0) {
     console.log("Using fallback test cases for problem:", problemId)
     // Fallback test cases
     formattedTestCases = [
@@ -454,15 +486,6 @@ export async function judgeSubmission(language: string, code: string, problemId:
       { input: "abcabcbb", expected: "3" },
       { input: "abc", expected: "3" },
     ]
-  } else {
-    // Convert database test cases to expected format
-    formattedTestCases = testCases.map((tc: any) => ({
-      input: tc.input,
-      expected: tc.expected_output,
-      points: tc.points || 1,
-      timeLimit: tc.time_limit,
-      memoryLimit: tc.memory_limit,
-    }))
   }
 
   // If a custom judge API is configured, use its batch /judge endpoint for efficiency

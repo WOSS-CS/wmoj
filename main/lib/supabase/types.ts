@@ -47,20 +47,15 @@ export type Database = {
           description: string
           difficulty: "Easy" | "Medium" | "Hard"
           tags: string[]
-          input_format: string | null
-          output_format: string | null
-          constraints: string | null
-          sample_input: string | null
-          sample_output: string | null
           explanation: string | null
+          testcase_inputs: string[]
+          testcase_outputs: string[]
           time_limit: number
           memory_limit: number
           created_by: string | null
-          user_id: string | null
           created_at: string
           updated_at: string
           is_active: boolean
-          is_public: boolean
         }
         Insert: {
           id?: string
@@ -69,20 +64,15 @@ export type Database = {
           description: string
           difficulty: "Easy" | "Medium" | "Hard"
           tags?: string[]
-          input_format?: string | null
-          output_format?: string | null
-          constraints?: string | null
-          sample_input?: string | null
-          sample_output?: string | null
           explanation?: string | null
+          testcase_inputs?: string[]
+          testcase_outputs?: string[]
           time_limit?: number
           memory_limit?: number
           created_by?: string | null
-          user_id?: string | null
           created_at?: string
           updated_at?: string
           is_active?: boolean
-          is_public?: boolean
         }
         Update: {
           id?: string
@@ -91,20 +81,15 @@ export type Database = {
           description?: string
           difficulty?: "Easy" | "Medium" | "Hard"
           tags?: string[]
-          input_format?: string | null
-          output_format?: string | null
-          constraints?: string | null
-          sample_input?: string | null
-          sample_output?: string | null
           explanation?: string | null
+          testcase_inputs?: string[]
+          testcase_outputs?: string[]
           time_limit?: number
           memory_limit?: number
           created_by?: string | null
-          user_id?: string | null
           created_at?: string
           updated_at?: string
           is_active?: boolean
-          is_public?: boolean
         }
       }
       contests: {
@@ -119,11 +104,6 @@ export type Database = {
           registration_end: string
           max_participants: number | null
           is_public: boolean
-          is_rated: boolean
-          contest_type: "icpc" | "ioi" | "atcoder" | "codeforces"
-          difficulty_level: "beginner" | "intermediate" | "advanced" | "expert"
-          prize_pool: number
-          rules: string | null
           created_by: string
           created_at: string
           updated_at: string
@@ -139,11 +119,6 @@ export type Database = {
           registration_end: string
           max_participants?: number | null
           is_public?: boolean
-          is_rated?: boolean
-          contest_type?: "icpc" | "ioi" | "atcoder" | "codeforces"
-          difficulty_level?: "beginner" | "intermediate" | "advanced" | "expert"
-          prize_pool?: number
-          rules?: string | null
           created_by: string
           created_at?: string
           updated_at?: string
@@ -159,11 +134,6 @@ export type Database = {
           registration_end?: string
           max_participants?: number | null
           is_public?: boolean
-          is_rated?: boolean
-          contest_type?: "icpc" | "ioi" | "atcoder" | "codeforces"
-          difficulty_level?: "beginner" | "intermediate" | "advanced" | "expert"
-          prize_pool?: number
-          rules?: string | null
           created_by?: string
           created_at?: string
           updated_at?: string
@@ -174,9 +144,7 @@ export type Database = {
           id: string
           contest_id: string
           problem_id: string
-          problem_index: string
           points: number
-          penalty_minutes: number
           order_index: number
           created_at: string
         }
@@ -184,9 +152,7 @@ export type Database = {
           id?: string
           contest_id: string
           problem_id: string
-          problem_index: string
           points?: number
-          penalty_minutes?: number
           order_index: number
           created_at?: string
         }
@@ -194,9 +160,7 @@ export type Database = {
           id?: string
           contest_id?: string
           problem_id?: string
-          problem_index?: string
           points?: number
-          penalty_minutes?: number
           order_index?: number
           created_at?: string
         }
@@ -206,25 +170,19 @@ export type Database = {
           id: string
           contest_id: string
           user_id: string
-          registration_time: string
-          team_name: string | null
-          is_official: boolean
+          registered_at: string
         }
         Insert: {
           id?: string
           contest_id: string
           user_id: string
-          registration_time?: string
-          team_name?: string | null
-          is_official?: boolean
+          registered_at?: string
         }
         Update: {
           id?: string
           contest_id?: string
           user_id?: string
-          registration_time?: string
-          team_name?: string | null
-          is_official?: boolean
+          registered_at?: string
         }
       }
       submissions: {
@@ -235,15 +193,6 @@ export type Database = {
           user_id: string
           language: string
           code: string
-          status:
-            | "pending"
-            | "running"
-            | "accepted"
-            | "wrong_answer"
-            | "time_limit_exceeded"
-            | "memory_limit_exceeded"
-            | "runtime_error"
-            | "compilation_error"
           runtime: number | null
           memory_used: number | null
           score: number
@@ -251,6 +200,7 @@ export type Database = {
           total_test_cases: number
           error_message: string | null
           submitted_at: string
+          test_case_results: any | null
         }
         Insert: {
           id?: string
@@ -259,15 +209,6 @@ export type Database = {
           user_id: string
           language: string
           code: string
-          status?:
-            | "pending"
-            | "running"
-            | "accepted"
-            | "wrong_answer"
-            | "time_limit_exceeded"
-            | "memory_limit_exceeded"
-            | "runtime_error"
-            | "compilation_error"
           runtime?: number | null
           memory_used?: number | null
           score?: number
@@ -275,6 +216,7 @@ export type Database = {
           total_test_cases?: number
           error_message?: string | null
           submitted_at?: string
+          test_case_results?: any | null
         }
         Update: {
           id?: string
@@ -283,15 +225,6 @@ export type Database = {
           user_id?: string
           language?: string
           code?: string
-          status?:
-            | "pending"
-            | "running"
-            | "accepted"
-            | "wrong_answer"
-            | "time_limit_exceeded"
-            | "memory_limit_exceeded"
-            | "runtime_error"
-            | "compilation_error"
           runtime?: number | null
           memory_used?: number | null
           score?: number
@@ -299,6 +232,7 @@ export type Database = {
           total_test_cases?: number
           error_message?: string | null
           submitted_at?: string
+          test_case_results?: any | null
         }
       }
       user_problem_stats: {

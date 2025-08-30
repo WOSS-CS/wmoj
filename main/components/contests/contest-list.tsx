@@ -20,10 +20,7 @@ interface Contest {
   max_participants: number | null
   participant_count?: number
   is_public: boolean
-  is_rated: boolean
-  contest_type: string
-  difficulty_level: string
-  prize_pool: number
+  // removed fields from schema
 }
 
 interface ContestListProps {
@@ -81,20 +78,7 @@ export function ContestList({ isAdmin = false }: ContestListProps) {
     }
   }
 
-  const getDifficultyColor = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-      case "intermediate":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
-      case "advanced":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300"
-      case "expert":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
-    }
-  }
+  // difficulty/type/prize removed
 
   const filteredContests = contests.filter(contest => {
     if (filter === "all") return true
@@ -207,7 +191,7 @@ export function ContestList({ isAdmin = false }: ContestListProps) {
                         >
                           {contest.title}
                         </Link>
-                        {contest.is_rated && <Star className="h-4 w-4 text-yellow-500" />}
+                        {/* rated removed */}
                       </CardTitle>
                       <CardDescription className="mt-1">
                         {contest.description || "No description provided"}
@@ -217,9 +201,7 @@ export function ContestList({ isAdmin = false }: ContestListProps) {
                       <Badge className={getStatusColor(status)}>
                         {status}
                       </Badge>
-                      <Badge className={getDifficultyColor(contest.difficulty_level)}>
-                        {contest.difficulty_level}
-                      </Badge>
+                      {/* difficulty removed */}
                     </div>
                   </div>
                 </CardHeader>
@@ -265,22 +247,11 @@ export function ContestList({ isAdmin = false }: ContestListProps) {
                       </div>
                     </div>
 
-                    {contest.prize_pool > 0 && (
-                      <div className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">Prize Pool</div>
-                          <div className="text-muted-foreground">${contest.prize_pool}</div>
-                        </div>
-                      </div>
-                    )}
+                    {/* prize pool removed */}
                   </div>
 
                   <div className="flex justify-between items-center mt-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Badge variant="outline" className="text-xs">
-                        {contest.contest_type.toUpperCase()}
-                      </Badge>
                       {!contest.is_public && (
                         <Badge variant="outline" className="text-xs">
                           Private
