@@ -18,36 +18,12 @@ interface SubmissionListProps {
 }
 
 export function SubmissionList({ submissions }: SubmissionListProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "accepted":
-        return "bg-green-100 text-green-800"
-      case "wrong_answer":
-      case "runtime_error":
-      case "compilation_error":
-        return "bg-red-100 text-red-800"
-      case "time_limit_exceeded":
-      case "memory_limit_exceeded":
-        return "bg-yellow-100 text-yellow-800"
-      case "pending":
-        return "bg-blue-100 text-blue-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "accepted":
-        return <CheckCircle className="h-4 w-4" />
-      case "wrong_answer":
-      case "runtime_error":
-      case "compilation_error":
-        return <XCircle className="h-4 w-4" />
-      default:
-        return <Clock className="h-4 w-4" />
-    }
-  }
+  const isAccepted = (s: any) => (s.total_test_cases && s.test_cases_passed === s.total_test_cases) || s.score === 100
+  const statusBadge = (s: any) => (
+    <Badge className={isAccepted(s) ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+      {isAccepted(s) ? "ACCEPTED" : "REJECTED"}
+    </Badge>
+  )
 
   if (submissions.length === 0) {
     return (
@@ -96,15 +72,13 @@ export function SubmissionList({ submissions }: SubmissionListProps) {
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
-                    {getStatusIcon(submission.status)}
-                    <Badge className={getStatusColor(submission.status)}>
-                      {submission.status.replace("_", " ").toUpperCase()}
-                    </Badge>
+                    {isAccepted(submission) ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                    {statusBadge(submission)}
                   </div>
                   <Badge variant="outline">{submission.language}</Badge>
                   <span>{new Date(submission.submitted_at).toLocaleString()}</span>
                 </div>
-                {submission.status === "accepted" && (
+                {isAccepted(submission) && (
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span>Runtime: {submission.runtime}ms</span>
                     <span>Memory: {Math.round((submission.memory_used || 0) / 1024)}KB</span>

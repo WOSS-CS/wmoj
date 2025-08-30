@@ -297,7 +297,10 @@ export async function getUserStats(userId: string) {
     .eq("user_id", userId)
 
   // Get submission stats
-  const { data: submissions } = await supabase.from("submissions").select("status, submitted_at").eq("user_id", userId)
+  const { data: submissions } = await supabase
+    .from("submissions")
+    .select("score, test_cases_passed, total_test_cases, submitted_at")
+    .eq("user_id", userId)
 
   const stats = {
     totalSolved: problemStats?.filter((p) => p.status === "solved").length || 0,
@@ -306,7 +309,8 @@ export async function getUserStats(userId: string) {
     mediumSolved: problemStats?.filter((p) => p.status === "solved" && p.problems.difficulty === "Medium").length || 0,
     hardSolved: problemStats?.filter((p) => p.status === "solved" && p.problems.difficulty === "Hard").length || 0,
     totalSubmissions: submissions?.length || 0,
-    acceptedSubmissions: submissions?.filter((s) => s.status === "accepted").length || 0,
+    acceptedSubmissions:
+      submissions?.filter((s: any) => (s.total_test_cases && s.test_cases_passed === s.total_test_cases) || s.score === 100).length || 0,
     recentSubmissions: submissions?.slice(0, 10) || [],
   }
 
