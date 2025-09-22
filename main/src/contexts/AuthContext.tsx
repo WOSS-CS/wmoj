@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { getUserRole, getUserDashboardPath } from '@/utils/userRole';
@@ -27,8 +27,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userDashboardPath, setUserDashboardPath] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -49,8 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const signUp = async (email: string, password: string, username: string) => {
     console.log('Starting signup process for:', email);
@@ -98,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
-  const updateUserRoleAndPath = async (userId: string) => {
+  const updateUserRoleAndPath = useCallback(async (userId: string) => {
     try {
       const role = await getUserRole(userId);
       const dashboardPath = await getUserDashboardPath(userId);
@@ -112,9 +117,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserRole('regular');
       setUserDashboardPath('/dashboard');
     }
-  };
+  }, []);
 
-  const createUserProfile = async (user: User) => {
+  const createUserProfile = useCallback(async (user: User) => {
     try {
       // Check if user profile already exists
       const { data: existingUser, error: selectError } = await supabase
@@ -166,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error in createUserProfile:', error);
     }
-  };
+  }, [updateUserRoleAndPath]);
 
   const value = {
     user,

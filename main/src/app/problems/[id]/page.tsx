@@ -32,7 +32,6 @@ export default function ProblemPage() {
   }> | null>(null);
   const [summary, setSummary] = useState<{ total: number; passed: number; failed: number } | null>(null);
   const [bestSummary, setBestSummary] = useState<{ total: number; passed: number; failed: number } | null>(null);
-  const [loadingBest, setLoadingBest] = useState(false);
 
   const JUDGE_URL = (process.env.NEXT_PUBLIC_JUDGE_URL as string) || 'http://localhost:4001';
 
@@ -133,7 +132,6 @@ export default function ProblemPage() {
 
   const fetchBestSubmission = async (userId: string, problemId: string) => {
     try {
-      setLoadingBest(true);
       const { data, error } = await supabase
         .from('submissions')
         .select('summary')
@@ -169,7 +167,7 @@ export default function ProblemPage() {
       }
       setBestSummary(best);
     } finally {
-      setLoadingBest(false);
+      // no-op
     }
   };
 
