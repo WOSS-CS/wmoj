@@ -70,7 +70,7 @@ app.post('/submit', async (req, res) => {
       }
       filePath = path.join(workDir, 'Main.py');
       await fs.promises.writeFile(filePath, code ?? '', 'utf8');
-      runCmdBuilder = () => ({ cmd: py, args: [filePath] });
+      runCmdBuilder = () => ({ cmd: py, args: [filePath], env: { PYTHONUNBUFFERED: '1' } });
     } else if (language === 'cpp') {
       const gpp = await findExecutable(['g++'], ['--version']);
       if (!gpp) {
@@ -120,10 +120,10 @@ app.post('/submit', async (req, res) => {
     for (let i = 0; i < input.length; i += 1) {
       const testInput = input[i] ?? '';
       const expected = output[i] ?? '';
-      const { cmd, args } = runCmdBuilder();
+      const { cmd, args, env: extraEnv } = runCmdBuilder();
 
       const result = await new Promise((resolve) => {
-        const child = spawn(cmd, args, { cwd: workDir });
+        const child = spawn(cmd, args, { cwd: workDir, env: { ...process.env, ...(extraEnv || {}) } });
         let stdout = '';
         let stderr = '';
         let timedOut = false;
@@ -163,6 +163,7 @@ app.post('/submit', async (req, res) => {
           clearTimeout(timer);
           const normalizedOut = (stdout || '').replace(/\r\n/g, '\n').trimEnd();
           const normalizedExpected = (expected || '').replace(/\r\n/g, '\n').trimEnd();
+          try { console.log(`[judge] case ${i}: exit=${code} out_len=${normalizedOut.length} err_len=${(stderr||'').length}`); } catch(_) {}
           resolve({
             index: i,
             exitCode: code,
