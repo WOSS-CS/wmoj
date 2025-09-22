@@ -62,61 +62,74 @@ app.post('/submit', async (req, res) => {
       return null;
     }
 
-    function flattenArrayToTokens(arr, tokens) {
-      for (const v of arr) {
-        if (Array.isArray(v)) {
-          flattenArrayToTokens(v, tokens);
-        } else if (typeof v === 'number') {
-          tokens.push(String(v));
-        } else if (typeof v === 'string') {
-          // Extract numeric tokens from any embedded string
-          const matches = v.match(/[+-]?\d+(?:\.\d+)?/g);
-          if (matches) tokens.push(...matches);
-        }
-      }
+    function isArrayOfArrays(value) {
+      return Array.isArray(value) && value.some(Array.isArray);
     }
 
-    function toSpaceSeparatedNumbersFromJsonLike(s) {
-      try {
-        const data = JSON.parse(s);
-        const tokens = [];
-        if (Array.isArray(data)) {
-          flattenArrayToTokens(data, tokens);
-          return tokens.join(' ');
+    // Convert a parsed JSON value into raw text lines for stdin
+    function jsonValueToLines(value) {
+      if (value == null) return [''];
+      if (typeof value === 'number') return [String(value)];
+      if (typeof value === 'string') return [value];
+      if (Array.isArray(value)) {
+        // If it's an array of arrays, treat each element as a line
+        if (isArrayOfArrays(value)) {
+          const lines = [];
+          for (const line of value) {
+            if (Array.isArray(line)) {
+              const tokens = [];
+              for (const t of line) {
+                if (typeof t === 'number') tokens.push(String(t));
+                else if (typeof t === 'string') tokens.push(t.trim());
+              }
+              lines.push(tokens.join(' '));
+            } else if (typeof line === 'string' || typeof line === 'number') {
+              lines.push(String(line));
+            }
+          }
+          return lines.length ? lines : [''];
         }
-      } catch (_) {}
-      return null;
+        // Flat array: join as space-separated tokens
+        const tokens = [];
+        for (const v of value) {
+          if (typeof v === 'number') tokens.push(String(v));
+          else if (typeof v === 'string') tokens.push(v.trim());
+        }
+        return [tokens.join(' ')];
+      }
+      // Objects: fallback to JSON string (rare in CP)
+      try { return [JSON.stringify(value)]; } catch (_) { return ['']; }
     }
 
     function normalizeInputCase(testInput) {
-      const raw = (testInput ?? '').toString();
-      const trimmed = raw.trim();
-      let normalized = null;
-      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-        normalized = toSpaceSeparatedNumbersFromJsonLike(trimmed);
+      const raw = (testInput ?? '').toString().trim();
+      let lines = [];
+      if ((raw.startsWith('[') && raw.endsWith(']')) || (raw.startsWith('{') && raw.endsWith('}'))) {
+        try {
+          const parsed = JSON.parse(raw);
+          lines = jsonValueToLines(parsed);
+        } catch (_) {}
       }
-      if (!normalized) {
+      if (!lines.length) {
         // As a fallback, extract numeric tokens from the string
-        const matches = trimmed.match(/[+-]?\d+(?:\.\d+)?/g);
-        if (matches && matches.length) {
-          normalized = matches.join(' ');
-        }
+        const matches = raw.match(/[+-]?\d+(?:\.\d+)?/g);
+        if (matches && matches.length) lines = [matches.join(' ')];
       }
-      if (!normalized) normalized = raw; // last resort: pass through
-      return normalized.endsWith('\n') ? normalized : normalized + '\n';
+      if (!lines.length) lines = [raw];
+      const joined = lines.join('\n');
+      return joined.endsWith('\n') ? joined : joined + '\n';
     }
 
     function normalizeExpectedCase(expected) {
       if (typeof expected === 'number') return String(expected);
-      const raw = (expected ?? '').toString();
-      const trimmed = raw.trim();
-      let normalized = null;
-      if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
-        const asSpace = toSpaceSeparatedNumbersFromJsonLike(trimmed);
-        if (asSpace !== null) return asSpace;
+      const raw = (expected ?? '').toString().trim();
+      if ((raw.startsWith('[') && raw.endsWith(']')) || (raw.startsWith('{') && raw.endsWith('}'))) {
+        try {
+          const parsed = JSON.parse(raw);
+          return jsonValueToLines(parsed).join('\n');
+        } catch (_) {}
       }
-      // Fallback: collapse internal whitespace
-      return trimmed.replace(/\s+/g, ' ');
+      return raw.replace(/\s+/g, ' ');
     }
 
     function collapseWhitespace(s) {
