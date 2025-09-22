@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { Problem } from '@/types/problem';
 
 export async function GET() {
   try {
