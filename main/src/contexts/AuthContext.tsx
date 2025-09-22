@@ -26,49 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [userDashboardPath, setUserDashboardPath] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (!isMounted) return;
-        if (error) {
-          console.error('getSession error:', error);
-        }
-        const session = data?.session ?? null;
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await createUserProfile(session.user);
-        }
-      } catch (e) {
-        console.error('getSession exception:', e);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    })();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      try {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user && _event === 'SIGNED_IN') {
-          await createUserProfile(session.user);
-        }
-      } catch (e) {
-        console.error('onAuthStateChange exception:', e);
-      } finally {
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase, createUserProfile]);
+  // moved effect below callbacks to avoid TDZ on createUserProfile
 
   const signUp = async (email: string, password: string, username: string) => {
     console.log('Starting signup process for:', email);
@@ -185,6 +143,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error in createUserProfile:', error);
     }
   }, [updateUserRoleAndPath]);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (!isMounted) return;
+        if (error) {
+          console.error('getSession error:', error);
+        }
+        const session = data?.session ?? null;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await createUserProfile(session.user);
+        }
+      } catch (e) {
+        console.error('getSession exception:', e);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    })();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      try {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user && _event === 'SIGNED_IN') {
+          await createUserProfile(session.user);
+        }
+      } catch (e) {
+        console.error('onAuthStateChange exception:', e);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [createUserProfile]);
 
   const value = {
     user,
