@@ -7,7 +7,8 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const app = express();
-const PORT = process.env.JUDGE_PORT || 4001;
+// Prefer platform-provided PORT (Render/Heroku/etc.), fallback to custom or local default
+const PORT = process.env.PORT || process.env.JUDGE_PORT || 4001;
 
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
