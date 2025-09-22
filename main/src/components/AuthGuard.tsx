@@ -21,15 +21,16 @@ export function AuthGuard({
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (requireAuth && !user) {
-        // Redirect unauthenticated users to login
-        router.push('/auth/login');
-      } else if (!allowAuthenticated && user) {
-        // Redirect authenticated users away from auth pages
-        // Use dynamic dashboard path if available, otherwise use default
-        const targetPath = userDashboardPath || redirectTo;
-        router.push(targetPath);
+    if (loading) return;
+    if (requireAuth && !user) {
+      router.replace('/auth/login');
+      return;
+    }
+    if (!allowAuthenticated && user) {
+      const targetPath = userDashboardPath || redirectTo;
+      // Avoid redirect loops
+      if (targetPath !== window.location.pathname) {
+        router.replace(targetPath);
       }
     }
   }, [user, loading, requireAuth, allowAuthenticated, redirectTo, userDashboardPath, router]);
@@ -47,11 +48,11 @@ export function AuthGuard({
   }
 
   // Don't render children if auth requirements aren't met
-  if (requireAuth && !user) {
+  if (!loading && requireAuth && !user) {
     return null;
   }
 
-  if (!allowAuthenticated && user) {
+  if (!loading && !allowAuthenticated && user) {
     return null;
   }
 

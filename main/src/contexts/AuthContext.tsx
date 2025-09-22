@@ -154,10 +154,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error('getSession error:', error);
         }
         const session = data?.session ?? null;
+        const currentUser = session?.user ?? null;
         setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await createUserProfile(session.user);
+        setUser(currentUser);
+        // Do not block initial render on profile DB ops
+        if (currentUser) {
+          void createUserProfile(currentUser);
         }
       } catch (e) {
         console.error('getSession exception:', e);
@@ -170,10 +172,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       try {
+        const currentUser = session?.user ?? null;
         setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user && _event === 'SIGNED_IN') {
-          await createUserProfile(session.user);
+        setUser(currentUser);
+        // Fire-and-forget; avoid blocking UI on network
+        if (currentUser && (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED')) {
+          void createUserProfile(currentUser);
         }
       } catch (e) {
         console.error('onAuthStateChange exception:', e);
