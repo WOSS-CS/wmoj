@@ -78,9 +78,12 @@ export default function DashboardPage() {
               <div className="text-4xl mb-4">💻</div>
               <h3 className="text-xl font-semibold text-white mb-3">Problems</h3>
               <p className="text-gray-300 mb-4">Browse and solve coding challenges</p>
-              <button className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+              <Link
+                href="/problems"
+                className="block w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-center"
+              >
                 Start Solving
-              </button>
+              </Link>
             </div>
 
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
