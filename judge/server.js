@@ -62,6 +62,67 @@ app.post('/submit', async (req, res) => {
       return null;
     }
 
+    function flattenArrayToTokens(arr, tokens) {
+      for (const v of arr) {
+        if (Array.isArray(v)) {
+          flattenArrayToTokens(v, tokens);
+        } else if (typeof v === 'number') {
+          tokens.push(String(v));
+        } else if (typeof v === 'string') {
+          // Extract numeric tokens from any embedded string
+          const matches = v.match(/[+-]?\d+(?:\.\d+)?/g);
+          if (matches) tokens.push(...matches);
+        }
+      }
+    }
+
+    function toSpaceSeparatedNumbersFromJsonLike(s) {
+      try {
+        const data = JSON.parse(s);
+        const tokens = [];
+        if (Array.isArray(data)) {
+          flattenArrayToTokens(data, tokens);
+          return tokens.join(' ');
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    function normalizeInputCase(testInput) {
+      const raw = (testInput ?? '').toString();
+      const trimmed = raw.trim();
+      let normalized = null;
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        normalized = toSpaceSeparatedNumbersFromJsonLike(trimmed);
+      }
+      if (!normalized) {
+        // As a fallback, extract numeric tokens from the string
+        const matches = trimmed.match(/[+-]?\d+(?:\.\d+)?/g);
+        if (matches && matches.length) {
+          normalized = matches.join(' ');
+        }
+      }
+      if (!normalized) normalized = raw; // last resort: pass through
+      return normalized.endsWith('\n') ? normalized : normalized + '\n';
+    }
+
+    function normalizeExpectedCase(expected) {
+      if (typeof expected === 'number') return String(expected);
+      const raw = (expected ?? '').toString();
+      const trimmed = raw.trim();
+      let normalized = null;
+      if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+        const asSpace = toSpaceSeparatedNumbersFromJsonLike(trimmed);
+        if (asSpace !== null) return asSpace;
+      }
+      // Fallback: collapse internal whitespace
+      return trimmed.replace(/\s+/g, ' ');
+    }
+
+    function collapseWhitespace(s) {
+      return (s ?? '').toString().replace(/\s+/g, ' ').trim();
+    }
+
     if (language === 'python') {
       const py = await findExecutable(['python3', 'python'], ['-V']);
       if (!py) {
@@ -149,7 +210,7 @@ app.post('/submit', async (req, res) => {
         });
 
         try {
-          const payloadInput = typeof testInput === 'string' ? (testInput.endsWith('\n') ? testInput : testInput + '\n') : '';
+          const payloadInput = normalizeInputCase(testInput);
           try { console.log(`[judge] case ${i}: input_len=${payloadInput.length} preview="${payloadInput.slice(0,50).replace(/\n/g,'\\n')}"`); } catch(_) {}
           child.stdin.write(payloadInput, 'utf8');
           child.stdin.end();
@@ -162,8 +223,10 @@ app.post('/submit', async (req, res) => {
 
         child.on('close', (code) => {
           clearTimeout(timer);
-          const normalizedOut = (stdout || '').replace(/\r\n/g, '\n').trimEnd();
-          const normalizedExpected = (expected || '').replace(/\r\n/g, '\n').trimEnd();
+          const normalizedOut = (stdout || '').replace(/\r\n/g, '\n').trim();
+          const expectedNorm = normalizeExpectedCase(expected);
+          const outCollapsed = collapseWhitespace(normalizedOut);
+          const expCollapsed = collapseWhitespace(expectedNorm);
           try { console.log(`[judge] case ${i}: exit=${code} out_len=${normalizedOut.length} err_len=${(stderr||'').length}`); } catch(_) {}
           if ((stderr || '').length) {
             try { console.log(`[judge] case ${i}: stderr_preview="${stderr.slice(0,200).replace(/\n/g,'\\n')}"`); } catch(_) {}
@@ -174,8 +237,8 @@ app.post('/submit', async (req, res) => {
             timedOut,
             stdout,
             stderr,
-            passed: !timedOut && code === 0 && normalizedOut === normalizedExpected,
-            expected: normalizedExpected,
+            passed: !timedOut && code === 0 && outCollapsed === expCollapsed,
+            expected: expectedNorm,
             received: normalizedOut,
           });
         });
@@ -201,6 +264,33 @@ app.post('/submit', async (req, res) => {
 });
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
+app.get('/selftest/python', async (_req, res) => {
+  function findExec(cands, args) {
+    return new Promise((resolve) => {
+      let idx = 0;
+      const tryNext = () => {
+        if (idx >= cands.length) return resolve(null);
+        const c = cands[idx++];
+        const p = spawn(c, args);
+        p.on('error', () => tryNext());
+        p.on('close', (code) => (code === 0 ? resolve(c) : tryNext()));
+      };
+      tryNext();
+    });
+  }
+  const py = await findExec(['python3', 'python'], ['-V']);
+  if (!py) return res.status(501).json({ error: 'python not available' });
+  const child = spawn(py, ['-u', '-c', 'print(input())']);
+  let out = '', err = '';
+  child.stdout.on('data', (d) => (out += d.toString()));
+  child.stderr.on('data', (d) => (err += d.toString()));
+  child.stdin.write('hello\n');
+  child.stdin.end();
+  child.on('close', (code) => {
+    res.json({ code, out, err });
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`Judge listening on http://localhost:${PORT}`);
