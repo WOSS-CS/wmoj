@@ -30,7 +30,8 @@ export default function LoginPage() {
         // Redirect to dashboard after successful login
         router.push('/dashboard');
       }
-    } catch (_err) {
+    } catch (err) {
+      console.error('Login unexpected error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
