@@ -50,7 +50,7 @@ export default function SignUpPage() {
           router.push('/auth/login');
         }, 2000);
       }
-    } catch (err) {
+    } catch (_err) {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
