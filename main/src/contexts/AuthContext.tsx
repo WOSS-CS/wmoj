@@ -28,34 +28,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted) return;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        createUserProfile(session.user);
+    (async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (!isMounted) return;
+        if (error) {
+          console.error('getSession error:', error);
+        }
+        const session = data?.session ?? null;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await createUserProfile(session.user);
+        }
+      } catch (e) {
+        console.error('getSession exception:', e);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-      setLoading(false);
-    });
+    })();
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user && _event === 'SIGNED_IN') {
-        await createUserProfile(session.user);
+      try {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user && _event === 'SIGNED_IN') {
+          await createUserProfile(session.user);
+        }
+      } catch (e) {
+        console.error('onAuthStateChange exception:', e);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, createUserProfile]);
 
   const signUp = async (email: string, password: string, username: string) => {
     console.log('Starting signup process for:', email);
