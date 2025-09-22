@@ -150,6 +150,7 @@ app.post('/submit', async (req, res) => {
 
         try {
           const payloadInput = typeof testInput === 'string' ? (testInput.endsWith('\n') ? testInput : testInput + '\n') : '';
+          try { console.log(`[judge] case ${i}: input_len=${payloadInput.length} preview="${payloadInput.slice(0,50).replace(/\n/g,'\\n')}"`); } catch(_) {}
           child.stdin.write(payloadInput, 'utf8');
           child.stdin.end();
         } catch (_) {
@@ -164,6 +165,9 @@ app.post('/submit', async (req, res) => {
           const normalizedOut = (stdout || '').replace(/\r\n/g, '\n').trimEnd();
           const normalizedExpected = (expected || '').replace(/\r\n/g, '\n').trimEnd();
           try { console.log(`[judge] case ${i}: exit=${code} out_len=${normalizedOut.length} err_len=${(stderr||'').length}`); } catch(_) {}
+          if ((stderr || '').length) {
+            try { console.log(`[judge] case ${i}: stderr_preview="${stderr.slice(0,200).replace(/\n/g,'\\n')}"`); } catch(_) {}
+          }
           resolve({
             index: i,
             exitCode: code,
