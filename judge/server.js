@@ -62,72 +62,50 @@ app.post('/submit', async (req, res) => {
       return null;
     }
 
-    function isArrayOfArrays(value) {
-      return Array.isArray(value) && value.some(Array.isArray);
-    }
-
-    // Convert a parsed JSON value into raw text lines for stdin
-    function jsonValueToLines(value) {
-      if (value == null) return [''];
-      if (typeof value === 'number') return [String(value)];
-      if (typeof value === 'string') return [value];
-      if (Array.isArray(value)) {
-        // If it's an array of arrays, treat each element as a line
-        if (isArrayOfArrays(value)) {
-          const lines = [];
-          for (const line of value) {
-            if (Array.isArray(line)) {
-              const tokens = [];
-              for (const t of line) {
-                if (typeof t === 'number') tokens.push(String(t));
-                else if (typeof t === 'string') tokens.push(t.trim());
-              }
-              lines.push(tokens.join(' '));
-            } else if (typeof line === 'string' || typeof line === 'number') {
-              lines.push(String(line));
-            }
-          }
-          return lines.length ? lines : [''];
+    // Convert one test case (inner array) to a single-line CP-style stdin string
+    function toCaseLine(value) {
+      const tokens = [];
+      (function flatten(v) {
+        if (v == null) return;
+        if (Array.isArray(v)) {
+          for (const x of v) flatten(x);
+          return;
         }
-        // Flat array: join as space-separated tokens
-        const tokens = [];
-        for (const v of value) {
-          if (typeof v === 'number') tokens.push(String(v));
-          else if (typeof v === 'string') tokens.push(v.trim());
-        }
-        return [tokens.join(' ')];
-      }
-      // Objects: fallback to JSON string (rare in CP)
-      try { return [JSON.stringify(value)]; } catch (_) { return ['']; }
+        if (typeof v === 'number') { tokens.push(String(v)); return; }
+        if (typeof v === 'string') { tokens.push(v.trim()); return; }
+        // objects: stringify
+        try { tokens.push(JSON.stringify(v)); } catch (_) { /* ignore */ }
+      })(value);
+      return tokens.join(' ');
     }
 
     function normalizeInputCase(testInput) {
-      const raw = (testInput ?? '').toString().trim();
-      let lines = [];
-      if ((raw.startsWith('[') && raw.endsWith(']')) || (raw.startsWith('{') && raw.endsWith('}'))) {
-        try {
-          const parsed = JSON.parse(raw);
-          lines = jsonValueToLines(parsed);
-        } catch (_) {}
+      // Expect each testInput to be an inner array (tokens for one run)
+      // If it's a string containing JSON, parse it; otherwise use as-is
+      let line = '';
+      if (Array.isArray(testInput)) {
+        line = toCaseLine(testInput);
+      } else if (typeof testInput === 'string') {
+        const raw = testInput.trim();
+        if ((raw.startsWith('[') && raw.endsWith(']')) || (raw.startsWith('{') && raw.endsWith('}'))) {
+          try { line = toCaseLine(JSON.parse(raw)); } catch (_) { line = raw; }
+        } else {
+          line = raw;
+        }
+      } else if (typeof testInput === 'number') {
+        line = String(testInput);
+      } else {
+        try { line = JSON.stringify(testInput); } catch (_) { line = String(testInput ?? ''); }
       }
-      if (!lines.length) {
-        // As a fallback, extract numeric tokens from the string
-        const matches = raw.match(/[+-]?\d+(?:\.\d+)?/g);
-        if (matches && matches.length) lines = [matches.join(' ')];
-      }
-      if (!lines.length) lines = [raw];
-      const joined = lines.join('\n');
-      return joined.endsWith('\n') ? joined : joined + '\n';
+      return line.endsWith('\n') ? line : line + '\n';
     }
 
     function normalizeExpectedCase(expected) {
+      if (Array.isArray(expected)) return toCaseLine(expected);
       if (typeof expected === 'number') return String(expected);
       const raw = (expected ?? '').toString().trim();
       if ((raw.startsWith('[') && raw.endsWith(']')) || (raw.startsWith('{') && raw.endsWith('}'))) {
-        try {
-          const parsed = JSON.parse(raw);
-          return jsonValueToLines(parsed).join('\n');
-        } catch (_) {}
+        try { return toCaseLine(JSON.parse(raw)); } catch (_) { return raw; }
       }
       return raw.replace(/\s+/g, ' ');
     }
