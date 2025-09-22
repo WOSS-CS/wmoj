@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || process.env.JUDGE_PORT || 4001;
 
 app.use(cors());
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(morgan('dev'));
 
 /**
@@ -26,6 +26,8 @@ app.use(morgan('dev'));
 
 app.post('/submit', async (req, res) => {
   const { language, code, input, output } = req.body || {};
+  // Basic debug to help diagnose production issues
+  try { console.log(`[judge] submit: lang=${language}, code_len=${code ? String(code).length : 0}, cases=${Array.isArray(input) ? input.length : 0}`); } catch(_) {}
 
   if (!language || !code || !Array.isArray(input) || !Array.isArray(output)) {
     return res.status(400).json({
@@ -147,7 +149,8 @@ app.post('/submit', async (req, res) => {
         });
 
         try {
-          child.stdin.write(testInput);
+          const payloadInput = typeof testInput === 'string' ? (testInput.endsWith('\n') ? testInput : testInput + '\n') : '';
+          child.stdin.write(payloadInput, 'utf8');
           child.stdin.end();
         } catch (_) {
           // ignore
