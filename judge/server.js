@@ -44,21 +44,53 @@ app.post('/submit', async (req, res) => {
     let compileCmd = null;
     let runCmdBuilder;
 
+    async function findExecutable(candidates, versionArgs = ['--version']) {
+      for (const candidate of candidates) {
+        try {
+          await new Promise((resolve, reject) => {
+            const p = spawn(candidate, versionArgs);
+            p.on('error', reject);
+            p.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`code ${code}`))));
+          });
+          return candidate;
+        } catch (_) {
+          // try next
+        }
+      }
+      return null;
+    }
+
     if (language === 'python') {
+      const py = await findExecutable(['python3', 'python'], ['-V']);
+      if (!py) {
+        await fs.promises.rm(workDir, { recursive: true, force: true });
+        return res.status(501).json({ error: 'Python runtime not available on server' });
+      }
       filePath = path.join(workDir, 'Main.py');
-      await fs.promises.writeFile(filePath, code, 'utf8');
-      runCmdBuilder = () => ({ cmd: 'python3', args: [filePath] });
+      await fs.promises.writeFile(filePath, code ?? '', 'utf8');
+      runCmdBuilder = () => ({ cmd: py, args: [filePath] });
     } else if (language === 'cpp') {
+      const gpp = await findExecutable(['g++'], ['--version']);
+      if (!gpp) {
+        await fs.promises.rm(workDir, { recursive: true, force: true });
+        return res.status(501).json({ error: 'g++ compiler not available on server' });
+      }
       filePath = path.join(workDir, 'Main.cpp');
       const outPath = path.join(workDir, 'a.out');
-      await fs.promises.writeFile(filePath, code, 'utf8');
-      compileCmd = { cmd: 'g++', args: ['-O2', '-std=c++17', filePath, '-o', outPath] };
+      await fs.promises.writeFile(filePath, code ?? '', 'utf8');
+      compileCmd = { cmd: gpp, args: ['-O2', '-std=c++17', filePath, '-o', outPath] };
       runCmdBuilder = () => ({ cmd: outPath, args: [] });
     } else if (language === 'java') {
+      const javac = await findExecutable(['javac'], ['-version']);
+      const java = await findExecutable(['java'], ['-version']);
+      if (!javac || !java) {
+        await fs.promises.rm(workDir, { recursive: true, force: true });
+        return res.status(501).json({ error: 'Java runtime/compiler not available on server' });
+      }
       filePath = path.join(workDir, 'Main.java');
-      await fs.promises.writeFile(filePath, code, 'utf8');
-      compileCmd = { cmd: 'javac', args: [filePath] };
-      runCmdBuilder = () => ({ cmd: 'java', args: ['-classpath', workDir, 'Main'] });
+      await fs.promises.writeFile(filePath, code ?? '', 'utf8');
+      compileCmd = { cmd: javac, args: [filePath] };
+      runCmdBuilder = () => ({ cmd: java, args: ['-classpath', workDir, 'Main'] });
     } else {
       return res.status(400).json({ error: 'Unsupported language. Use python | cpp | java' });
     }
@@ -68,6 +100,7 @@ app.post('/submit', async (req, res) => {
       await new Promise((resolve, reject) => {
         const p = spawn(compileCmd.cmd, compileCmd.args, { cwd: workDir });
         let stderr = '';
+        p.on('error', (err) => reject(err));
         p.stderr.on('data', (d) => (stderr += d.toString()));
         p.on('close', (code) => {
           if (code !== 0) {
@@ -99,8 +132,26 @@ app.post('/submit', async (req, res) => {
           child.kill('SIGKILL');
         }, 5000);
 
-        child.stdin.write(testInput);
-        child.stdin.end();
+        child.on('error', (err) => {
+          clearTimeout(timer);
+          resolve({
+            index: i,
+            exitCode: null,
+            timedOut: false,
+            stdout: '',
+            stderr: `spawn error: ${String(err && err.message ? err.message : err)}`,
+            passed: false,
+            expected: (expected || '').replace(/\r\n/g, '\n').trimEnd(),
+            received: ''
+          });
+        });
+
+        try {
+          child.stdin.write(testInput);
+          child.stdin.end();
+        } catch (_) {
+          // ignore
+        }
 
         child.stdout.on('data', (d) => (stdout += d.toString()))
         child.stderr.on('data', (d) => (stderr += d.toString()))
