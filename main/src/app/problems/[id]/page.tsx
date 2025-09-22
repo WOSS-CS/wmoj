@@ -2,17 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { Problem } from '@/types/problem';
+import { supabase } from '@/lib/supabase';
 
-interface ProblemPageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function ProblemPage({ params }: ProblemPageProps) {
+export default function ProblemPage() {
+  const routeParams = useParams<{ id: string }>();
+  const problemId = Array.isArray(routeParams?.id) ? routeParams.id[0] : routeParams?.id;
+  const router = useRouter();
   const { user, signOut } = useAuth();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,12 +19,34 @@ export default function ProblemPage({ params }: ProblemPageProps) {
   const [selectedLanguage, setSelectedLanguage] = useState('python');
   const [codeFile, setCodeFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [results, setResults] = useState<Array<{
+    index: number;
+    exitCode: number | null;
+    timedOut: boolean;
+    stdout: string;
+    stderr: string;
+    passed: boolean;
+    expected: string;
+    received: string;
+  }> | null>(null);
+  const [summary, setSummary] = useState<{ total: number; passed: number; failed: number } | null>(null);
+  const [bestSummary, setBestSummary] = useState<{ total: number; passed: number; failed: number } | null>(null);
+  const [loadingBest, setLoadingBest] = useState(false);
+
+  const JUDGE_URL = (process.env.NEXT_PUBLIC_JUDGE_URL as string) || 'http://localhost:4001';
 
   useEffect(() => {
-    if (params.id) {
-      fetchProblem(params.id);
+    if (problemId) {
+      fetchProblem(problemId);
     }
-  }, [params.id]);
+  }, [problemId]);
+
+  useEffect(() => {
+    if (user && problem) {
+      fetchBestSubmission(user.id, problem.id);
+    }
+  }, [user, problem]);
 
   const fetchProblem = async (id: string) => {
     try {
@@ -59,13 +80,97 @@ export default function ProblemPage({ params }: ProblemPageProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!problem || !user || !codeFile) return;
     setSubmitting(true);
-    
-    // Placeholder for future submission logic
-    setTimeout(() => {
+    setSubmitError('');
+    setResults(null);
+    setSummary(null);
+
+    try {
+      const code = await codeFile.text();
+      const payload = {
+        language: selectedLanguage,
+        code,
+        input: problem.input,
+        output: problem.output,
+      };
+
+      const resp = await fetch(`${JUDGE_URL}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data?.error || 'Judge failed to evaluate submission');
+      }
+
+      setResults(data.results || []);
+      setSummary(data.summary || null);
+
+      // Persist submission to Supabase
+      await supabase.from('submissions').insert({
+        problem_id: problem.id,
+        user_id: user.id,
+        language: selectedLanguage,
+        code,
+        input: problem.input,
+        output: problem.output,
+        results: data.results,
+        summary: data.summary,
+      });
+
+      // Refresh best submission indicator
+      await fetchBestSubmission(user.id, problem.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Submission failed';
+      setSubmitError(message);
+    } finally {
       setSubmitting(false);
-      alert('Submission functionality will be implemented soon!');
-    }, 1000);
+    }
+  };
+
+  const fetchBestSubmission = async (userId: string, problemId: string) => {
+    try {
+      setLoadingBest(true);
+      const { data, error } = await supabase
+        .from('submissions')
+        .select('summary')
+        .eq('user_id', userId)
+        .eq('problem_id', problemId);
+
+      if (error) {
+        console.error('Error loading best submission:', error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        setBestSummary(null);
+        return;
+      }
+
+      let best: { total: number; passed: number; failed: number } | null = null;
+      for (const row of data) {
+        const s = row.summary as { total?: number; passed?: number; failed?: number } | null;
+        if (!s) continue;
+        const current = {
+          total: Number(s.total ?? 0),
+          passed: Number(s.passed ?? 0),
+          failed: Number(s.failed ?? 0),
+        };
+        if (
+          !best ||
+          current.passed > best.passed ||
+          (current.passed === best.passed && current.total > best.total)
+        ) {
+          best = current;
+        }
+      }
+      setBestSummary(best);
+    } finally {
+      setLoadingBest(false);
+    }
   };
 
   const languages = [
@@ -78,7 +183,7 @@ export default function ProblemPage({ params }: ProblemPageProps) {
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
         {/* Circuit Pattern Background */}
-        <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 opacity-5 pointer-events-none">
           <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full"></div>
           <div className="absolute top-20 left-20 w-32 h-0.5 bg-green-400"></div>
           <div className="absolute top-20 left-52 w-2 h-2 bg-green-400 rounded-full"></div>
@@ -104,18 +209,20 @@ export default function ProblemPage({ params }: ProblemPageProps) {
             <span className="text-white">MOJ</span>
           </Link>
           <div className="flex gap-4">
-            <Link
-              href="/problems"
+            <button
+              type="button"
+              onClick={() => router.push('/problems')}
               className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-all duration-300"
             >
               Back to Problems
-            </Link>
-            <Link
-              href="/dashboard"
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard')}
               className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-all duration-300"
             >
-              Dashboard
-            </Link>
+              Back to Dashboard
+            </button>
             <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg">
               {user?.user_metadata?.username || user?.email}
             </span>
@@ -141,12 +248,13 @@ export default function ProblemPage({ params }: ProblemPageProps) {
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-8">
               <p className="text-red-400">{error}</p>
-              <Link
-                href="/problems"
+              <button
+                type="button"
+                onClick={() => router.push('/problems')}
                 className="mt-4 inline-block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Back to Problems
-              </Link>
+              </button>
             </div>
           )}
 
@@ -170,6 +278,56 @@ export default function ProblemPage({ params }: ProblemPageProps) {
                       {problem.content}
                     </div>
                   </div>
+                  {bestSummary && (
+                    <div className="mt-6 p-4 rounded-xl border border-white/10 bg-white/5 flex items-center gap-3">
+                      <span className={`px-3 py-1 rounded-full text-sm ${bestSummary.failed === 0 ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
+                        {bestSummary.failed === 0 ? 'Passed' : 'Failed'}
+                      </span>
+                      <span className="text-gray-300">
+                        Best score: <span className="text-white font-semibold">{bestSummary.passed}/{bestSummary.total}</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {summary && results && (
+                    <div className="mt-8">
+                      <h3 className="text-xl font-semibold text-white mb-4">Latest Submission Results</h3>
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className={`px-3 py-1 rounded-full text-sm ${summary.failed === 0 ? 'bg-green-400/20 text-green-400' : 'bg-yellow-400/20 text-yellow-400'}`}>
+                          {summary.failed === 0 ? 'All Passed' : 'Some Failed'}
+                        </span>
+                        <span className="text-gray-300">Score:</span>
+                        <span className="text-white font-semibold">{summary.passed}/{summary.total}</span>
+                      </div>
+                      <div className="space-y-3">
+                        {results.map((r) => (
+                          <div key={r.index} className="p-4 bg-white/5 rounded-xl border border-white/10">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className={`px-2 py-0.5 rounded text-xs ${r.passed ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
+                                  {r.passed ? 'Passed' : 'Failed'}
+                                </span>
+                                <span className="text-white font-medium">Test case {r.index + 1}</span>
+                              </div>
+                              <div className="text-xs text-gray-400">exit {r.exitCode}{r.timedOut ? ' · timed out' : ''}</div>
+                            </div>
+                            {!r.passed && (
+                              <div className="mt-3 grid md:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                  <div className="text-gray-400 mb-1">Expected</div>
+                                  <pre className="p-3 rounded bg-black/40 text-gray-200 whitespace-pre-wrap">{r.expected}</pre>
+                                </div>
+                                <div>
+                                  <div className="text-gray-400 mb-1">Received</div>
+                                  <pre className="p-3 rounded bg-black/40 text-gray-200 whitespace-pre-wrap">{r.received}</pre>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -220,6 +378,12 @@ export default function ProblemPage({ params }: ProblemPageProps) {
                     </div>
 
                     {/* Submit Button */}
+                    {submitError && (
+                      <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-lg">
+                        {submitError}
+                      </div>
+                    )}
+
                     <button
                       type="submit"
                       disabled={!codeFile || submitting}

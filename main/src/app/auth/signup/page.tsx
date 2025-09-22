@@ -67,7 +67,7 @@ export default function SignUpPage() {
     <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo="/dashboard">
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center p-6 relative overflow-hidden">
       {/* Circuit Pattern Background */}
-      <div className="absolute inset-0 opacity-5">
+      <div className="absolute inset-0 opacity-5 pointer-events-none">
         <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full"></div>
         <div className="absolute top-20 left-20 w-32 h-0.5 bg-green-400"></div>
         <div className="absolute top-20 left-52 w-2 h-2 bg-green-400 rounded-full"></div>
