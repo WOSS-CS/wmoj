@@ -10,6 +10,8 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
     const userId: string | undefined = body?.userId;
 
+    console.log('Join contest request:', { id, userId, body });
+
     if (!id || !userId) {
       return NextResponse.json({ error: 'contest id and userId are required' }, { status: 400 });
     }
@@ -22,9 +24,11 @@ export async function POST(
       .maybeSingle();
 
     if (contestErr) {
+      console.log('Contest verification error:', contestErr);
       return NextResponse.json({ error: 'Failed to verify contest' }, { status: 500 });
     }
     if (!contest || !contest.is_active) {
+      console.log('Contest not found or inactive:', { contest, is_active: contest?.is_active });
       return NextResponse.json({ error: 'Contest is not active' }, { status: 403 });
     }
 
@@ -36,6 +40,7 @@ export async function POST(
       .limit(1);
 
     if (existErr) {
+      console.log('Participation check error:', existErr);
       return NextResponse.json({ error: 'Failed to check participation' }, { status: 500 });
     }
 
@@ -53,11 +58,13 @@ export async function POST(
       .insert({ contest_id: id, user_id: userId });
 
     if (insertErr) {
+      console.log('Insert participation error:', insertErr);
       return NextResponse.json({ error: 'Failed to join contest' }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
   } catch (e) {
+    console.log('Join contest error:', e);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
