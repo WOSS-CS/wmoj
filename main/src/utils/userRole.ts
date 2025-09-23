@@ -30,7 +30,7 @@ export async function getUserRole(userId: string): Promise<UserRole> {
       return 'regular';
     }
 
-    // If neither found, infer admin if present in admins (no rows) else default to regular
+    // Default to regular if user doesn't exist in any table
     return 'regular';
   } catch (error) {
     console.error('Error determining user role:', error);

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
 
 export default function Home() {
-  const { user, signOut, userRole } = useAuth();
+  const { user, signOut } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -94,7 +94,7 @@ export default function Home() {
             {user ? (
               <>
                 <Link
-                  href={userRole === 'admin' ? '/admin' : '/dashboard'}
+                  href="/dashboard"
                   className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105"
                 >
                   Start Coding Now
