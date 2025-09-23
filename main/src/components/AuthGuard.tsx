@@ -17,7 +17,7 @@ export function AuthGuard({
   redirectTo = '/dashboard',
   allowAuthenticated = false
 }: AuthGuardProps) {
-  const { user, loading, userDashboardPath, userRole } = useAuth();
+  const { user, loading, userDashboardPath } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -27,17 +27,16 @@ export function AuthGuard({
       return;
     }
     if (!allowAuthenticated && user) {
-      const rolePath = userRole === 'admin' ? '/admin' : '/dashboard';
-      const targetPath = userDashboardPath || rolePath || redirectTo;
+      const targetPath = userDashboardPath || redirectTo;
       // Avoid redirect loops
       if (targetPath !== window.location.pathname) {
         router.replace(targetPath);
       }
     }
-  }, [user, loading, requireAuth, allowAuthenticated, redirectTo, userDashboardPath, userRole, router]);
+  }, [user, loading, requireAuth, allowAuthenticated, redirectTo, userDashboardPath, router]);
 
   // Show loading state
-  if (loading || (user && userRole == null)) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center">
         <div className="text-center">
