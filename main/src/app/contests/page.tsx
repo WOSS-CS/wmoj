@@ -85,17 +85,32 @@ export default function ContestsPage() {
                   <div key={c.id} className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:border-green-400/50 transition-all">
                     <div className="flex items-start justify-between">
                       <h3 className="text-xl font-semibold text-white">{c.name}</h3>
-                      {c.is_active ? (
-                        <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm">Active</span>
-                      ) : (
-                        <span className="px-3 py-1 bg-gray-400/20 text-gray-300 rounded-full text-sm">Inactive</span>
-                      )}
+                      <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm">Active</span>
                     </div>
                     <p className="text-gray-300 mt-3 line-clamp-3">{c.description || 'No description'}</p>
                     <div className="mt-4 flex items-center justify-between text-gray-300 text-sm">
                       <span>Length: <span className="text-white font-medium">{c.length} min</span></span>
-                      <button className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all">View</button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/contests/${c.id}/join`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ userId: user?.id })
+                            });
+                            const json = await res.json();
+                            if (!res.ok) throw new Error(json?.error || 'Failed to join contest');
+                            alert('Joined contest successfully');
+                          } catch (e) {
+                            alert(e instanceof Error ? e.message : 'Failed to join contest');
+                          }
+                        }}
+                        className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all"
+                      >
+                        Join
+                      </button>
                     </div>
+                    <ContestProblemsPreview contestId={c.id} />
                   </div>
                 ))
               )}
@@ -104,6 +119,30 @@ export default function ContestsPage() {
         </div>
       </div>
     </AuthGuard>
+  );
+}
+
+function ContestProblemsPreview({ contestId }: { contestId: string }) {
+  const [items, setItems] = useState<{ id: string; name: string }[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/contests/${contestId}/problems`);
+        const json = await res.json();
+        if (res.ok) setItems((json.problems || []).slice(0, 3));
+      } finally { setLoaded(true); }
+    })();
+  }, [contestId]);
+  if (!loaded) return null;
+  if (items.length === 0) return <div className="mt-3 text-gray-400 text-sm">No problems yet.</div>;
+  return (
+    <div className="mt-4 text-gray-300 text-sm">
+      <div className="mb-2 font-medium text-white">Problems</div>
+      <ul className="list-disc list-inside space-y-1">
+        {items.map(p => <li key={p.id}>{p.name}</li>)}
+      </ul>
+    </div>
   );
 }
 
