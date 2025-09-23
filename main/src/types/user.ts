@@ -14,7 +14,7 @@ export interface UserProfile {
 export const getUserDashboardPath = (userRole: UserRole): string => {
   switch (userRole) {
     case 'admin':
-      return '/admin';
+      return '/admin/dashboard';
     case 'regular':
     default:
       return '/dashboard';
