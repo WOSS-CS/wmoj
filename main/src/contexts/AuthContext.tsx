@@ -70,8 +70,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    return { error };
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (!error) {
+        // Clear all state on successful sign out
+        setUser(null);
+        setSession(null);
+        setUserRole(null);
+        setUserDashboardPath(null);
+      }
+      return { error };
+    } catch (error) {
+      console.error('Sign out error:', error);
+      return { error: error as any };
+    }
   };
 
   const updateUserRoleAndPath = useCallback(async (userId: string) => {

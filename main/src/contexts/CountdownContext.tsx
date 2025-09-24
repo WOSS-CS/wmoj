@@ -20,6 +20,16 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [contestId, setContestId] = useState<string | null>(null);
 
+  // Clear countdown when user changes (including logout)
+  useEffect(() => {
+    if (!user) {
+      setContestId(null);
+      setContestName(null);
+      setTimeRemaining(null);
+      setIsActive(false);
+    }
+  }, [user]);
+
   const startCountdown = useCallback(async (id: string, name: string, durationMinutes: number) => {
     setContestId(id);
     setContestName(name);
@@ -98,7 +108,14 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
   // Load countdown from database on mount
   useEffect(() => {
     (async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        // Clear countdown if user is not authenticated
+        setContestId(null);
+        setContestName(null);
+        setTimeRemaining(null);
+        setIsActive(false);
+        return;
+      }
       
       try {
         const { createClient } = await import('@supabase/supabase-js');
