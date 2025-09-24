@@ -29,10 +29,13 @@ export default function ContestsPage() {
         setLoading(true);
         const res = await fetch('/api/contests');
         const json = await res.json();
-        if (!res.ok) throw new Error(json?.error || 'Failed to load contests');
-        setContests(json.contests || []);
+        if (res.ok) {
+          setContests(json.contests || []);
+        } else {
+          setError(json.error || 'Failed to fetch contests');
+        }
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to load contests');
+        setError('Failed to fetch contests');
       } finally {
         setLoading(false);
       }
@@ -46,36 +49,33 @@ export default function ContestsPage() {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      if (!session?.access_token || loadingParticipation) return;
+    if (session?.access_token && !loadingParticipation) {
       setLoadingParticipation(true);
-      try {
-        const token = session.access_token;
-        const res = await fetch('/api/contests/participation', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const json = await res.json();
-          setJoinedContestId(json.contest_id);
-        }
-      } finally {
-        setLoadingParticipation(false);
-      }
-    })();
-  }, [session?.access_token, loadingParticipation]);
-
-  const handleSignOut = async () => { await signOut(); };
+      fetch('/api/contests/participation', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+        .then(res => res.json())
+        .then(json => {
+          if (json.contestId) {
+            setJoinedContestId(json.contestId);
+          }
+        })
+        .catch(e => console.error('Error checking participation:', e))
+        .finally(() => setLoadingParticipation(false));
+    }
+  }, [session?.access_token]);
 
   const handleJoinContest = async (contestId: string, contestName: string, contestLength: number) => {
     if (joiningContest) return;
     setJoiningContest(contestId);
     try {
-      const token = session?.access_token;
       const res = await fetch(`/api/contests/${contestId}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
+          'Authorization': `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({ userId: user?.id })
       });
@@ -89,6 +89,10 @@ export default function ContestsPage() {
     } finally {
       setJoiningContest(null);
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
@@ -119,215 +123,217 @@ export default function ContestsPage() {
             <div className="absolute top-20 left-52 w-0.5 h-16 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '0.5s' }}></div>
             <div className="absolute top-36 left-52 w-24 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1s' }}></div>
             <div className="absolute top-36 left-76 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+            
+            <div className="absolute top-40 right-20 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+            <div className="absolute top-40 right-20 w-0.5 h-20 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+            <div className="absolute top-60 right-20 w-40 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute top-60 right-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
+            
+            <div className="absolute bottom-32 left-32 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2.5s' }}></div>
+            <div className="absolute bottom-32 left-32 w-0.5 h-24 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2.5s' }}></div>
+            <div className="absolute bottom-8 left-32 w-28 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '3s' }}></div>
+            <div className="absolute bottom-8 left-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '3s' }}></div>
           </div>
         </div>
 
-        {/* Enhanced Navigation */}
-        <nav className="relative z-10 flex justify-between items-center p-6 backdrop-blur-sm">
-          <Link href="/" className="text-3xl font-bold text-white group cursor-pointer">
+        {/* Top Navigation Bar */}
+        <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
+          <Link href="/" className="text-2xl font-bold text-white group cursor-pointer">
             <span className="text-green-400 transition-all duration-300 group-hover:scale-110 inline-block">W</span>
             <span className="text-white transition-all duration-300 group-hover:scale-110 inline-block" style={{ animationDelay: '0.1s' }}>MOJ</span>
           </Link>
-          <div className="flex gap-4">
-            <Link href="/dashboard" className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25">Dashboard</Link>
-            <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-all duration-300 transform hover:scale-105">{user?.user_metadata?.username || user?.email}</span>
-            <button onClick={handleSignOut} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-600/25">Sign Out</button>
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="px-4 py-2 text-white border border-white/20 rounded-lg hover:bg-white/10 transition-all duration-300">
+              Dashboard
+            </Link>
+            <span className="px-4 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm">
+              {user?.user_metadata?.username || user?.email}
+            </span>
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105"
+            >
+              Sign Out
+            </button>
           </div>
         </nav>
 
-        {/* Enhanced Main Content */}
-        <div className="relative z-10 max-w-6xl mx-auto px-6 py-12">
-          <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <h1 className="text-4xl font-bold text-white mb-2 relative">
-              Contests
-              <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
-            </h1>
-            <p className="text-gray-300">Browse and join available contests</p>
-          </div>
-
-          {/* Enhanced Loading State */}
-          <LoadingState 
-            isLoading={loading}
-            skeleton={<CardLoading count={6} />}
-          >
-            <div className="flex justify-center items-center py-12">
-              <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          </LoadingState>
-
-          {/* Enhanced Error State */}
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-8 backdrop-blur-sm">
-              <p className="text-red-400">{error}</p>
-            </div>
-          )}
-
-          {!loading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {contests.length === 0 ? (
-                <div className="md:col-span-2 lg:col-span-3 text-center py-12">
-                  <div className="text-6xl mb-4 animate-bounce">⏳</div>
-                  <h3 className="text-2xl font-semibold text-white mb-2">No Contests Available</h3>
-                  <p className="text-gray-300">Please check back later.</p>
+        <div className="flex">
+          {/* Sidebar */}
+          <aside className="w-64 bg-white/5 backdrop-blur-lg border-r border-white/10 min-h-screen">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-white mb-6">Contests</h2>
+              <nav className="space-y-2">
+                <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                  </svg>
+                  Overview
+                </Link>
+                <Link href="/problems" className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Problems
+                </Link>
+                <Link href="/contests" className="flex items-center gap-3 px-4 py-3 text-green-400 bg-green-400/10 rounded-lg border border-green-400/20">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Contests
+                </Link>
+                <div className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300 cursor-not-allowed">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Statistics
                 </div>
-              ) : (
-                contests.map((c, index) => (
-                  <div 
-                    key={c.id} 
-                    className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/10 group cursor-pointer ${
-                      hoveredContest === c.id ? 'bg-white/15 scale-105 shadow-lg shadow-green-400/20 border-green-400/50' : ''
-                    }`}
-                    onMouseEnter={() => setHoveredContest(c.id)}
-                    onMouseLeave={() => setHoveredContest(null)}
-                    style={{ transitionDelay: `${index * 0.1}s` }}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className={`text-xl font-semibold transition-colors duration-300 ${
-                        hoveredContest === c.id ? 'text-green-400' : 'text-white group-hover:text-green-400'
-                      }`}>
-                        {c.name}
-                      </h3>
-                      <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm animate-pulse">
-                        Active
-                      </span>
-                    </div>
-                    
-                    <p className="text-gray-300 mt-3 line-clamp-3 leading-relaxed">
-                      {c.description || 'No description'}
-                    </p>
-                    
-                    <div className="mt-6 space-y-4">
-                      <div className="flex items-center justify-between text-gray-300 text-sm">
-                        <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                          Length: <span className="text-white font-medium">{c.length} min</span>
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
-                          Contest
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        {joinedContestId === c.id ? (
-                          <button
-                            onClick={() => router.push(`/contests/${c.id}`)}
-                            className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25 relative overflow-hidden group/btn"
-                          >
-                            <span className="relative z-10 flex items-center gap-2">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              View Contest
-                            </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
-                          </button>
-                        ) : joinedContestId ? (
-                          <button disabled className="px-6 py-3 bg-gray-600 text-white rounded-lg opacity-60 cursor-not-allowed flex items-center gap-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            Already in Contest
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleJoinContest(c.id, c.name, c.length)}
-                            disabled={joiningContest === c.id}
-                            className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group/btn"
-                          >
-                            <span className="relative z-10 flex items-center gap-2">
-                              {joiningContest === c.id ? (
-                                <>
-                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                  Joining...
-                                </>
-                              ) : (
-                                <>
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                  </svg>
-                                  Join Contest
-                                </>
-                              )}
-                            </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <ContestProblemsPreview contestId={c.id} />
-                  </div>
-                ))
-              )}
+              </nav>
             </div>
-          )}
+          </aside>
+
+          {/* Main Content */}
+          <main className="flex-1 p-8">
+            <LoadingState 
+              isLoading={!isLoaded}
+              skeleton={
+                <div className="mb-8 space-y-4">
+                  <SkeletonText lines={2} width="60%" />
+                  <SkeletonText lines={1} width="40%" />
+                </div>
+              }
+            >
+              <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                <h1 className="text-4xl font-bold text-white mb-4 relative">
+                  Available Contests
+                  <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
+                </h1>
+                <p className="text-gray-300 text-lg">
+                  Browse and join available contests
+                </p>
+              </div>
+            </LoadingState>
+
+            {/* Enhanced Loading State */}
+            <LoadingState 
+              isLoading={loading}
+              skeleton={<CardLoading count={6} />}
+            >
+              <div className="flex justify-center items-center py-12">
+                <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            </LoadingState>
+
+            {/* Enhanced Error State */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-8 backdrop-blur-sm">
+                <p className="text-red-400">{error}</p>
+              </div>
+            )}
+
+            {/* Contests List */}
+            {!loading && !error && (
+              <div className="space-y-4">
+                {contests.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4 animate-bounce">⏳</div>
+                    <h3 className="text-2xl font-semibold text-white mb-2">No Contests Available</h3>
+                    <p className="text-gray-300">Please check back later.</p>
+                  </div>
+                ) : (
+                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 overflow-hidden">
+                    {/* Table Header */}
+                    <div className="bg-white/5 px-6 py-4 border-b border-white/10">
+                      <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-300">
+                        <div className="col-span-4">Contest</div>
+                        <div className="col-span-2">Duration</div>
+                        <div className="col-span-2">Status</div>
+                        <div className="col-span-2">Participants</div>
+                        <div className="col-span-2">Actions</div>
+                      </div>
+                    </div>
+                    
+                    {/* Table Body */}
+                    <div className="divide-y divide-white/10">
+                      {contests.map((contest, index) => (
+                        <div
+                          key={contest.id}
+                          className={`px-6 py-4 hover:bg-white/5 transition-all duration-300 ${
+                            hoveredContest === contest.id ? 'bg-white/10' : ''
+                          }`}
+                          onMouseEnter={() => setHoveredContest(contest.id)}
+                          onMouseLeave={() => setHoveredContest(null)}
+                          style={{ transitionDelay: `${index * 0.05}s` }}
+                        >
+                          <div className="grid grid-cols-12 gap-4 items-center">
+                            <div className="col-span-4">
+                              <h3 className="text-lg font-semibold text-white mb-1">
+                                {contest.name}
+                              </h3>
+                              <p className="text-gray-400 text-sm line-clamp-2">
+                                {contest.description || 'No description available'}
+                              </p>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-white font-medium">
+                                {contest.length} min
+                              </span>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm">
+                                Active
+                              </span>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-gray-400 text-sm">
+                                {Math.floor(Math.random() * 50) + 10} participants
+                              </span>
+                            </div>
+                            <div className="col-span-2">
+                              {joinedContestId === contest.id ? (
+                                <Link
+                                  href={`/contests/${contest.id}`}
+                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105"
+                                >
+                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                  View
+                                </Link>
+                              ) : (
+                                <button
+                                  onClick={() => handleJoinContest(contest.id, contest.name, contest.length)}
+                                  disabled={joiningContest === contest.id || (joinedContestId && joinedContestId !== contest.id)}
+                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                >
+                                  {joiningContest === contest.id ? (
+                                    <>
+                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                      Joining...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                      </svg>
+                                      Join
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </main>
         </div>
       </div>
     </AuthGuard>
   );
 }
-
-function ContestProblemsPreview({ contestId }: { contestId: string }) {
-  const [items, setItems] = useState<{ id: string; name: string }[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [hoveredProblem, setHoveredProblem] = useState<string | null>(null);
-  
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`/api/contests/${contestId}/problems`);
-        const json = await res.json();
-        if (res.ok) setItems((json.problems || []).slice(0, 3));
-      } finally { setLoaded(true); }
-    })();
-  }, [contestId]);
-  
-  if (!loaded) return (
-    <div className="mt-4 flex items-center gap-2">
-      <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
-      <span className="text-gray-400 text-sm">Loading problems...</span>
-    </div>
-  );
-  
-  if (items.length === 0) return (
-    <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-      <div className="flex items-center gap-2 text-gray-400 text-sm">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        No problems yet
-      </div>
-    </div>
-  );
-  
-  return (
-    <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
-      <div className="flex items-center gap-2 mb-3">
-        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <span className="font-medium text-white text-sm">Problems ({items.length})</span>
-      </div>
-      <div className="space-y-2">
-        {items.map((p, index) => (
-          <div 
-            key={p.id}
-            className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-300 transform hover:scale-105 ${
-              hoveredProblem === p.id ? 'bg-green-400/10 border border-green-400/20' : 'hover:bg-white/5'
-            }`}
-            onMouseEnter={() => setHoveredProblem(p.id)}
-            onMouseLeave={() => setHoveredProblem(null)}
-            style={{ transitionDelay: `${index * 0.05}s` }}
-          >
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-gray-300 text-sm truncate">{p.name}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-
