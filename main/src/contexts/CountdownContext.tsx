@@ -7,8 +7,14 @@ interface CountdownContextType {
   timeRemaining: number | null;
   contestName: string | null;
   isActive: boolean;
+  contestId: string | null;
   startCountdown: (contestId: string, contestName: string, durationMinutes: number) => void;
   stopCountdown: () => void;
+  pauseCountdown: () => void;
+  resumeCountdown: () => void;
+  isPaused: boolean;
+  totalDuration: number | null;
+  progressPercentage: number;
 }
 
 const CountdownContext = createContext<CountdownContextType | undefined>(undefined);
@@ -19,6 +25,9 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
   const [contestName, setContestName] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [contestId, setContestId] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [totalDuration, setTotalDuration] = useState<number | null>(null);
+  const [progressPercentage, setProgressPercentage] = useState(0);
 
   // Clear countdown when user changes (including logout)
   useEffect(() => {
@@ -27,14 +36,28 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
       setContestName(null);
       setTimeRemaining(null);
       setIsActive(false);
+      setIsPaused(false);
+      setTotalDuration(null);
+      setProgressPercentage(0);
     }
   }, [user]);
+
+  // Update progress percentage
+  useEffect(() => {
+    if (totalDuration && timeRemaining !== null) {
+      const percentage = Math.max(0, ((totalDuration - timeRemaining) / totalDuration) * 100);
+      setProgressPercentage(percentage);
+    }
+  }, [timeRemaining, totalDuration]);
 
   const startCountdown = useCallback(async (id: string, name: string, durationMinutes: number) => {
     setContestId(id);
     setContestName(name);
-    setTimeRemaining(durationMinutes * 60);
+    const durationSeconds = durationMinutes * 60;
+    setTimeRemaining(durationSeconds);
+    setTotalDuration(durationSeconds);
     setIsActive(true);
+    setIsPaused(false);
     
     // Store in database for persistence
     try {
@@ -61,6 +84,9 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     setContestName(null);
     setTimeRemaining(null);
     setIsActive(false);
+    setIsPaused(false);
+    setTotalDuration(null);
+    setProgressPercentage(0);
     
     // Remove from database
     try {
@@ -79,6 +105,14 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
       console.error('Error removing countdown from database:', error);
     }
   }, [user?.id, contestId]);
+
+  const pauseCountdown = useCallback(() => {
+    setIsPaused(true);
+  }, []);
+
+  const resumeCountdown = useCallback(() => {
+    setIsPaused(false);
+  }, []);
 
   const checkExpiration = useCallback(async () => {
     if (!contestId || !user?.id) return;
@@ -174,7 +208,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
 
   // Update countdown every second
   useEffect(() => {
-    if (!isActive || timeRemaining === null) return;
+    if (!isActive || timeRemaining === null || isPaused) return;
 
     const interval = setInterval(() => {
       setTimeRemaining(prev => {
@@ -188,14 +222,20 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isActive, timeRemaining, checkExpiration]);
+  }, [isActive, timeRemaining, isPaused, checkExpiration]);
 
   const value = {
     timeRemaining,
     contestName,
     isActive,
+    contestId,
     startCountdown,
     stopCountdown,
+    pauseCountdown,
+    resumeCountdown,
+    isPaused,
+    totalDuration,
+    progressPercentage,
   };
 
   return <CountdownContext.Provider value={value}>{children}</CountdownContext.Provider>;
