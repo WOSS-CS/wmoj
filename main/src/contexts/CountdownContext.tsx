@@ -20,29 +20,55 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [contestId, setContestId] = useState<string | null>(null);
 
-  const startCountdown = useCallback((id: string, name: string, durationMinutes: number) => {
-    const endTime = Date.now() + (durationMinutes * 60 * 1000);
+  const startCountdown = useCallback(async (id: string, name: string, durationMinutes: number) => {
     setContestId(id);
     setContestName(name);
     setTimeRemaining(durationMinutes * 60);
     setIsActive(true);
     
-    // Store in localStorage for persistence
-    localStorage.setItem('contestCountdown', JSON.stringify({
-      contestId: id,
-      contestName: name,
-      endTime,
-      durationMinutes
-    }));
-  }, []);
+    // Store in database for persistence
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      
+      await supabase.from('countdown_timers').upsert({
+        user_id: user?.id,
+        contest_id: id,
+        started_at: new Date().toISOString(),
+        duration_minutes: durationMinutes,
+        is_active: true
+      });
+    } catch (error) {
+      console.error('Error saving countdown to database:', error);
+    }
+  }, [user]);
 
-  const stopCountdown = useCallback(() => {
+  const stopCountdown = useCallback(async () => {
     setContestId(null);
     setContestName(null);
     setTimeRemaining(null);
     setIsActive(false);
-    localStorage.removeItem('contestCountdown');
-  }, []);
+    
+    // Remove from database
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      
+      if (user?.id && contestId) {
+        await supabase.from('countdown_timers').delete()
+          .eq('user_id', user.id)
+          .eq('contest_id', contestId);
+      }
+    } catch (error) {
+      console.error('Error removing countdown from database:', error);
+    }
+  }, [user, contestId]);
 
   const checkExpiration = useCallback(async () => {
     if (!contestId || !user) return;
@@ -69,30 +95,48 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     }
   }, [contestId, user, stopCountdown]);
 
-  // Load countdown from localStorage on mount
+  // Load countdown from database on mount
   useEffect(() => {
-    const stored = localStorage.getItem('contestCountdown');
-    if (stored) {
+    (async () => {
+      if (!user) return;
+      
       try {
-        const data = JSON.parse(stored);
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        
+        const { data: timer, error } = await supabase
+          .from('countdown_timers')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .single();
+        
+        if (error || !timer) return;
+        
+        const startTime = new Date(timer.started_at).getTime();
         const now = Date.now();
-        const remaining = Math.max(0, Math.floor((data.endTime - now) / 1000));
+        const elapsed = Math.floor((now - startTime) / 1000);
+        const remaining = Math.max(0, (timer.duration_minutes * 60) - elapsed);
         
         if (remaining > 0) {
-          setContestId(data.contestId);
-          setContestName(data.contestName);
+          setContestId(timer.contest_id);
+          setContestName(timer.contest_id); // We'll need to fetch the name separately
           setTimeRemaining(remaining);
           setIsActive(true);
         } else {
           // Countdown expired, clean up
-          localStorage.removeItem('contestCountdown');
+          await supabase.from('countdown_timers').delete()
+            .eq('user_id', user.id)
+            .eq('contest_id', timer.contest_id);
         }
       } catch (error) {
-        console.error('Error loading countdown from localStorage:', error);
-        localStorage.removeItem('contestCountdown');
+        console.error('Error loading countdown from database:', error);
       }
-    }
-  }, []);
+    })();
+  }, [user]);
 
   // Update countdown every second
   useEffect(() => {

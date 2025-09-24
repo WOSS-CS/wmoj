@@ -47,6 +47,23 @@ export async function POST(
       return NextResponse.json({ error: 'Contest is not active' }, { status: 403 });
     }
 
+    // Check if user has left this contest before
+    const { data: historyData, error: historyErr } = await supabase
+      .from('join_history')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('contest_id', id)
+      .limit(1);
+
+    if (historyErr) {
+      console.log('Join history check error:', historyErr);
+      return NextResponse.json({ error: 'Failed to check join history' }, { status: 500 });
+    }
+
+    if (historyData && historyData.length > 0) {
+      return NextResponse.json({ error: 'You have already left this contest and cannot rejoin' }, { status: 403 });
+    }
+
     // Check if user is already in any contest
     const { data: existing, error: existErr } = await supabase
       .from('contest_participants')
@@ -65,6 +82,19 @@ export async function POST(
         return NextResponse.json({ ok: true, message: 'Already joined' });
       }
       return NextResponse.json({ error: 'User already joined another contest' }, { status: 409 });
+    }
+
+    // Record join in history
+    const { error: joinHistoryErr } = await supabase
+      .from('join_history')
+      .insert({
+        user_id: userId,
+        contest_id: id,
+        joined_at: new Date().toISOString()
+      });
+
+    if (joinHistoryErr) {
+      console.log('Join history insert error:', joinHistoryErr);
     }
 
     // Insert participation
