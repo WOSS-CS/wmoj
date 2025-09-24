@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseServer';
+import { getServerSupabaseFromToken } from '@/lib/supabaseServer';
 
 export async function POST(
   request: Request,
