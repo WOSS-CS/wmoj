@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
 import { LoadingState, SkeletonText } from '@/components/LoadingStates';
+import { MarkdownEditor } from '@/components/MarkdownEditor';
 import { useRouter } from 'next/navigation';
 
 interface Contest {
@@ -247,18 +248,11 @@ export default function CreateProblemPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="content" className="block text-sm font-medium text-white mb-2">
-                    Problem Description *
-                  </label>
-                  <textarea
-                    id="content"
-                    name="content"
+                  <MarkdownEditor
                     value={formData.content}
-                    onChange={handleChange}
-                    required
-                    rows={6}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none"
-                    placeholder="Enter problem description, constraints, and examples"
+                    onChange={(value) => setFormData(prev => ({ ...prev, content: value }))}
+                    placeholder="Enter problem description, constraints, and examples using markdown..."
+                    height={500}
                   />
                 </div>
 
