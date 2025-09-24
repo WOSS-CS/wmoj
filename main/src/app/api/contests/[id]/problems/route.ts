@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = getServerSupabase();
+    const supabase = await getServerSupabase();
     if (!id) return NextResponse.json({ error: 'contest id required' }, { status: 400 });
 
     // Only return problems for active contests
