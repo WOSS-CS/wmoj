@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getServerSupabase } from '@/lib/supabaseServer';
 
 export async function POST(
   request: Request,
@@ -7,6 +7,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const supabase = getServerSupabase();
     const body = await request.json().catch(() => ({}));
     const userId: string | undefined = body?.userId;
 
