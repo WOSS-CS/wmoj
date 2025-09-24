@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 
 export default function ContestPage() {
   const params = useParams<{ id: string }>();
-  const { user, signOut } = useAuth();
+  const { user, session, signOut } = useAuth();
   const { timeRemaining, isActive } = useCountdown();
   const router = useRouter();
   const [contest, setContest] = useState<Contest | null>(null);
@@ -84,10 +84,7 @@ export default function ContestPage() {
     
     try {
       setLeaving(true);
-      const token = (await import('@supabase/supabase-js')).createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      ).auth.getSession().then(s => s.data.session?.access_token);
+      const token = session?.access_token;
       
       const res = await fetch(`/api/contests/${params.id}/leave`, {
         method: 'POST',
