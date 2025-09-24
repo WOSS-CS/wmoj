@@ -2,6 +2,9 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { AnimationWrapper, StaggeredAnimation, HoverAnimation } from '@/components/AnimationWrapper';
+import { RippleEffect, MagneticEffect, TiltEffect } from '@/components/MicroInteractions';
+import { useAnimation, useHoverAnimation, useMousePosition } from '@/hooks/useAnimations';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -96,46 +99,52 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <StaggeredAnimation animation="fadeInUp" staggerDelay={200}>
             {[
               { icon: '📊', title: 'Statistics', desc: 'Track your progress and achievements', action: 'View Stats', href: null },
               { icon: '💻', title: 'Problems', desc: 'Browse and solve coding challenges', action: 'Start Solving', href: '/problems' },
               { icon: '🏆', title: 'Contests', desc: 'Join live competitions', action: 'View Contests', href: '/contests' }
             ].map((card, index) => (
-              <div 
-                key={index}
-                className={`bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/10 group cursor-pointer ${
-                  hoveredCard === index ? 'bg-white/15 scale-105 shadow-lg shadow-green-400/20' : ''
-                }`}
-                onMouseEnter={() => setHoveredCard(index)}
-                onMouseLeave={() => setHoveredCard(null)}
-                style={{ transitionDelay: `${index * 0.1}s` }}
-              >
-                <div className={`text-6xl mb-6 transition-all duration-300 ${hoveredCard === index ? 'scale-110' : 'group-hover:scale-110'}`}>
-                  {card.icon}
-                </div>
-                <h3 className={`text-xl font-semibold mb-4 transition-colors duration-300 ${hoveredCard === index ? 'text-green-400' : 'text-white group-hover:text-green-400'}`}>
-                  {card.title}
-                </h3>
-                <p className="text-gray-300 mb-6 leading-relaxed">
-                  {card.desc}
-                </p>
-                {card.href ? (
-                  <Link
-                    href={card.href}
-                    className="block w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 text-center relative overflow-hidden group/btn"
-                  >
-                    <span className="relative z-10">{card.action}</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
-                  </Link>
-                ) : (
-                  <button className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25">
-                    {card.action}
-                  </button>
-                )}
-              </div>
+              <TiltEffect key={index} maxTilt={8}>
+                <MagneticEffect strength={0.3}>
+                  <RippleEffect color="green">
+                    <HoverAnimation effect="lift">
+                      <div 
+                        className={`bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/10 group cursor-pointer smooth-transition ${
+                          hoveredCard === index ? 'bg-white/15 scale-105 shadow-lg shadow-green-400/20' : ''
+                        }`}
+                        onMouseEnter={() => setHoveredCard(index)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                      >
+                        <div className={`text-6xl mb-6 transition-all duration-300 ${hoveredCard === index ? 'scale-110 animate-wiggle' : 'group-hover:scale-110'}`}>
+                          {card.icon}
+                        </div>
+                        <h3 className={`text-xl font-semibold mb-4 transition-colors duration-300 ${hoveredCard === index ? 'text-green-400' : 'text-white group-hover:text-green-400'}`}>
+                          {card.title}
+                        </h3>
+                        <p className="text-gray-300 mb-6 leading-relaxed">
+                          {card.desc}
+                        </p>
+                        {card.href ? (
+                          <Link
+                            href={card.href}
+                            className="block w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 text-center relative overflow-hidden group/btn hover-glow"
+                          >
+                            <span className="relative z-10">{card.action}</span>
+                            <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
+                          </Link>
+                        ) : (
+                          <button className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25">
+                            {card.action}
+                          </button>
+                        )}
+                      </div>
+                    </HoverAnimation>
+                  </RippleEffect>
+                </MagneticEffect>
+              </TiltEffect>
             ))}
-          </div>
+          </StaggeredAnimation>
 
           <div className={`bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.3s' }}>
             <h2 className="text-2xl font-bold text-white mb-6 relative">
