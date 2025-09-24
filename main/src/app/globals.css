@@ -397,6 +397,79 @@
   color: white;
 }
 
+/* Markdown Editor Styles */
+.markdown-editor .w-md-editor {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.markdown-editor .w-md-editor-toolbar {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.markdown-editor .w-md-editor-toolbar button {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.markdown-editor .w-md-editor-toolbar button:hover {
+  background-color: rgba(34, 197, 94, 0.2) !important;
+  color: rgba(34, 197, 94, 1) !important;
+}
+
+.markdown-editor .w-md-editor-text-pre,
+.markdown-editor .w-md-editor-text-input {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.markdown-editor .w-md-editor-preview {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.markdown-editor .w-md-editor-preview h1,
+.markdown-editor .w-md-editor-preview h2,
+.markdown-editor .w-md-editor-preview h3,
+.markdown-editor .w-md-editor-preview h4,
+.markdown-editor .w-md-editor-preview h5,
+.markdown-editor .w-md-editor-preview h6 {
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+.markdown-editor .w-md-editor-preview p {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.markdown-editor .w-md-editor-preview code {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  color: rgba(34, 197, 94, 1) !important;
+}
+
+.markdown-editor .w-md-editor-preview pre {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.markdown-editor .w-md-editor-preview blockquote {
+  border-left: 4px solid rgba(34, 197, 94, 0.8) !important;
+  background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+.markdown-editor .w-md-editor-preview table {
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.markdown-editor .w-md-editor-preview th {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+.markdown-editor .w-md-editor-preview td {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

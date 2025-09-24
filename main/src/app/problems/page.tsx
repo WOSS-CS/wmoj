@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
+import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { Problem } from '@/types/problem';
 
 export default function ProblemsPage() {
