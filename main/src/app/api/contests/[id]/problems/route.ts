@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getServerSupabase } from '@/lib/supabaseServer';
 
 export async function GET(
   request: Request,
@@ -7,6 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const supabase = getServerSupabase();
     if (!id) return NextResponse.json({ error: 'contest id required' }, { status: 400 });
 
     // Only return problems for active contests
