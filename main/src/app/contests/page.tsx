@@ -5,12 +5,15 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { Contest } from '@/types/contest';
+import { useRouter } from 'next/navigation';
 
 export default function ContestsPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, session } = useAuth();
   const [contests, setContests] = useState<Contest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [joinedContestId, setJoinedContestId] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     (async () => {
@@ -27,6 +30,20 @@ export default function ContestsPage() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      if (!session) return;
+      const token = session.access_token;
+      const res = await fetch('/api/contests/participation', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setJoinedContestId(json.contest_id);
+      }
+    })();
+  }, [session]);
 
   const handleSignOut = async () => { await signOut(); };
 
@@ -90,11 +107,20 @@ export default function ContestsPage() {
                     <p className="text-gray-300 mt-3 line-clamp-3">{c.description || 'No description'}</p>
                     <div className="mt-4 flex items-center justify-between text-gray-300 text-sm">
                       <span>Length: <span className="text-white font-medium">{c.length} min</span></span>
+                      {joinedContestId === c.id ? (
+                        <button
+                          onClick={() => router.push(`/contests/${c.id}`)}
+                          className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all"
+                        >
+                          View
+                        </button>
+                      ) : joinedContestId ? (
+                        <button disabled className="px-4 py-2 bg-gray-600 text-white rounded-lg opacity-60 cursor-not-allowed">Join</button>
+                      ) : (
                         <button
                         onClick={async () => {
                           try {
-                              // get current access token from client supabase via context
-                              const token = (await (await import('@supabase/supabase-js')).createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!).auth.getSession()).data.session?.access_token;
+                            const token = session?.access_token;
                               const res = await fetch(`/api/contests/${c.id}/join`, {
                               method: 'POST',
                                 headers: {
@@ -105,7 +131,8 @@ export default function ContestsPage() {
                             });
                             const json = await res.json();
                             if (!res.ok) throw new Error(json?.error || 'Failed to join contest');
-                            alert('Joined contest successfully');
+                            setJoinedContestId(c.id);
+                            router.push(`/contests/${c.id}`);
                           } catch (e) {
                             alert(e instanceof Error ? e.message : 'Failed to join contest');
                           }
@@ -113,7 +140,8 @@ export default function ContestsPage() {
                         className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all"
                       >
                         Join
-                      </button>
+                        </button>
+                      )}
                     </div>
                     <ContestProblemsPreview contestId={c.id} />
                   </div>
