@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import type { Contest } from '@/types/contest';
 
 export default function ContestPage() {
   const params = useParams<{ id: string }>();
   const { user, signOut } = useAuth();
-  const router = useRouter();
-  const [contest, setContest] = useState<any>(null);
-  const [problems, setProblems] = useState<any[]>([]);
+  const [contest, setContest] = useState<Contest | null>(null);
+  const [problems, setProblems] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
