@@ -9,28 +9,7 @@ export async function GET(
     const { id } = await params;
     const supabase = await getServerSupabase();
 
-    // Get all submissions for this contest
-    const { data: submissions, error: submissionsErr } = await supabase
-      .from('submissions')
-      .select(`
-        user_id,
-        problem_id,
-        passed,
-        created_at
-      `)
-      .in('problem_id', 
-        supabase
-          .from('problems')
-          .select('id')
-          .eq('contest', id)
-      );
-
-    if (submissionsErr) {
-      console.log('Submissions fetch error:', submissionsErr);
-      return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 });
-    }
-
-    // Get all problems for this contest
+    // Get all problems for this contest first
     const { data: problems, error: problemsErr } = await supabase
       .from('problems')
       .select('id')
@@ -42,6 +21,26 @@ export async function GET(
     }
 
     const problemIds = problems?.map(p => p.id) || [];
+    if (problemIds.length === 0) {
+      return NextResponse.json({ leaderboard: [] });
+    }
+
+    // Get all submissions for this contest
+    const { data: submissions, error: submissionsErr } = await supabase
+      .from('submissions')
+      .select(`
+        user_id,
+        problem_id,
+        passed,
+        created_at
+      `)
+      .in('problem_id', problemIds);
+
+    if (submissionsErr) {
+      console.log('Submissions fetch error:', submissionsErr);
+      return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 });
+    }
+
     const totalProblems = problemIds.length;
 
     // Calculate scores per user
