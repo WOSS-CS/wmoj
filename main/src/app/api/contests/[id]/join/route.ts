@@ -7,7 +7,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const supabase = getServerSupabase();
+    const supabase = await getServerSupabase();
     const body = await request.json().catch(() => ({}));
     const userId: string | undefined = body?.userId;
 
