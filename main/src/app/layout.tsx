@@ -26,13 +26,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased smooth-transition`}
       >
         <AuthProvider>
           <CountdownProvider>
-            {children}
+            <div className="animate-fade-in-up">
+              {children}
+            </div>
             <CountdownOverlay />
           </CountdownProvider>
         </AuthProvider>
