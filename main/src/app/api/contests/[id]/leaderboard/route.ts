@@ -31,7 +31,8 @@ export async function GET(
       .select(`
         user_id,
         problem_id,
-        passed,
+        results,
+        summary,
         created_at
       `)
       .in('problem_id', problemIds);
@@ -63,7 +64,18 @@ export async function GET(
       }
 
       const userData = userScores.get(userId)!;
-      if (submission.passed && !userData.solvedProblems.has(submission.problem_id)) {
+      
+      // Calculate if submission passed based on results
+      let passed = false;
+      if (submission.summary && submission.summary.passed > 0) {
+        // If summary shows passed test cases, consider it a pass
+        passed = submission.summary.passed === submission.summary.total;
+      } else if (submission.results && Array.isArray(submission.results)) {
+        // Check if all test cases passed
+        passed = submission.results.every((result: any) => result.passed === true);
+      }
+      
+      if (passed && !userData.solvedProblems.has(submission.problem_id)) {
         userData.solvedProblems.add(submission.problem_id);
         userData.totalScore += 1;
       }
