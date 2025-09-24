@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountdown } from '@/contexts/CountdownContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
 import { Contest } from '@/types/contest';
 import { useRouter } from 'next/navigation';
 
@@ -145,11 +146,14 @@ export default function ContestsPage() {
           </div>
 
           {/* Enhanced Loading State */}
-          {loading && (
+          <LoadingState 
+            isLoading={loading}
+            skeleton={<CardLoading count={6} />}
+          >
             <div className="flex justify-center items-center py-12">
               <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
             </div>
-          )}
+          </LoadingState>
 
           {/* Enhanced Error State */}
           {error && (

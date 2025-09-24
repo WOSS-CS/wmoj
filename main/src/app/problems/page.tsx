@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
 import { Problem } from '@/types/problem';
 
 export default function ProblemsPage() {
@@ -127,11 +128,14 @@ export default function ProblemsPage() {
           </div>
 
           {/* Enhanced Loading State */}
-          {loading && (
+          <LoadingState 
+            isLoading={loading}
+            skeleton={<CardLoading count={6} />}
+          >
             <div className="flex justify-center items-center py-12">
               <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
             </div>
-          )}
+          </LoadingState>
 
           {/* Enhanced Error State */}
           {error && (

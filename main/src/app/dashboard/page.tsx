@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AnimationWrapper, StaggeredAnimation, HoverAnimation } from '@/components/AnimationWrapper';
 import { RippleEffect, MagneticEffect, TiltEffect } from '@/components/MicroInteractions';
+import { LoadingState, CardLoading, SkeletonText, SkeletonAvatar } from '@/components/LoadingStates';
 import { useAnimation, useHoverAnimation, useMousePosition } from '@/hooks/useAnimations';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -89,22 +90,36 @@ export default function DashboardPage() {
 
         {/* Enhanced Dashboard Content */}
         <div className="relative z-10 max-w-6xl mx-auto px-6 py-12">
-          <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <h1 className="text-4xl font-bold text-white mb-4 relative">
-              Welcome to your Dashboard
-              <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
-            </h1>
-            <p className="text-gray-300 text-lg">
-              Ready to tackle some competitive programming challenges?
-            </p>
-          </div>
+          <LoadingState 
+            isLoading={!isLoaded}
+            skeleton={
+              <div className="mb-8 space-y-4">
+                <SkeletonText lines={2} width="60%" />
+                <SkeletonText lines={1} width="40%" />
+              </div>
+            }
+          >
+            <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+              <h1 className="text-4xl font-bold text-white mb-4 relative">
+                Welcome to your Dashboard
+                <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
+              </h1>
+              <p className="text-gray-300 text-lg">
+                Ready to tackle some competitive programming challenges?
+              </p>
+            </div>
+          </LoadingState>
 
-          <StaggeredAnimation animation="fadeInUp" staggerDelay={200}>
-            {[
-              { icon: '📊', title: 'Statistics', desc: 'Track your progress and achievements', action: 'View Stats', href: null },
-              { icon: '💻', title: 'Problems', desc: 'Browse and solve coding challenges', action: 'Start Solving', href: '/problems' },
-              { icon: '🏆', title: 'Contests', desc: 'Join live competitions', action: 'View Contests', href: '/contests' }
-            ].map((card, index) => (
+          <LoadingState 
+            isLoading={!isLoaded}
+            skeleton={<CardLoading count={3} />}
+          >
+            <StaggeredAnimation animation="fadeInUp" staggerDelay={200}>
+              {[
+                { icon: '📊', title: 'Statistics', desc: 'Track your progress and achievements', action: 'View Stats', href: null },
+                { icon: '💻', title: 'Problems', desc: 'Browse and solve coding challenges', action: 'Start Solving', href: '/problems' },
+                { icon: '🏆', title: 'Contests', desc: 'Join live competitions', action: 'View Contests', href: '/contests' }
+              ].map((card, index) => (
               <TiltEffect key={index} maxTilt={8}>
                 <MagneticEffect strength={0.3}>
                   <RippleEffect color="green">
@@ -145,6 +160,7 @@ export default function DashboardPage() {
               </TiltEffect>
             ))}
           </StaggeredAnimation>
+          </LoadingState>
 
           <div className={`bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.3s' }}>
             <h2 className="text-2xl font-bold text-white mb-6 relative">
