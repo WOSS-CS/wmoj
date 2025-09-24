@@ -41,6 +41,8 @@ export async function GET(
       console.log('Submissions fetch error:', submissionsErr);
       return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 });
     }
+    
+    console.log('Submissions query result:', { submissions, submissionsErr, problemIds });
 
     const totalProblems = problemIds.length;
 
@@ -83,6 +85,9 @@ export async function GET(
 
     // Get user details for all participants
     const userIds = Array.from(userScores.keys());
+    console.log('User IDs from submissions:', userIds);
+    console.log('User scores map:', userScores);
+    
     const { data: users, error: usersErr } = await supabase
       .from('users')
       .select('id, username, email')
@@ -94,12 +99,14 @@ export async function GET(
     }
 
     console.log('Fetched users:', users?.length, 'for user IDs:', userIds);
+    console.log('Users data:', users);
 
     // Create leaderboard entries
     const leaderboard = Array.from(userScores.values())
       .map(userData => {
         const user = users?.find(u => u.id === userData.userId);
         console.log('User data for', userData.userId, ':', user);
+        console.log('Available users:', users?.map(u => ({ id: u.id, username: u.username, email: u.email })));
         return {
           user_id: userData.userId,
           username: user?.username || user?.email?.split('@')[0] || 'Unknown',
