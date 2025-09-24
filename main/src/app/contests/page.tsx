@@ -90,12 +90,17 @@ export default function ContestsPage() {
                     <p className="text-gray-300 mt-3 line-clamp-3">{c.description || 'No description'}</p>
                     <div className="mt-4 flex items-center justify-between text-gray-300 text-sm">
                       <span>Length: <span className="text-white font-medium">{c.length} min</span></span>
-                      <button
+                        <button
                         onClick={async () => {
                           try {
-                            const res = await fetch(`/api/contests/${c.id}/join`, {
+                              // get current access token from client supabase via context
+                              const token = (await (await import('@supabase/supabase-js')).createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!).auth.getSession()).data.session?.access_token;
+                              const res = await fetch(`/api/contests/${c.id}/join`, {
                               method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  ...(token ? { Authorization: `Bearer ${token}` } : {})
+                                },
                               body: JSON.stringify({ userId: user?.id })
                             });
                             const json = await res.json();
