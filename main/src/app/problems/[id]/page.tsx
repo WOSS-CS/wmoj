@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { LoadingState, CardLoading, SkeletonText, CodeEditorLoading } from '@/components/LoadingStates';
+import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { Problem } from '@/types/problem';
 import { supabase } from '@/lib/supabase';
 import { checkContestParticipation } from '@/utils/participationCheck';
@@ -382,9 +383,7 @@ export default function ProblemPage() {
                   <div className="transition-all duration-300">
                     {activeTab === 'description' && (
                       <div className="prose prose-invert max-w-none">
-                        <div className="text-gray-300 whitespace-pre-wrap leading-relaxed">
-                          {problem.content}
-                        </div>
+                        <MarkdownRenderer content={problem.content} />
                       </div>
                     )}
                     
