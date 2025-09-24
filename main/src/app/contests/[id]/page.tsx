@@ -13,11 +13,19 @@ import { useRouter } from 'next/navigation';
 export default function ContestPage() {
   const params = useParams<{ id: string }>();
   const { user, signOut } = useAuth();
-  const { timeRemaining, contestName, isActive } = useCountdown();
+  const { timeRemaining, isActive } = useCountdown();
   const router = useRouter();
   const [contest, setContest] = useState<Contest | null>(null);
   const [problems, setProblems] = useState<{ id: string; name: string }[]>([]);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<Array<{
+    user_id: string;
+    username: string;
+    email: string;
+    total_score: number;
+    solved_problems: number;
+    total_problems: number;
+    rank: number;
+  }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [accessChecked, setAccessChecked] = useState(false);
