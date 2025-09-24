@@ -20,6 +20,19 @@ export async function POST(
     }
     const userId = authData.user.id;
 
+    // Record in join_history
+    const { error: historyErr } = await supabase
+      .from('join_history')
+      .upsert({
+        user_id: userId,
+        contest_id: id,
+        left_at: new Date().toISOString()
+      });
+
+    if (historyErr) {
+      console.log('Join history error:', historyErr);
+    }
+
     // Remove user from contest
     const { error: deleteErr } = await supabase
       .from('contest_participants')
