@@ -9,9 +9,17 @@ export async function POST(
     const { id } = await params;
     const supabase = await getServerSupabase();
     const body = await request.json().catch(() => ({}));
-    const userId: string | undefined = body?.userId;
+    const requestedUserId: string | undefined = body?.userId;
 
-    console.log('Join contest request:', { id, userId, body });
+    // Verify authenticated user via Supabase auth context (RLS depends on this)
+    const { data: authData, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !authData?.user) {
+      console.log('Join contest auth error:', authErr);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = authData.user.id;
+
+    console.log('Join contest request:', { id, userId, body, requestedUserId });
 
     if (!id || !userId) {
       return NextResponse.json({ error: 'contest id and userId are required' }, { status: 400 });
