@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { LoadingState, CardLoading, SkeletonText, CodeEditorLoading } from '@/components/LoadingStates';
 import { Problem } from '@/types/problem';
 import { supabase } from '@/lib/supabase';
 import { checkContestParticipation } from '@/utils/participationCheck';
@@ -294,11 +295,36 @@ export default function ProblemPage() {
         {/* Enhanced Main Content */}
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
           {/* Enhanced Loading State */}
-          {(loading || !accessChecked) && (
+          <LoadingState 
+            isLoading={loading || !accessChecked}
+            skeleton={
+              <div className="grid lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+                    <SkeletonText lines={3} width="80%" />
+                    <div className="mt-6 space-y-4">
+                      <SkeletonText lines={5} />
+                      <SkeletonText lines={3} width="60%" />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                    <SkeletonText lines={2} width="60%" />
+                    <div className="mt-4 space-y-3">
+                      <SkeletonText lines={1} width="40%" />
+                      <SkeletonText lines={1} width="60%" />
+                    </div>
+                  </div>
+                  <CodeEditorLoading lines={8} />
+                </div>
+              </div>
+            }
+          >
             <div className="flex justify-center items-center py-12">
               <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
             </div>
-          )}
+          </LoadingState>
 
           {/* Enhanced Error State */}
           {error && (

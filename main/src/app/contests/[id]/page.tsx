@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountdown } from '@/contexts/CountdownContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { LoadingState, CardLoading, SkeletonText, LeaderboardLoading } from '@/components/LoadingStates';
 import { checkContestParticipation } from '@/utils/participationCheck';
 import type { Contest } from '@/types/contest';
 import { useRouter } from 'next/navigation';
@@ -183,11 +184,36 @@ export default function ContestPage() {
 
         {/* Enhanced Main Content */}
         <div className="relative z-10 max-w-6xl mx-auto px-6 py-12">
-          {loading ? (
+          <LoadingState 
+            isLoading={loading}
+            skeleton={
+              <div className="space-y-8">
+                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+                  <SkeletonText lines={2} width="60%" />
+                  <div className="mt-4 space-y-2">
+                    <SkeletonText lines={1} width="40%" />
+                    <SkeletonText lines={1} width="30%" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <SkeletonText lines={1} width="40%" />
+                    <CardLoading count={3} />
+                  </div>
+                  <div className="space-y-4">
+                    <SkeletonText lines={1} width="40%" />
+                    <LeaderboardLoading items={5} />
+                  </div>
+                </div>
+              </div>
+            }
+          >
             <div className="flex justify-center items-center py-12">
               <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
             </div>
-          ) : error ? (
+          </LoadingState>
+          
+          {error ? (
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-8 backdrop-blur-sm">
               <p className="text-red-400">{error}</p>
             </div>
