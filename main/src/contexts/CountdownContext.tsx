@@ -44,7 +44,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error saving countdown to database:', error);
     }
-  }, [user]);
+  }, [user?.id]);
 
   const stopCountdown = useCallback(async () => {
     setContestId(null);
@@ -68,10 +68,10 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error removing countdown from database:', error);
     }
-  }, [user, contestId]);
+  }, [user?.id, contestId]);
 
   const checkExpiration = useCallback(async () => {
-    if (!contestId || !user) return;
+    if (!contestId || !user?.id) return;
     
     try {
       const res = await fetch(`/api/contests/${contestId}/leave`, {
@@ -93,12 +93,12 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error leaving contest:', error);
     }
-  }, [contestId, user, stopCountdown]);
+  }, [contestId, user?.id, stopCountdown]);
 
   // Load countdown from database on mount
   useEffect(() => {
     (async () => {
-      if (!user) return;
+      if (!user?.id) return;
       
       try {
         const { createClient } = await import('@supabase/supabase-js');
@@ -136,7 +136,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
         console.error('Error loading countdown from database:', error);
       }
     })();
-  }, [user]);
+  }, [user?.id]);
 
   // Update countdown every second
   useEffect(() => {
