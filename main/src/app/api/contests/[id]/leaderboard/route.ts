@@ -93,13 +93,16 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch user details' }, { status: 500 });
     }
 
+    console.log('Fetched users:', users?.length, 'for user IDs:', userIds);
+
     // Create leaderboard entries
     const leaderboard = Array.from(userScores.values())
       .map(userData => {
         const user = users?.find(u => u.id === userData.userId);
+        console.log('User data for', userData.userId, ':', user);
         return {
           user_id: userData.userId,
-          username: user?.username || 'Unknown',
+          username: user?.username || user?.email?.split('@')[0] || 'Unknown',
           email: user?.email || '',
           total_score: userData.totalScore,
           solved_problems: userData.solvedProblems.size,

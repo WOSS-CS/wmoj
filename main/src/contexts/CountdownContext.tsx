@@ -140,9 +140,26 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
         
         if (remaining > 0) {
           setContestId(timer.contest_id);
-          setContestName(timer.contest_id); // We'll need to fetch the name separately
           setTimeRemaining(remaining);
           setIsActive(true);
+          
+          // Fetch contest name
+          try {
+            const { data: contest, error: contestErr } = await supabase
+              .from('contests')
+              .select('name')
+              .eq('id', timer.contest_id)
+              .single();
+            
+            if (!contestErr && contest) {
+              setContestName(contest.name);
+            } else {
+              setContestName(timer.contest_id); // Fallback to ID
+            }
+          } catch (error) {
+            console.error('Error fetching contest name:', error);
+            setContestName(timer.contest_id); // Fallback to ID
+          }
         } else {
           // Countdown expired, clean up
           await supabase.from('countdown_timers').delete()
