@@ -45,6 +45,18 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to leave contest' }, { status: 500 });
     }
 
+    // Clean up countdown timer
+    const { error: timerErr } = await supabase
+      .from('countdown_timers')
+      .delete()
+      .eq('user_id', userId)
+      .eq('contest_id', id);
+
+    if (timerErr) {
+      console.log('Countdown timer cleanup error:', timerErr);
+      // Don't fail the request if timer cleanup fails
+    }
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.log('Leave contest error:', e);
