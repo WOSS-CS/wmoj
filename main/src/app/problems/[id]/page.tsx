@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { Problem } from '@/types/problem';
 import { supabase } from '@/lib/supabase';
+import { checkContestParticipation } from '@/utils/participationCheck';
 
 export default function ProblemPage() {
   const routeParams = useParams<{ id: string }>();
@@ -16,6 +17,7 @@ export default function ProblemPage() {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [accessChecked, setAccessChecked] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('python');
   const [codeFile, setCodeFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -40,6 +42,28 @@ export default function ProblemPage() {
       fetchProblem(problemId);
     }
   }, [problemId]);
+
+  // Check access permission for contest problems
+  useEffect(() => {
+    (async () => {
+      if (!user || !problem) return;
+      
+      // If problem is part of a contest, check participation
+      if (problem.contest) {
+        try {
+          const hasAccess = await checkContestParticipation(user.id, problem.contest);
+          if (!hasAccess) {
+            router.push('/problems');
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking contest access:', error);
+          router.push('/problems');
+        }
+      }
+      setAccessChecked(true);
+    })();
+  }, [user, problem, router]);
 
   useEffect(() => {
     if (user && problem) {
@@ -236,7 +260,7 @@ export default function ProblemPage() {
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Loading State */}
-          {loading && (
+          {(loading || !accessChecked) && (
             <div className="flex justify-center items-center py-12">
               <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
             </div>
