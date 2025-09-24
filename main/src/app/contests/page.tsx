@@ -15,6 +15,7 @@ export default function ContestsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [joinedContestId, setJoinedContestId] = useState<string | null>(null);
+  const [loadingParticipation, setLoadingParticipation] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -35,17 +36,22 @@ export default function ContestsPage() {
 
   useEffect(() => {
     (async () => {
-      if (!session) return;
-      const token = session.access_token;
-      const res = await fetch('/api/contests/participation', {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
-      if (res.ok) {
-        const json = await res.json();
-        setJoinedContestId(json.contest_id);
+      if (!session?.access_token || loadingParticipation) return;
+      setLoadingParticipation(true);
+      try {
+        const token = session.access_token;
+        const res = await fetch('/api/contests/participation', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const json = await res.json();
+          setJoinedContestId(json.contest_id);
+        }
+      } finally {
+        setLoadingParticipation(false);
       }
     })();
-  }, [session]);
+  }, [session?.access_token, loadingParticipation]);
 
   const handleSignOut = async () => { await signOut(); };
 
