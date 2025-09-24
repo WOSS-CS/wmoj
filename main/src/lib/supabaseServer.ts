@@ -11,10 +11,10 @@ export function getServerSupabase() {
       get(name: string) {
         return cookieStore.get(name)?.value;
       },
-      set(name: string, value: string, options: any) {
+      set(name: string, value: string, options: { path?: string; maxAge?: number; domain?: string; secure?: boolean; httpOnly?: boolean; sameSite?: 'lax' | 'strict' | 'none' }) {
         cookieStore.set({ name, value, ...options });
       },
-      remove(name: string, options: any) {
+      remove(name: string, options: { path?: string; domain?: string }) {
         cookieStore.set({ name, value: '', ...options });
       },
     },
