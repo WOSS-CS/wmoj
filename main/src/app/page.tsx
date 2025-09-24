@@ -7,7 +7,7 @@ import { AuthGuard } from '@/components/AuthGuard';
 import { useEffect, useState } from 'react';
 
 export default function Home() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, userDashboardPath } = useAuth();
   const router = useRouter();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
@@ -37,7 +37,7 @@ export default function Home() {
   };
 
   return (
-    <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo="/dashboard">
+    <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo={userDashboardPath || "/dashboard"}>
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
       {/* Enhanced Animated Background */}
       <div className="absolute inset-0 pointer-events-none">
