@@ -6,18 +6,43 @@ import { useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountdown } from '@/contexts/CountdownContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { checkContestParticipation } from '@/utils/participationCheck';
 import type { Contest } from '@/types/contest';
+import { useRouter } from 'next/navigation';
 
 export default function ContestPage() {
   const params = useParams<{ id: string }>();
   const { user, signOut } = useAuth();
   const { timeRemaining, contestName, isActive } = useCountdown();
+  const router = useRouter();
   const [contest, setContest] = useState<Contest | null>(null);
   const [problems, setProblems] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [accessChecked, setAccessChecked] = useState(false);
+
+  // Check access permission
+  useEffect(() => {
+    (async () => {
+      if (!user || !params.id) return;
+      
+      try {
+        const hasAccess = await checkContestParticipation(user.id, params.id);
+        if (!hasAccess) {
+          router.push('/contests');
+          return;
+        }
+        setAccessChecked(true);
+      } catch (error) {
+        console.error('Error checking contest access:', error);
+        router.push('/contests');
+      }
+    })();
+  }, [user, params.id, router]);
 
   useEffect(() => {
+    if (!accessChecked) return;
+    
     (async () => {
       try {
         setLoading(true);
@@ -34,7 +59,7 @@ export default function ContestPage() {
         setLoading(false);
       }
     })();
-  }, [params.id]);
+  }, [params.id, accessChecked]);
 
   const handleSignOut = async () => { await signOut(); };
 
