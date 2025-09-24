@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCountdown } from '@/contexts/CountdownContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import type { Contest } from '@/types/contest';
 
 export default function ContestPage() {
   const params = useParams<{ id: string }>();
   const { user, signOut } = useAuth();
+  const { timeRemaining, contestName, isActive } = useCountdown();
   const [contest, setContest] = useState<Contest | null>(null);
   const [problems, setProblems] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +67,22 @@ export default function ContestPage() {
               <h1 className="text-4xl font-bold text-white mb-2">{contest?.name}</h1>
               <div className="text-gray-300 mb-6">{contest?.description}</div>
               <div className="text-gray-400 mb-8">Length: <span className="text-white">{contest?.length} min</span></div>
+              {isActive && timeRemaining !== null && (
+                <div className="bg-green-400/10 border border-green-400/20 rounded-lg p-4 mb-8">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                    <div>
+                      <div className="text-green-400 text-sm font-medium">Contest Active</div>
+                      <div className="text-white text-lg font-bold">
+                        {Math.floor(timeRemaining / 3600) > 0 
+                          ? `${Math.floor(timeRemaining / 3600)}:${Math.floor((timeRemaining % 3600) / 60).toString().padStart(2, '0')}:${(timeRemaining % 60).toString().padStart(2, '0')}`
+                          : `${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}`
+                        } remaining
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               <h2 className="text-2xl font-semibold text-white mb-4">Problems</h2>
               {problems.length === 0 ? (
                 <div className="text-gray-400">No problems yet.</div>
