@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, userDashboardPath } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,7 +58,7 @@ export default function LoginPage() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
   return (
-    <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo="/dashboard">
+    <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo={userDashboardPath || "/dashboard"}>
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center p-6 relative overflow-hidden">
         {/* Enhanced Animated Background */}
         <div className="absolute inset-0 pointer-events-none">

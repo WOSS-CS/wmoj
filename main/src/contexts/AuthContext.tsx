@@ -104,7 +104,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const createUserProfile = useCallback(async (user: User) => {
     try {
-      // Check if user profile already exists
+      // First, check if user is an admin
+      const { data: adminUser, error: adminError } = await supabase
+        .from('admins')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!adminError && adminUser) {
+        // User is an admin, update their last login
+        console.log('Updating last login for admin user:', user.email);
+        
+        const { error: updateError } = await supabase
+          .from('admins')
+          .update({ 
+            last_login: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
+
+        if (updateError) {
+          console.error('Error updating admin profile:', updateError);
+        }
+        
+        // Update user role and dashboard path
+        await updateUserRoleAndPath(user.id);
+        return;
+      }
+
+      // Check if user profile already exists in users table
       const { data: existingUser, error: selectError } = await supabase
         .from('users')
         .select('id')
