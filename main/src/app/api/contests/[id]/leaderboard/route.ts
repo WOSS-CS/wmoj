@@ -72,7 +72,7 @@ export async function GET(
         passed = submission.summary.passed === submission.summary.total;
       } else if (submission.results && Array.isArray(submission.results)) {
         // Check if all test cases passed
-        passed = submission.results.every((result: any) => result.passed === true);
+        passed = submission.results.every((result: { passed: boolean }) => result.passed === true);
       }
       
       if (passed && !userData.solvedProblems.has(submission.problem_id)) {
