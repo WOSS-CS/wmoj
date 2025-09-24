@@ -14,7 +14,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ contests: data || [] });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

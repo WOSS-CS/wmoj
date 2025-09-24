@@ -27,7 +27,7 @@ export async function GET(
 
     if (error) return NextResponse.json({ error: 'Failed to load problems' }, { status: 500 });
     return NextResponse.json({ problems: data || [] });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
