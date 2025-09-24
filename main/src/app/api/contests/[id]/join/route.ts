@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSupabase } from '@/lib/supabaseServer';
+import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseServer';
 
 export async function POST(
   request: Request,
@@ -7,11 +7,17 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const supabase = await getServerSupabase();
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+      console.log('Join contest missing bearer token');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const accessToken = authHeader.split(' ')[1];
+    const supabase = getServerSupabaseFromToken(accessToken);
     const body = await request.json().catch(() => ({}));
     const requestedUserId: string | undefined = body?.userId;
 
-    // Verify authenticated user via Supabase auth context (RLS depends on this)
+    // Verify authenticated user via the token
     const { data: authData, error: authErr } = await supabase.auth.getUser();
     if (authErr || !authData?.user) {
       console.log('Join contest auth error:', authErr);
