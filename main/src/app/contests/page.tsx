@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCountdown } from '@/contexts/CountdownContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { Contest } from '@/types/contest';
 import { useRouter } from 'next/navigation';
 
 export default function ContestsPage() {
   const { user, signOut, session } = useAuth();
+  const { startCountdown } = useCountdown();
   const [contests, setContests] = useState<Contest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -129,10 +131,11 @@ export default function ContestsPage() {
                                 },
                               body: JSON.stringify({ userId: user?.id })
                             });
-                            const json = await res.json();
-                            if (!res.ok) throw new Error(json?.error || 'Failed to join contest');
-                            setJoinedContestId(c.id);
-                            router.push(`/contests/${c.id}`);
+                             const json = await res.json();
+                             if (!res.ok) throw new Error(json?.error || 'Failed to join contest');
+                             setJoinedContestId(c.id);
+                             startCountdown(c.id, c.name, c.length);
+                             router.push(`/contests/${c.id}`);
                           } catch (e) {
                             alert(e instanceof Error ? e.message : 'Failed to join contest');
                           }
