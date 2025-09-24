@@ -4,7 +4,7 @@ export async function checkContestParticipation(userId: string, contestId: strin
   try {
     const { data, error } = await supabase
       .from('contest_participants')
-      .select('id')
+      .select('user_id')
       .eq('user_id', userId)
       .eq('contest_id', contestId)
       .maybeSingle();
