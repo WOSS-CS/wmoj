@@ -33,30 +33,41 @@ type SanitizeSchema = {
 };
 
 const base: SanitizeSchema = (defaultSchema as SanitizeSchema) || {};
-const sanitizeOptions: SanitizeSchema = {
-  ...base,
-  tagNames: Array.from(new Set([...(base.tagNames || []), ...katexAllowedTags])),
-  attributes: {
-    ...(base.attributes || {}),
-    span: [
-      // Preserve existing rules for span
-      ...(Array.isArray((base.attributes as any)?.span) ? (base.attributes as any).span : []),
-      ['className', /^katex.*$/],
-      ['className', 'katex'],
-      ['className', 'katex-display'],
-      ['className', 'katex-html'],
-      ['className', 'katex-mathml'],
-    ],
-    math: [
-      ...(Array.isArray((base.attributes as any)?.math) ? (base.attributes as any).math : []),
-      'display'
-    ],
-    annotation: [
-      ...(Array.isArray((base.attributes as any)?.annotation) ? (base.attributes as any).annotation : []),
-      'encoding'
-    ],
-  }
-};
+// Helper to safely extract existing attribute array from base schema without using 'any'
+function getAttrArray(schema: SanitizeSchema, key: string): unknown[] {
+  if (!schema.attributes) return [];
+  const existing = (schema.attributes as Record<string, unknown>)[key];
+  return Array.isArray(existing) ? existing : [];
+}
+
+const sanitizeOptions: SanitizeSchema = (() => {
+  const spanExisting = getAttrArray(base, 'span');
+  const mathExisting = getAttrArray(base, 'math');
+  const annotationExisting = getAttrArray(base, 'annotation');
+  return {
+    ...base,
+    tagNames: Array.from(new Set([...(base.tagNames || []), ...katexAllowedTags])),
+    attributes: {
+      ...(base.attributes || {}),
+      span: [
+        ...spanExisting,
+        ['className', /^katex.*$/],
+        ['className', 'katex'],
+        ['className', 'katex-display'],
+        ['className', 'katex-html'],
+        ['className', 'katex-mathml'],
+      ],
+      math: [
+        ...mathExisting,
+        'display'
+      ],
+      annotation: [
+        ...annotationExisting,
+        'encoding'
+      ],
+    }
+  };
+})();
 
 export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
   return (
