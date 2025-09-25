@@ -104,6 +104,8 @@ export function MarkdownEditor({
           <li>Use <code>```language</code> for code blocks</li>
           <li>Use <code>#</code> for headers</li>
           <li>Use <code>-</code> or <code>*</code> for lists</li>
+          <li>Inline math with <code>$f(x)=x^2$</code></li>
+          <li>Block math with <code>{'$$\\sum_{i=1}^n i^2$$'}</code></li>
         </ul>
       </div>
     </div>

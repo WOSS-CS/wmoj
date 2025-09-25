@@ -2,7 +2,10 @@
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import rehypeSanitize from 'rehype-sanitize';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -15,8 +18,8 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
   return (
     <div className={`markdown-content ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeSanitize]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeSanitize, rehypeKatex]}
         components={{
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           code({ inline, className, children, ...props }: any) {
