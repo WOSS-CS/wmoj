@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -10,6 +9,7 @@ import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { Problem } from '@/types/problem';
 import { supabase } from '@/lib/supabase';
 import { checkContestParticipation } from '@/utils/participationCheck';
+import { Logo } from '@/components/Logo';
 
 export default function ProblemPage() {
   const routeParams = useParams<{ id: string }>();
@@ -262,10 +262,7 @@ export default function ProblemPage() {
 
         {/* Enhanced Navigation */}
         <nav className="relative z-10 flex justify-between items-center p-6 backdrop-blur-sm">
-          <Link href="/" className="text-3xl font-bold text-white group cursor-pointer">
-            <span className="text-green-400 transition-all duration-300 group-hover:scale-110 inline-block">W</span>
-            <span className="text-white transition-all duration-300 group-hover:scale-110 inline-block" style={{ animationDelay: '0.1s' }}>MOJ</span>
-          </Link>
+          <Logo size="md" className="cursor-pointer" />
           <div className="flex gap-4">
             <button
               type="button"
@@ -347,11 +344,14 @@ export default function ProblemPage() {
               {/* Enhanced Problem Description */}
               <div className="lg:col-span-2">
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-lg hover:shadow-green-400/10">
-                  <div className="flex items-center gap-4 mb-6">
-                    <h1 className="text-3xl font-bold text-white relative">
-                      {problem.name}
+                  <div className="flex flex-wrap items-center gap-4 mb-6">
+                    <Logo size="sm" className="cursor-default" href={null} withText={false} />
+                    <div className="relative">
+                      <h1 className="text-3xl font-bold text-white">
+                        {problem.name}
+                      </h1>
                       <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
-                    </h1>
+                    </div>
                     <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm animate-pulse">
                       {problem.contest ? 'Contest Problem' : 'Standalone'}
                     </span>

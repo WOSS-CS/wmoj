@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
+import { Logo } from '@/components/Logo';
 import { useEffect, useState } from 'react';
 
 export default function Home() {
@@ -78,10 +79,7 @@ export default function Home() {
       </div>
       {/* Enhanced Navigation */}
       <nav className="relative z-10 flex justify-between items-center p-6 backdrop-blur-sm">
-        <div className="text-3xl font-bold text-white group cursor-pointer">
-          <span className="text-green-400 transition-all duration-300 group-hover:scale-110 inline-block">W</span>
-          <span className="text-white transition-all duration-300 group-hover:scale-110 inline-block" style={{ animationDelay: '0.1s' }}>MOJ</span>
-        </div>
+        <Logo size="md" className="cursor-pointer" priority />
         <div className="flex gap-4">
           {user ? (
             <>
@@ -117,6 +115,9 @@ export default function Home() {
       {/* Enhanced Hero Section */}
       <div className="relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-[80vh] px-6">
         <div className={`lg:w-1/2 text-center lg:text-left mb-12 lg:mb-0 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className="mb-8 flex justify-center lg:justify-start">
+            <Logo size="lg" className="cursor-default" badge="Competitive Programming" />
+          </div>
           <h1 className="text-6xl lg:text-7xl font-bold text-white mb-6 relative">
             Master
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400 relative">
@@ -245,6 +246,9 @@ export default function Home() {
       {/* Enhanced Features Section */}
       <div className="relative z-10 py-20 px-6">
         <div className="max-w-6xl mx-auto">
+          <div className="flex justify-center mb-8">
+            <Logo size="md" className="cursor-default" href={null} withText badge="Why Choose" />
+          </div>
           <h2 className="text-4xl font-bold text-white text-center mb-16 relative">
             Why Choose WMOJ?
             <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full" />
@@ -279,7 +283,8 @@ export default function Home() {
 
       {/* Enhanced Footer */}
       <footer className="relative z-10 py-8 px-6 border-t border-white/10 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto text-center">
+        <div className="max-w-6xl mx-auto text-center space-y-4">
+          <Logo size="sm" className="mx-auto justify-center cursor-default" href={null} withText={true} badge="Competitive Programming" />
           <p className="text-gray-400">
             © 2024 WMOJ. All rights reserved. Built for competitive programmers.
           </p>
