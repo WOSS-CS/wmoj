@@ -188,6 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let isMounted = true;
     (async () => {
       try {
+        console.log('AuthContext: Getting session...');
         const { data, error } = await supabase.auth.getSession();
         if (!isMounted) return;
         if (error) {
@@ -195,15 +196,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         const session = data?.session ?? null;
         const currentUser = session?.user ?? null;
+        console.log('AuthContext: Session loaded, user:', currentUser?.email);
         setSession(session);
         setUser(currentUser);
         // Do not block initial render on profile DB ops
         if (currentUser) {
+          console.log('AuthContext: Creating user profile...');
           void createUserProfile(currentUser);
         }
       } catch (e) {
         console.error('getSession exception:', e);
       } finally {
+        console.log('AuthContext: Setting loading to false');
         if (isMounted) setLoading(false);
       }
     })();
@@ -212,16 +216,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       try {
+        console.log('AuthContext: Auth state change:', _event, session?.user?.email);
         const currentUser = session?.user ?? null;
         setSession(session);
         setUser(currentUser);
         // Fire-and-forget; avoid blocking UI on network
         if (currentUser && (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED')) {
+          console.log('AuthContext: Creating user profile from auth state change...');
           void createUserProfile(currentUser);
         }
       } catch (e) {
         console.error('onAuthStateChange exception:', e);
       } finally {
+        console.log('AuthContext: Setting loading to false from auth state change');
         setLoading(false);
       }
     });
