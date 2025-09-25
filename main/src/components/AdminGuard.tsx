@@ -9,7 +9,7 @@ interface AdminGuardProps {
 }
 
 export function AdminGuard({ children }: AdminGuardProps) {
-  const { user, session, loading } = useAuth();
+  const { user, session, loading, userRole } = useAuth();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
@@ -17,14 +17,27 @@ export function AdminGuard({ children }: AdminGuardProps) {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user || !session || loading) return;
-      
+
+      // If role already known from context, short-circuit
+      if (userRole === 'admin') {
+        setIsAdmin(true);
+        setCheckingAdmin(false);
+        return;
+      } else if (userRole === 'regular') {
+        setIsAdmin(false);
+        setCheckingAdmin(false);
+        router.replace('/dashboard');
+        return;
+      }
+
+      // Fallback: role not yet known; perform API check as authoritative source
       try {
         const res = await fetch('/api/admin/check', {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
           },
         });
-        
+
         if (res.ok) {
           setIsAdmin(true);
         } else {
@@ -41,7 +54,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
     };
 
     checkAdminStatus();
-  }, [user, session, loading, router]);
+  }, [user, session, loading, router, userRole]);
 
   // Show loading state while checking admin status
   if (loading || checkingAdmin || isAdmin === null) {
