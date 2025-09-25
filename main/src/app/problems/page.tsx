@@ -29,16 +29,22 @@ export default function ProblemsPage() {
   const fetchStandaloneProblems = async () => {
     try {
       setLoading(true);
+      console.log('Fetching standalone problems...');
       const res = await fetch('/api/problems/standalone');
       const json = await res.json();
+      console.log('API response:', { status: res.status, data: json });
       if (res.ok) {
         setProblems(json.problems || []);
+        console.log('Problems set:', json.problems?.length || 0);
       } else {
         setError(json.error || 'Failed to fetch problems');
+        console.error('API error:', json.error);
       }
-    } catch {
+    } catch (error) {
+      console.error('Fetch error:', error);
       setError('Failed to fetch problems');
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
     }
   };
