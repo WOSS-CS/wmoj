@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import MDEditor from '@uiw/react-md-editor';
+import MDEditor, { commands } from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 
 interface MarkdownEditorProps {
@@ -69,31 +69,31 @@ export function MarkdownEditor({
           }}
           toolbarHeight={50}
           commands={[
-            MDEditor.commands.bold,
-            MDEditor.commands.italic,
-            MDEditor.commands.strikethrough,
-            MDEditor.commands.divider,
-            MDEditor.commands.link,
-            MDEditor.commands.quote,
-            MDEditor.commands.code,
-            MDEditor.commands.codeBlock,
-            MDEditor.commands.divider,
-            MDEditor.commands.unorderedListCommand,
-            MDEditor.commands.orderedListCommand,
-            MDEditor.commands.checkedListCommand,
-            MDEditor.commands.divider,
-            MDEditor.commands.title1,
-            MDEditor.commands.title2,
-            MDEditor.commands.title3,
-            MDEditor.commands.title4,
-            MDEditor.commands.title5,
-            MDEditor.commands.title6,
-            MDEditor.commands.divider,
-            MDEditor.commands.hr,
-            MDEditor.commands.table,
-            MDEditor.commands.divider,
-            MDEditor.commands.undo,
-            MDEditor.commands.redo,
+            commands.bold,
+            commands.italic,
+            commands.strikethrough,
+            commands.divider,
+            commands.link,
+            commands.quote,
+            commands.code,
+            commands.codeBlock,
+            commands.divider,
+            commands.unorderedListCommand,
+            commands.orderedListCommand,
+            commands.checkedListCommand,
+            commands.divider,
+            commands.title1,
+            commands.title2,
+            commands.title3,
+            commands.title4,
+            commands.title5,
+            commands.title6,
+            commands.divider,
+            commands.hr,
+            commands.table,
+            commands.divider,
+            commands.undo,
+            commands.redo,
           ]}
         />
       </div>
