@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
-import { LoadingState, CardLoading, SkeletonText, CodeEditorLoading } from '@/components/LoadingStates';
+import { LoadingState, SkeletonText, CodeEditorLoading } from '@/components/LoadingStates';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { Problem } from '@/types/problem';
 import { supabase } from '@/lib/supabase';
@@ -366,7 +366,7 @@ export default function ProblemPage() {
                     ].map((tab) => (
                       <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
+                        onClick={() => setActiveTab(tab.id as 'description' | 'results' | 'stats')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
                           activeTab === tab.id
                             ? 'bg-green-400/20 text-green-400 border border-green-400/50'
