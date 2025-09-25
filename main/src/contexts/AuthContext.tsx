@@ -25,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [userDashboardPath, setUserDashboardPath] = useState<string | null>(null);
+  const [profileCreationInProgress, setProfileCreationInProgress] = useState(false);
 
   // moved effect below callbacks to avoid TDZ on createUserProfile
 
@@ -103,7 +104,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const createUserProfile = useCallback(async (user: User) => {
+    if (profileCreationInProgress) {
+      console.log('Profile creation already in progress, skipping...');
+      return;
+    }
+    
+    setProfileCreationInProgress(true);
     try {
+      console.log('Starting profile creation for:', user.email);
       // First, check if user is an admin
       const { data: adminUser, error: adminError } = await supabase
         .from('admins')
@@ -181,8 +189,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await updateUserRoleAndPath(user.id);
     } catch (error) {
       console.error('Error in createUserProfile:', error);
+    } finally {
+      console.log('Profile creation completed for:', user.email);
+      setProfileCreationInProgress(false);
     }
-  }, [updateUserRoleAndPath]);
+  }, [updateUserRoleAndPath, profileCreationInProgress]);
 
   useEffect(() => {
     let isMounted = true;
@@ -204,6 +215,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('AuthContext: Creating user profile...');
           void createUserProfile(currentUser);
         }
+        
+        // Ensure loading is set to false after a maximum delay
+        setTimeout(() => {
+          if (isMounted) {
+            console.log('AuthContext: Force setting loading to false after timeout');
+            setLoading(false);
+          }
+        }, 5000);
       } catch (e) {
         console.error('getSession exception:', e);
       } finally {
