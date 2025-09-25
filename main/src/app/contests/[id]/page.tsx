@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountdown } from '@/contexts/CountdownContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import { LoadingState, CardLoading, SkeletonText, LeaderboardLoading } from '@/components/LoadingStates';
 import { checkContestParticipation } from '@/utils/participationCheck';
 import type { Contest } from '@/types/contest';
@@ -140,6 +141,7 @@ export default function ContestPage() {
 
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
+      <RegularOnlyGuard>
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
         {/* Enhanced Animated Background */}
         <div className="absolute inset-0 pointer-events-none">
@@ -443,6 +445,7 @@ export default function ContestPage() {
           )}
         </div>
       </div>
+      </RegularOnlyGuard>
     </AuthGuard>
   );
 }

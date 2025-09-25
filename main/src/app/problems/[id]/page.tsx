@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import { LoadingState, SkeletonText, CodeEditorLoading } from '@/components/LoadingStates';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { Problem } from '@/types/problem';
@@ -221,6 +222,7 @@ export default function ProblemPage() {
 
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
+      <RegularOnlyGuard>
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
         {/* Enhanced Animated Background */}
         <div className="absolute inset-0 pointer-events-none">
@@ -654,6 +656,7 @@ export default function ProblemPage() {
           )}
         </div>
       </div>
+      </RegularOnlyGuard>
     </AuthGuard>
   );
 }
