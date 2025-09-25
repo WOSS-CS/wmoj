@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
-import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { Problem } from '@/types/problem';
 
 export default function ProblemsPage() {
@@ -37,7 +36,7 @@ export default function ProblemsPage() {
       } else {
         setError(json.error || 'Failed to fetch problems');
       }
-    } catch (e) {
+    } catch {
       setError('Failed to fetch problems');
     } finally {
       setLoading(false);
