@@ -4,7 +4,7 @@ import { useCountdown } from '@/contexts/CountdownContext';
 import { useState, useEffect, useRef } from 'react';
 import { AnimationWrapper, HoverAnimation } from './AnimationWrapper';
 import { RippleEffect, MagneticEffect, TiltEffect } from './MicroInteractions';
-import { useAnimation, useHoverAnimation, usePulseAnimation } from '@/hooks/useAnimations';
+import { useHoverAnimation, usePulseAnimation } from '@/hooks/useAnimations';
 
 export function CountdownOverlay() {
   const { 
@@ -19,7 +19,6 @@ export function CountdownOverlay() {
   } = useCountdown();
   const [isVisible, setIsVisible] = useState(false);
   const [pulseIntensity, setPulseIntensity] = useState(1);
-  const [animationPhase, setAnimationPhase] = useState<'idle' | 'entering' | 'entered' | 'exiting' | 'exited'>('idle');
   const [isUrgent, setIsUrgent] = useState(false);
   const [isCritical, setIsCritical] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
@@ -27,18 +26,13 @@ export function CountdownOverlay() {
   const [timeSegments, setTimeSegments] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const overlayRef = useRef<HTMLDivElement>(null);
   const { isHovered, handleMouseEnter, handleMouseLeave } = useHoverAnimation();
-  const isPulsing = usePulseAnimation(isUrgent ? 1000 : 2000);
 
   useEffect(() => {
     if (isActive && timeRemaining !== null) {
-      setAnimationPhase('entering');
       setIsVisible(true);
-      setTimeout(() => setAnimationPhase('entered'), 300);
     } else {
-      setAnimationPhase('exiting');
       setTimeout(() => {
         setIsVisible(false);
-        setAnimationPhase('exited');
       }, 300);
     }
   }, [isActive, timeRemaining]);
@@ -72,7 +66,7 @@ export function CountdownOverlay() {
         setPulseIntensity(1);
       }
     }
-  }, [timeRemaining]);
+  }, [timeRemaining, contextProgress]);
 
   if (!isActive || timeRemaining === null) return null;
 
