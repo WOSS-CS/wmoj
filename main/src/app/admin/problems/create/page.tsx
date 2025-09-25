@@ -103,7 +103,7 @@ export default function CreateProblemPage() {
       } else {
         setError(json.error || 'Failed to create problem');
       }
-    } catch (err) {
+    } catch {
       setError('Invalid JSON format for input/output or an unexpected error occurred');
     } finally {
       setLoading(false);

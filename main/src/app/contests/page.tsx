@@ -34,7 +34,7 @@ export default function ContestsPage() {
         } else {
           setError(json.error || 'Failed to fetch contests');
         }
-      } catch (e) {
+      } catch {
         setError('Failed to fetch contests');
       } finally {
         setLoading(false);
@@ -65,7 +65,7 @@ export default function ContestsPage() {
         .catch(e => console.error('Error checking participation:', e))
         .finally(() => setLoadingParticipation(false));
     }
-  }, [session?.access_token]);
+  }, [session?.access_token, loadingParticipation]);
 
   const handleJoinContest = async (contestId: string, contestName: string, contestLength: number) => {
     if (joiningContest) return;
