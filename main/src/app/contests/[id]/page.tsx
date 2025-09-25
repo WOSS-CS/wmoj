@@ -10,6 +10,7 @@ import { LoadingState, CardLoading, SkeletonText, LeaderboardLoading } from '@/c
 import { checkContestParticipation } from '@/utils/participationCheck';
 import type { Contest } from '@/types/contest';
 import { useRouter } from 'next/navigation';
+import { Logo } from '@/components/Logo';
 
 export default function ContestPage() {
   const params = useParams<{ id: string }>();
@@ -170,10 +171,7 @@ export default function ContestPage() {
 
         {/* Enhanced Navigation */}
         <nav className="relative z-10 flex justify-between items-center p-6 backdrop-blur-sm">
-          <Link href="/" className="text-3xl font-bold text-white group cursor-pointer">
-            <span className="text-green-400 transition-all duration-300 group-hover:scale-110 inline-block">W</span>
-            <span className="text-white transition-all duration-300 group-hover:scale-110 inline-block" style={{ animationDelay: '0.1s' }}>MOJ</span>
-          </Link>
+          <Logo size="md" className="cursor-pointer" />
           <div className="flex gap-4">
             <Link href="/dashboard" className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25">Dashboard</Link>
             <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-all duration-300 transform hover:scale-105">{user?.user_metadata?.username || user?.email}</span>
@@ -221,6 +219,7 @@ export default function ContestPage() {
               {/* Enhanced Contest Header */}
               <div className="flex justify-between items-start mb-8">
                 <div className="flex-1">
+                  <Logo size="sm" className="mb-4 cursor-default" badge="Contest" href={null} />
                   <h1 className="text-4xl font-bold text-white mb-4 relative">
                     {contest?.name}
                     <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
@@ -447,5 +446,4 @@ export default function ContestPage() {
     </AuthGuard>
   );
 }
-
 

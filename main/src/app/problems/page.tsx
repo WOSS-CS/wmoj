@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
+import { Logo } from '@/components/Logo';
 import { Problem } from '@/types/problem';
 
 export default function ProblemsPage() {
@@ -96,10 +97,7 @@ export default function ProblemsPage() {
 
         {/* Top Navigation Bar */}
         <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
-          <Link href="/" className="text-2xl font-bold text-white group cursor-pointer">
-            <span className="text-green-400 transition-all duration-300 group-hover:scale-110 inline-block">W</span>
-            <span className="text-white transition-all duration-300 group-hover:scale-110 inline-block" style={{ animationDelay: '0.1s' }}>MOJ</span>
-          </Link>
+          <Logo size="md" className="cursor-pointer" />
           <div className="flex items-center gap-4">
             <Link href="/dashboard" className="px-4 py-2 text-white border border-white/20 rounded-lg hover:bg-white/10 transition-all duration-300">
               Dashboard
@@ -119,7 +117,8 @@ export default function ProblemsPage() {
         <div className="flex">
           {/* Sidebar */}
           <aside className="w-64 bg-white/5 backdrop-blur-lg border-r border-white/10 min-h-screen">
-            <div className="p-6">
+            <div className="p-6 space-y-6">
+              <Logo size="sm" className="cursor-default" href={null} />
               <h2 className="text-xl font-bold text-white mb-6">Problems</h2>
               <nav className="space-y-2">
                 <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300">
@@ -162,6 +161,7 @@ export default function ProblemsPage() {
               }
             >
               <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                <Logo size="md" className="mb-6 cursor-default" badge="Problem Set" href={null} />
                 <h1 className="text-4xl font-bold text-white mb-4 relative">
                   Practice Problems
                   <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />

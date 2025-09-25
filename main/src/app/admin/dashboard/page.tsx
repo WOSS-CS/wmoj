@@ -8,6 +8,7 @@ import { RippleEffect, MagneticEffect, TiltEffect } from '@/components/MicroInte
 import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { Logo } from '@/components/Logo';
 
 export default function AdminDashboardPage() {
   const { user, signOut } = useAuth();
@@ -72,10 +73,7 @@ export default function AdminDashboardPage() {
 
         {/* Top Navigation Bar */}
         <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
-          <Link href="/" className="text-2xl font-bold text-white group cursor-pointer">
-            <span className="text-green-400 transition-all duration-300 group-hover:scale-110 inline-block">W</span>
-            <span className="text-white transition-all duration-300 group-hover:scale-110 inline-block" style={{ animationDelay: '0.1s' }}>MOJ</span>
-          </Link>
+          <Logo size="md" className="cursor-pointer" />
           <div className="flex items-center gap-4">
             <span className="px-4 py-2 text-red-400 border border-red-400 rounded-lg bg-red-400/10 backdrop-blur-sm">
               Admin: {user?.user_metadata?.username || user?.email}
@@ -136,6 +134,7 @@ export default function AdminDashboardPage() {
               }
             >
               <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                <Logo size="md" className="mb-6 cursor-default" badge="Admin Hub" href={null} />
                 <h1 className="text-4xl font-bold text-white mb-4 relative">
                   Admin Dashboard
                   <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-red-400 to-red-600 rounded-full animate-pulse" />
@@ -168,8 +167,8 @@ export default function AdminDashboardPage() {
                     color: 'from-blue-600 to-blue-700' 
                   }
                 ].map((card, index) => (
-                  <TiltEffect key={index} maxTilt={8}>
-                    <MagneticEffect strength={0.3}>
+                  <TiltEffect key={index} maxTilt={4}>
+                    <MagneticEffect strength={0.12} maxOffset={8}>
                       <RippleEffect color="green">
                         <HoverAnimation effect="lift">
                           <div 
