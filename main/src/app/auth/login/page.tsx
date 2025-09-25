@@ -32,8 +32,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
-        // Redirect to dashboard after successful login
-        router.push('/dashboard');
+        // Do not manually redirect; AuthGuard will route based on resolved role
       }
     } catch (err) {
       console.error('Login unexpected error:', err);

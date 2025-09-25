@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import { HoverAnimation } from '@/components/AnimationWrapper';
 import { RippleEffect, MagneticEffect, TiltEffect } from '@/components/MicroInteractions';
 import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
@@ -30,6 +31,7 @@ export default function DashboardPage() {
 
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
+      <RegularOnlyGuard>
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
         {/* Enhanced Animated Background */}
         <div className="absolute inset-0 pointer-events-none">
@@ -236,6 +238,7 @@ export default function DashboardPage() {
           </main>
         </div>
       </div>
+      </RegularOnlyGuard>
     </AuthGuard>
   );
 }
