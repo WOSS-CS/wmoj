@@ -167,13 +167,13 @@ export default function AdminDashboardPage() {
                     color: 'from-blue-600 to-blue-700' 
                   }
                 ].map((card, index) => (
-                  <TiltEffect key={index} maxTilt={4}>
-                    <MagneticEffect strength={0.12} maxOffset={8}>
+                  <TiltEffect key={index} maxTilt={2}>
+                    <MagneticEffect strength={0.06} maxOffset={4}>
                       <RippleEffect color="green">
                         <HoverAnimation effect="lift">
                           <div 
-                            className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-all duration-300 flex flex-col transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/10 group cursor-pointer ${
-                              hoveredCard === index ? 'bg-white/15 scale-105 shadow-lg shadow-green-400/20 border-green-400/50' : ''
+                            className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-all duration-300 flex flex-col transform hover:scale-[1.02] hover:shadow-lg hover:shadow-green-400/10 group cursor-pointer ${
+                              hoveredCard === index ? 'bg-white/15 scale-[1.02] shadow-lg shadow-green-400/20 border-green-400/50' : ''
                             }`}
                             onMouseEnter={() => setHoveredCard(index)}
                             onMouseLeave={() => setHoveredCard(null)}
@@ -195,7 +195,7 @@ export default function AdminDashboardPage() {
                               {card.desc}
                             </p>
                             <Link href={card.href} className="mt-auto">
-                              <div className={`px-6 py-3 bg-gradient-to-r ${card.color} text-white rounded-lg hover:opacity-90 transition-all duration-300 transform hover:scale-105`}>
+                              <div className={`px-6 py-3 bg-gradient-to-r ${card.color} text-white rounded-lg hover:opacity-90 transition-all duration-300 transform hover:scale-[1.02]`}>
                                 Get Started
                               </div>
                             </Link>
