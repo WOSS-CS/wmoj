@@ -72,10 +72,16 @@ export function RippleEffect({ children, className = '', color = 'green' }: Ripp
 interface MagneticEffectProps {
   children: ReactNode;
   strength?: number;
+  maxOffset?: number;
   className?: string;
 }
 
-export function MagneticEffect({ children, strength = 0.3, className = '' }: MagneticEffectProps) {
+function clamp(value: number, limit: number) {
+  if (!Number.isFinite(limit) || limit <= 0) return value;
+  return Math.max(-limit, Math.min(value, limit));
+}
+
+export function MagneticEffect({ children, strength = 0.3, maxOffset = 12, className = '' }: MagneticEffectProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -86,7 +92,10 @@ export function MagneticEffect({ children, strength = 0.3, className = '' }: Mag
     const deltaX = (e.clientX - centerX) * strength;
     const deltaY = (e.clientY - centerY) * strength;
     
-    setPosition({ x: deltaX, y: deltaY });
+    setPosition({
+      x: clamp(deltaX, maxOffset),
+      y: clamp(deltaY, maxOffset)
+    });
   };
 
   const handleMouseLeave = () => {
