@@ -30,10 +30,11 @@ export async function GET() {
     if (participantsErr) {
       console.warn('[contests API] participants aggregation error:', participantsErr);
     }
+    interface ParticipantRow { contest_id: string }
     const participantsCountMap: Record<string, number> = {};
-    (participantsRaw || []).forEach(row => {
-      const id = (row as any).contest_id; // row shape { contest_id: string }
-      participantsCountMap[id] = (participantsCountMap[id] || 0) + 1;
+    (participantsRaw as ParticipantRow[] | null | undefined)?.forEach(({ contest_id }) => {
+      if (!contest_id) return;
+      participantsCountMap[contest_id] = (participantsCountMap[contest_id] || 0) + 1;
     });
 
     // Fetch problems per contest (problems table uses 'contest' foreign key)
@@ -45,11 +46,11 @@ export async function GET() {
     if (problemsErr) {
       console.warn('[contests API] problems aggregation error:', problemsErr);
     }
+    interface ProblemRow { id: string; contest: string | null }
     const problemsCountMap: Record<string, number> = {};
-    (problemsRaw || []).forEach(row => {
-      const id = (row as any).contest; // row shape { id, contest }
-      if (!id) return;
-      problemsCountMap[id] = (problemsCountMap[id] || 0) + 1;
+    (problemsRaw as ProblemRow[] | null | undefined)?.forEach(({ contest }) => {
+      if (!contest) return;
+      problemsCountMap[contest] = (problemsCountMap[contest] || 0) + 1;
     });
 
     const enriched = (contests || []).map(c => ({
