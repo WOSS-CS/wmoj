@@ -304,7 +304,7 @@ export default function ContestsPage() {
                               ) : (
                                 <button
                                   onClick={() => handleJoinContest(contest.id, contest.name, contest.length)}
-                                  disabled={joiningContest === contest.id || (joinedContestId && joinedContestId !== contest.id)}
+                                  disabled={joiningContest === contest.id || (joinedContestId !== null && joinedContestId !== contest.id)}
                                   className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                                 >
                                   {joiningContest === contest.id ? (
