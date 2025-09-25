@@ -37,6 +37,31 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await getServerSupabase();
+
+    // Fetch current user (session context via cookies). If no user, reject.
+    const {
+      data: { user: authUser },
+      error: userErr,
+    } = await supabase.auth.getUser();
+
+    if (userErr || !authUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify admin membership explicitly to provide clearer feedback before hitting RLS.
+    const { data: adminRow, error: adminErr } = await supabase
+      .from('admins')
+      .select('id, is_active')
+      .eq('id', authUser.id)
+      .maybeSingle();
+
+    if (adminErr) {
+      console.error('Admin lookup error:', adminErr);
+      return NextResponse.json({ error: 'Authorization check failed' }, { status: 500 });
+    }
+    if (!adminRow || adminRow.is_active === false) {
+      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 });
+    }
     
     const { data, error } = await supabase
       .from('problems')
