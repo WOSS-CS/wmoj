@@ -59,7 +59,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     setIsActive(true);
     setIsPaused(false);
     
-    // Store in database for persistence
+    // Store in database for persistence (if table exists)
     try {
       const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(
@@ -75,7 +75,8 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
         is_active: true
       });
     } catch (error) {
-      console.error('Error saving countdown to database:', error);
+      // If table doesn't exist, just log a warning and continue
+      console.warn('Countdown timer table not available, countdown will not persist:', error);
     }
   }, [user?.id]);
 
@@ -88,7 +89,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     setTotalDuration(null);
     setProgressPercentage(0);
     
-    // Remove from database
+    // Remove from database (if table exists)
     try {
       const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(
@@ -102,7 +103,8 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
           .eq('contest_id', contestId);
       }
     } catch (error) {
-      console.error('Error removing countdown from database:', error);
+      // If table doesn't exist, just log a warning and continue
+      console.warn('Countdown timer table not available:', error);
     }
   }, [user?.id, contestId]);
 
@@ -165,7 +167,13 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
           .eq('is_active', true)
           .single();
         
-        if (error || !timer) return;
+        if (error) {
+          // If table doesn't exist or other error, just return without setting countdown
+          console.warn('Countdown timer table not available:', error.message);
+          return;
+        }
+        
+        if (!timer) return;
         
         const startTime = new Date(timer.started_at).getTime();
         const now = Date.now();
@@ -195,10 +203,14 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
             setContestName(timer.contest_id); // Fallback to ID
           }
         } else {
-          // Countdown expired, clean up
-          await supabase.from('countdown_timers').delete()
-            .eq('user_id', user.id)
-            .eq('contest_id', timer.contest_id);
+          // Countdown expired, clean up (if table exists)
+          try {
+            await supabase.from('countdown_timers').delete()
+              .eq('user_id', user.id)
+              .eq('contest_id', timer.contest_id);
+          } catch (cleanupError) {
+            console.warn('Error cleaning up expired countdown:', cleanupError);
+          }
         }
       } catch (error) {
         console.error('Error loading countdown from database:', error);
