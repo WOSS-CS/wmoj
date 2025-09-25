@@ -3,10 +3,9 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
-import { AnimationWrapper, StaggeredAnimation, HoverAnimation } from '@/components/AnimationWrapper';
+import { HoverAnimation } from '@/components/AnimationWrapper';
 import { RippleEffect, MagneticEffect, TiltEffect } from '@/components/MicroInteractions';
 import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
-import { useAnimation, useHoverAnimation, useMousePosition } from '@/hooks/useAnimations';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 

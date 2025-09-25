@@ -69,7 +69,7 @@ export default function CreateContestPage() {
       } else {
         setError(json.error || 'Failed to create contest');
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
