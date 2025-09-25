@@ -14,12 +14,54 @@ interface MarkdownRendererProps {
   className?: string;
 }
 
+// Extend sanitize schema to permit KaTeX output (span.math-inline, span.math-display, and katex-generated markup)
+// while preserving overall XSS protections.
+// KaTeX outputs mainly: span.katex, span.katex-html, span.katex-mathml, math, mrow, mi, mo, mn, mspace, mtext, annotation, annotation-xml.
+// We'll allow span with class starting with 'katex' and data- attributes, plus math + related tags.
+const katexAllowedTags = [
+  'span','math','mrow','mi','mo','mn','msup','msub','msubsup','mfrac','msqrt','mroot','mstyle','mspace','mtext','annotation','semantics'
+];
+// Dynamically build a schema extension (defensive try/catch in case rehype-sanitize internal schema changes)
+let sanitizeOptions: any = {};
+try {
+  // Lazy require to avoid SSR bundling issues if default schema shape changes
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { defaultSchema } = require('hast-util-sanitize');
+  sanitizeOptions = {
+    ...defaultSchema,
+    tagNames: Array.from(new Set([...(defaultSchema.tagNames || []), ...katexAllowedTags])),
+    attributes: {
+      ...(defaultSchema.attributes || {}),
+      span: [
+        ...(defaultSchema.attributes?.span || []),
+        ['className', /^katex.*$/],
+        ['className', 'katex'],
+        ['className', 'katex-display'],
+        ['className', 'katex-html'],
+        ['className', 'katex-mathml'],
+      ],
+      math: [ ...(defaultSchema.attributes?.math || []), 'display' ],
+      annotation: [ ...(defaultSchema.attributes?.annotation || []), 'encoding' ],
+    },
+  };
+} catch (e) {
+  // Fallback: minimal allowlist if default schema unavailable
+  sanitizeOptions = {
+    tagNames: katexAllowedTags,
+    attributes: {
+      span: [['className', /^katex.*$/]],
+      annotation: ['encoding'],
+      math: ['display']
+    }
+  };
+}
+
 export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
   return (
     <div className={`markdown-content ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeSanitize, rehypeKatex]}
+        rehypePlugins={[[rehypeSanitize, sanitizeOptions], rehypeKatex]}
         components={{
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           code({ inline, className, children, ...props }: any) {
