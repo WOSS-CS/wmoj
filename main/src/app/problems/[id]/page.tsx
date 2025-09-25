@@ -321,9 +321,11 @@ export default function ProblemPage() {
               </div>
             }
           >
-            <div className="flex justify-center items-center py-12">
-              <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            {(loading || !accessChecked) && (
+              <div className="flex justify-center items-center py-12">
+                <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
           </LoadingState>
 
           {/* Enhanced Error State */}
