@@ -5,6 +5,7 @@ export interface Contest {
   length: number;
   created_at: string | null;
   updated_at: string | null;
+  is_active: boolean; // reflects current activation status
   // Added at runtime (not necessarily persisted columns) for listing enrichment
   participants_count?: number;
   problems_count?: number;

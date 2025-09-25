@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
           name,
           description,
           length,
-          active: true
+          is_active: true
         }
       ])
       .select()
