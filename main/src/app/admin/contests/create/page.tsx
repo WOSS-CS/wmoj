@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 
 export default function CreateContestPage() {
-  const { user, signOut, session } = useAuth() as any; // session needed for bearer token
+  const { user, signOut, session } = useAuth();
   const router = useRouter();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
