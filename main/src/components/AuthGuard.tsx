@@ -23,13 +23,22 @@ export function AuthGuard({
 
   useEffect(() => {
     if (loading) return;
+
+    // If auth is required and no user, redirect to login immediately
     if (requireAuth && !user) {
       router.replace('/auth/login');
       return;
     }
-    if (!allowAuthenticated && user) {
+
+    // Defer redirect until we actually know the user's dashboard path.
+    // This prevents prematurely sending an admin to /dashboard before their
+    // role (and thus /admin/dashboard path) is resolved asynchronously.
+    if (user && !userDashboardPath) {
+      return; // Wait for role resolution
+    }
+
+    if (!allowAuthenticated && user && userDashboardPath) {
       const targetPath = userDashboardPath || redirectTo;
-      // Avoid redirect loops
       if (targetPath !== window.location.pathname) {
         router.replace(targetPath);
       }
@@ -118,8 +127,22 @@ export function AuthGuard({
     return null;
   }
 
-  if (!loading && !allowAuthenticated && user) {
-    return null;
+  // If we're waiting on the dashboard path (role) still, show loading screen to avoid flash
+  if (user && !userDashboardPath && !allowAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center relative overflow-hidden">
+        <div className="text-center animate-fade-in-up">
+          <div className="relative mb-6">
+            <div className="w-16 h-16 border-4 border-green-400/30 border-t-green-400 rounded-full animate-spin mx-auto"></div>
+          </div>
+          <p className="text-gray-300 text-sm">Determining your access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!loading && !allowAuthenticated && user && userDashboardPath) {
+    return null; // Redirect will happen via effect
   }
 
   return <>{children}</>;
