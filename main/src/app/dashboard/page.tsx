@@ -154,13 +154,13 @@ export default function DashboardPage() {
                   { icon: '🏆', title: 'Join Contest', desc: 'Participate in live competitions', href: '/contests', color: 'from-purple-600 to-purple-700' },
                   { icon: '📊', title: 'View Stats', desc: 'Track your progress and achievements', href: null, color: 'from-gray-600 to-gray-700' }
                 ].map((card, index) => (
-                  <TiltEffect key={index} maxTilt={8}>
-                    <MagneticEffect strength={0.3}>
+                  <TiltEffect key={index} maxTilt={4}>
+                    <MagneticEffect strength={0.12} maxOffset={8}>
                       <RippleEffect color="green">
                         <HoverAnimation effect="lift">
                           <div 
-                            className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-all duration-300 flex flex-col transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/10 group cursor-pointer ${
-                              hoveredCard === index ? 'bg-white/15 scale-105 shadow-lg shadow-green-400/20 border-green-400/50' : ''
+                            className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-all duration-300 flex flex-col hover:shadow-lg hover:shadow-green-400/10 group cursor-pointer ${
+                              hoveredCard === index ? 'bg-white/15 shadow-lg shadow-green-400/20 border-green-400/50' : ''
                             }`}
                             onMouseEnter={() => setHoveredCard(index)}
                             onMouseLeave={() => setHoveredCard(null)}
