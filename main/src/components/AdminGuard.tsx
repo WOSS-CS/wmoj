@@ -9,19 +9,19 @@ interface AdminGuardProps {
 }
 
 export function AdminGuard({ children }: AdminGuardProps) {
-  const { user, loading } = useAuth();
+  const { user, session, loading } = useAuth();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
-      if (!user || loading) return;
+      if (!user || !session || loading) return;
       
       try {
         const res = await fetch('/api/admin/check', {
           headers: {
-            'Authorization': `Bearer ${user.access_token}`,
+            'Authorization': `Bearer ${session.access_token}`,
           },
         });
         
@@ -41,7 +41,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
     };
 
     checkAdminStatus();
-  }, [user, loading, router]);
+  }, [user, session, loading, router]);
 
   // Show loading state while checking admin status
   if (loading || checkingAdmin || isAdmin === null) {
