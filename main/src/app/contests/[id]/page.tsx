@@ -36,7 +36,6 @@ export default function ContestPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredProblem, setHoveredProblem] = useState<string | null>(null);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'problems' | 'leaderboard'>('problems');
 
   // Check access permission
   useEffect(() => {
@@ -404,7 +403,7 @@ export default function ContestPage() {
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4 animate-bounce">📝</div>
                   <h3 className="text-xl font-semibold text-white mb-2">No Problems Yet</h3>
-                  <p className="text-gray-400">Problems will appear here when they're added to the contest.</p>
+                  <p className="text-gray-400">Problems will appear here when they&apos;re added to the contest.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
