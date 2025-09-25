@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 
 export default function CreateContestPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, session } = useAuth() as any; // session needed for bearer token
   const router = useRouter();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
@@ -55,6 +55,7 @@ export default function CreateContestPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
         body: JSON.stringify(formData)
       });
