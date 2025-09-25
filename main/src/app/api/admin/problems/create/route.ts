@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSupabase } from '@/lib/supabaseServer';
+import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseServer';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,7 +36,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await getServerSupabase();
+    // Try header bearer token first (explicit), fall back to cookie-based session.
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    const bearerToken = authHeader?.toLowerCase().startsWith('bearer ')
+      ? authHeader.substring(7).trim()
+      : null;
+
+    const supabase = bearerToken
+      ? getServerSupabaseFromToken(bearerToken)
+      : await getServerSupabase();
 
     // Fetch current user (session context via cookies). If no user, reject.
     const {

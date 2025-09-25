@@ -16,7 +16,7 @@ interface Contest {
 }
 
 export default function CreateProblemPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, session } = useAuth();
   const router = useRouter();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
@@ -110,11 +110,16 @@ export default function CreateProblemPage() {
         return;
       }
 
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const res = await fetch('/api/admin/problems/create', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           ...formData,
           input: inputArray,
