@@ -267,9 +267,14 @@ export default function ContestsPage() {
                         >
                           <div className="grid grid-cols-12 gap-4 items-center">
                             <div className="col-span-4">
-                              <h3 className="text-lg font-semibold text-white mb-1">
-                                {contest.name}
-                              </h3>
+                              <div className="flex items-center gap-3 mb-1 flex-wrap">
+                                <h3 className="text-lg font-semibold text-white">
+                                  {contest.name || 'Untitled Contest'}
+                                </h3>
+                                <span className="px-2 py-0.5 text-xs rounded-full bg-green-400/15 text-green-300 border border-green-400/30">
+                                  {(contest.problems_count ?? 0)} problem{(contest.problems_count ?? 0) === 1 ? '' : 's'}
+                                </span>
+                              </div>
                               <p className="text-gray-400 text-sm line-clamp-2">
                                 {contest.description || 'No description available'}
                               </p>
@@ -286,7 +291,7 @@ export default function ContestsPage() {
                             </div>
                             <div className="col-span-2">
                               <span className="text-gray-400 text-sm">
-                                {Math.floor(Math.random() * 50) + 10} participants
+                                {(contest.participants_count ?? 0)} participant{(contest.participants_count ?? 0) === 1 ? '' : 's'}
                               </span>
                             </div>
                             <div className="col-span-2">
