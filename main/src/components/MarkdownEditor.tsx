@@ -91,9 +91,6 @@ export function MarkdownEditor({
             commands.divider,
             commands.hr,
             commands.table,
-            commands.divider,
-            commands.undo,
-            commands.redo,
           ]}
         />
       </div>
