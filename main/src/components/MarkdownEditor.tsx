@@ -59,7 +59,7 @@ export function MarkdownEditor({
           data-color-mode="dark"
           preview={isPreview ? 'preview' : 'edit'}
           hideToolbar={isPreview}
-          visibleDragBar={false}
+          visibleDragbar={false}
           textareaProps={{
             placeholder,
             style: {
