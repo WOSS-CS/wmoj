@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import MDEditor, { commands } from '@uiw/react-md-editor';
+import { MarkdownRenderer } from './MarkdownRenderer';
 import '@uiw/react-md-editor/markdown-editor.css';
 
 interface MarkdownEditorProps {
@@ -52,47 +53,54 @@ export function MarkdownEditor({
       </div>
       
       <div className="border border-white/20 rounded-lg overflow-hidden">
-        <MDEditor
-          value={value}
-          onChange={(val) => onChange(val || '')}
-          height={height}
-          data-color-mode="dark"
-          preview={isPreview ? 'preview' : 'edit'}
-          hideToolbar={isPreview}
-          visibleDragbar={false}
-          textareaProps={{
-            placeholder,
-            style: {
-              fontSize: 14,
-              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
-            },
-          }}
-          toolbarHeight={50}
-          commands={[
-            commands.bold,
-            commands.italic,
-            commands.strikethrough,
-            commands.divider,
-            commands.link,
-            commands.quote,
-            commands.code,
-            commands.codeBlock,
-            commands.divider,
-            commands.unorderedListCommand,
-            commands.orderedListCommand,
-            commands.checkedListCommand,
-            commands.divider,
-            commands.title1,
-            commands.title2,
-            commands.title3,
-            commands.title4,
-            commands.title5,
-            commands.title6,
-            commands.divider,
-            commands.hr,
-            commands.table,
-          ]}
-        />
+        {!isPreview && (
+          <MDEditor
+            value={value}
+            onChange={(val) => onChange(val || '')}
+            height={height}
+            data-color-mode="dark"
+            preview="edit"
+            hideToolbar={false}
+            visibleDragbar={false}
+            textareaProps={{
+              placeholder,
+              style: {
+                fontSize: 14,
+                fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+              },
+            }}
+            toolbarHeight={50}
+            commands={[
+              commands.bold,
+              commands.italic,
+              commands.strikethrough,
+              commands.divider,
+              commands.link,
+              commands.quote,
+              commands.code,
+              commands.codeBlock,
+              commands.divider,
+              commands.unorderedListCommand,
+              commands.orderedListCommand,
+              commands.checkedListCommand,
+              commands.divider,
+              commands.title1,
+              commands.title2,
+              commands.title3,
+              commands.title4,
+              commands.title5,
+              commands.title6,
+              commands.divider,
+              commands.hr,
+              commands.table,
+            ]}
+          />
+        )}
+        {isPreview && (
+          <div className="p-6 bg-black/30 max-h-[600px] overflow-auto">
+            <MarkdownRenderer content={value} />
+          </div>
+        )}
       </div>
       
       <div className="mt-2 text-xs text-gray-400">
