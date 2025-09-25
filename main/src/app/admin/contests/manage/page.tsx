@@ -197,69 +197,98 @@ export default function ManageContestsPage() {
               )}
 
               {editing && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                  <div className="w-full max-w-2xl bg-gray-900 border border-white/10 rounded-lg p-6 shadow-xl">
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-xl font-bold">Edit Contest</h2>
-                      <button onClick={closeEdit} className="text-gray-400 hover:text-white">✕</button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                  <div className="w-full max-w-5xl bg-gray-900/95 border border-white/10 rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-gradient-to-r from-gray-900 to-gray-800 rounded-t-xl">
+                      <div>
+                        <h2 className="text-xl font-bold tracking-wide">Edit Contest</h2>
+                        <p className="text-xs text-gray-400 mt-0.5">Modify contest settings & description</p>
+                      </div>
+                      <button onClick={closeEdit} className="text-gray-400 hover:text-white transition" aria-label="Close edit modal">✕</button>
                     </div>
-                    {fetchingEditContent ? (
-                      <div className="animate-pulse text-gray-400">Loading content...</div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Name</label>
-                          <input
-                            className="w-full px-3 py-2 rounded bg-black/40 border border-white/10 focus:outline-none focus:ring focus:ring-green-600/40"
-                            value={editing.name}
-                            onChange={e => setEditing(s => s ? { ...s, name: e.target.value } : s)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="block text-sm font-medium">Description (Markdown)</label>
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-2">
-                              <MarkdownEditor
-                                value={editing.description}
-                                onChange={(val: string) => setEditing(s => s ? { ...s, description: val } : s)}
-                                placeholder="Write contest description in Markdown..."
-                                height={300}
+                    {/* Body */}
+                    <div className="overflow-y-auto custom-scrollbar px-6 py-5 space-y-6">
+                      {fetchingEditContent ? (
+                        <div className="animate-pulse text-gray-400">Loading content...</div>
+                      ) : (
+                        <>
+                          <div className="grid md:grid-cols-3 gap-6 items-start">
+                            <div className="md:col-span-2 space-y-2">
+                              <label className="block text-sm font-medium">Name</label>
+                              <input
+                                className="w-full px-3 py-2 rounded-md bg-black/40 border border-white/10 focus:outline-none focus:ring focus:ring-green-600/40"
+                                value={editing.name}
+                                placeholder="Enter contest title"
+                                onChange={e => setEditing(s => s ? { ...s, name: e.target.value } : s)}
                               />
                             </div>
-                            <div className="border border-white/10 rounded-lg p-3 bg-black/30 overflow-auto max-h-72">
-                              <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">Live Preview</div>
-                              <div className="prose prose-invert max-w-none">
-                                <MarkdownRenderer content={editing.description || '*Nothing yet...*'} />
+                            <div className="flex md:flex-col gap-4 md:gap-2 pt-6 md:pt-0">
+                              <label className="inline-flex items-center gap-2 text-sm select-none">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4"
+                                  checked={editing.is_active}
+                                  onChange={e => setEditing(s => s ? { ...s, is_active: e.target.checked } : s)}
+                                />
+                                Active
+                              </label>
+                              <button
+                                onClick={saveEdit}
+                                disabled={!editing.name.trim()}
+                                className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-500 disabled:opacity-40 text-sm font-medium transition shadow-md shadow-green-600/20"
+                              >
+                                Save Now
+                              </button>
+                            </div>
+                          </div>
+                          <div className="grid md:grid-cols-3 gap-6 items-start">
+                            <div className="space-y-2 md:col-span-1">
+                              <label className="block text-sm font-medium">Length (minutes)</label>
+                              <input
+                                type="number"
+                                className="w-full px-3 py-2 rounded-md bg-black/40 border border-white/10 focus:outline-none focus:ring focus:ring-green-600/40"
+                                value={editing.length ?? ''}
+                                onChange={e => setEditing(s => s ? { ...s, length: e.target.value ? Number(e.target.value) : null } : s)}
+                              />
+                              <p className="text-[11px] text-gray-500">Leave blank for unspecified length.</p>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="block text-sm font-medium">Description (Markdown)</label>
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                              <div className="flex flex-col gap-2 min-h-[420px]">
+                                <MarkdownEditor
+                                  value={editing.description}
+                                  onChange={(val: string) => setEditing(s => s ? { ...s, description: val } : s)}
+                                  placeholder="Write contest description in Markdown..."
+                                  height={420}
+                                />
+                              </div>
+                              <div className="border border-white/10 rounded-lg p-4 bg-black/40 overflow-auto max-h-[560px] relative">
+                                <div className="text-xs uppercase tracking-wide text-gray-400 mb-3 flex items-center gap-2">
+                                  <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" /> Live Preview
+                                </div>
+                                <div className="prose prose-invert max-w-none text-sm leading-relaxed">
+                                  <MarkdownRenderer content={editing.description || '*Nothing yet...*'} />
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Length (minutes)</label>
-                          <input
-                            type="number"
-                            className="w-full px-3 py-2 rounded bg-black/40 border border-white/10 focus:outline-none focus:ring focus:ring-green-600/40"
-                            value={editing.length ?? ''}
-                            onChange={e => setEditing(s => s ? { ...s, length: e.target.value ? Number(e.target.value) : null } : s)}
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            id="contestActiveToggle"
-                            type="checkbox"
-                            checked={editing.is_active}
-                            onChange={e => setEditing(s => s ? { ...s, is_active: e.target.checked } : s)}
-                          />
-                          <label htmlFor="contestActiveToggle" className="text-sm">Active</label>
-                        </div>
-                        <div className="flex justify-end gap-3 pt-2">
-                          <button onClick={closeEdit} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">Cancel</button>
-                          <button onClick={saveEdit} className="px-4 py-2 rounded bg-green-600 hover:bg-green-500 disabled:opacity-50" disabled={!editing.name.trim()}>
-                            Save Changes
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                        </>
+                      )}
+                    </div>
+                    {/* Footer */}
+                    <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3 bg-gray-900/80 rounded-b-xl">
+                      <button onClick={closeEdit} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20 transition text-sm font-medium">Close</button>
+                      <button
+                        onClick={saveEdit}
+                        disabled={!editing?.name.trim()}
+                        className="px-5 py-2 rounded-md bg-green-600 hover:bg-green-500 disabled:opacity-40 font-semibold text-sm shadow-lg shadow-green-600/20 transition"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
