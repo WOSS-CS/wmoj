@@ -140,7 +140,6 @@ export default function CreateContestPage() {
           {/* Sidebar */}
           <aside className="w-64 bg-white/5 backdrop-blur-lg border-r border-white/10 min-h-screen">
             <div className="p-6 space-y-6">
-              <Logo size="sm" className="cursor-default" href={null} badge="Admin" />
               <h2 className="text-xl font-bold text-white mb-6">Admin Dashboard</h2>
               <nav className="space-y-2">
                 <Link href="/admin/dashboard" className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300">
@@ -184,7 +183,6 @@ export default function CreateContestPage() {
               }
             >
               <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                <Logo size="md" className="mb-6 cursor-default" badge="Create Contest" href={null} />
                 <h1 className="text-4xl font-bold text-white mb-4 relative">
                   Create New Contest
                   <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-purple-400 to-purple-600 rounded-full animate-pulse" />
