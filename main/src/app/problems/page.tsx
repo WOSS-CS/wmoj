@@ -172,15 +172,15 @@ export default function ProblemsPage() {
               </div>
             </LoadingState>
 
-            {/* Enhanced Loading State */}
-            <LoadingState 
-              isLoading={loading}
-              skeleton={<CardLoading count={6} />}
-            >
-              <div className="flex justify-center items-center py-12">
-                <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+            {/* Data Loading Indicator (shows only while loading) */}
+            {loading && (
+              <div className="py-6">
+                <CardLoading count={6} />
+                <div className="flex justify-center items-center py-8">
+                  <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin" aria-label="Loading problems" />
+                </div>
               </div>
-            </LoadingState>
+            )}
 
             {/* Enhanced Error State */}
             {error && (
