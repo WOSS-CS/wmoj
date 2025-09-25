@@ -4,7 +4,7 @@ import { useCountdown } from '@/contexts/CountdownContext';
 import { useState, useEffect, useRef } from 'react';
 import { AnimationWrapper, HoverAnimation } from './AnimationWrapper';
 import { RippleEffect, MagneticEffect, TiltEffect } from './MicroInteractions';
-import { useHoverAnimation, usePulseAnimation } from '@/hooks/useAnimations';
+import { useHoverAnimation } from '@/hooks/useAnimations';
 
 export function CountdownOverlay() {
   const { 

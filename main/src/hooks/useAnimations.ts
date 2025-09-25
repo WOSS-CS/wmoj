@@ -27,7 +27,7 @@ export function useAnimation() {
   };
 }
 
-export function useStaggeredAnimation(items: any[], delay: number = 100) {
+export function useStaggeredAnimation(items: unknown[], delay: number = 100) {
   const [visibleItems, setVisibleItems] = useState<number[]>([]);
 
   useEffect(() => {
