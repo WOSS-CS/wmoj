@@ -7,6 +7,7 @@ export interface Problem {
   output: string[];
   created_at: string;
   updated_at: string;
+  is_active?: boolean; // optional until ensured in all selects
 }
 
 export interface Contest {
