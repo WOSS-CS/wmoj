@@ -348,9 +348,8 @@ export default function ProblemPage() {
               {/* Enhanced Problem Description */}
               <div className="lg:col-span-2">
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-lg hover:shadow-green-400/10">
-                  <div className="flex flex-wrap items-center gap-4 mb-6">
-                    <Logo size="sm" className="cursor-default" href={null} withText={false} />
-                    <div className="relative">
+                    <div className="flex flex-wrap items-center gap-4 mb-6">
+                      <div className="relative">
                       <h1 className="text-3xl font-bold text-white">
                         {problem.name}
                       </h1>

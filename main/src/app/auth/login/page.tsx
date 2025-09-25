@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
-import { Logo } from '@/components/Logo';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -109,9 +108,8 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {/* Enhanced WMOJ Logo */}
           <div className={`text-center mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.2s' }}>
-            <Logo size="md" className="mx-auto justify-center cursor-default" href={null} badge="Welcome Back" />
+            <span className="inline-flex items-center justify-center px-4 py-1 rounded-full border border-green-400/40 bg-white/5 text-green-300 text-xs font-semibold tracking-[0.3em] uppercase">Welcome Back</span>
             <p className="mt-4 text-gray-400 text-lg">Welcome back, competitive programmer</p>
           </div>
 
