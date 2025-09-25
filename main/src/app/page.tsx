@@ -116,7 +116,7 @@ export default function Home() {
       <div className="relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-[80vh] px-6">
         <div className={`lg:w-1/2 text-center lg:text-left mb-12 lg:mb-0 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="mb-8 flex justify-center lg:justify-start">
-            <Logo size="lg" className="cursor-default" badge="Competitive Programming" />
+            <span className="px-4 py-1 rounded-full border border-green-400/40 bg-white/5 text-green-300 text-xs font-semibold tracking-[0.3em] uppercase">Competitive Programming</span>
           </div>
           <h1 className="text-6xl lg:text-7xl font-bold text-white mb-6 relative">
             Master
@@ -247,7 +247,7 @@ export default function Home() {
       <div className="relative z-10 py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-center mb-8">
-            <Logo size="md" className="cursor-default" href={null} withText badge="Why Choose" />
+            <span className="px-4 py-1 rounded-full border border-green-400/40 bg-white/5 text-green-300 text-xs font-semibold tracking-[0.3em] uppercase">Why Choose</span>
           </div>
           <h2 className="text-4xl font-bold text-white text-center mb-16 relative">
             Why Choose WMOJ?
@@ -284,7 +284,7 @@ export default function Home() {
       {/* Enhanced Footer */}
       <footer className="relative z-10 py-8 px-6 border-t border-white/10 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto text-center space-y-4">
-          <Logo size="sm" className="mx-auto justify-center cursor-default" href={null} withText={true} badge="Competitive Programming" />
+          <span className="text-sm font-semibold tracking-[0.3em] uppercase text-green-300">Competitive Programming Platform</span>
           <p className="text-gray-400">
             © 2024 WMOJ. All rights reserved. Built for competitive programmers.
           </p>

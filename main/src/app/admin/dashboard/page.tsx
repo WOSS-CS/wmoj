@@ -134,7 +134,6 @@ export default function AdminDashboardPage() {
               }
             >
               <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                <Logo size="md" className="mb-6 cursor-default" badge="Admin Hub" href={null} />
                 <h1 className="text-4xl font-bold text-white mb-4 relative">
                   Admin Dashboard
                   <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-red-400 to-red-600 rounded-full animate-pulse" />

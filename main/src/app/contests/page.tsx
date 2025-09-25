@@ -162,7 +162,6 @@ export default function ContestsPage() {
           {/* Sidebar */}
           <aside className="w-64 bg-white/5 backdrop-blur-lg border-r border-white/10 min-h-screen">
             <div className="p-6 space-y-6">
-              <Logo size="sm" className="cursor-default" href={null} />
               <h2 className="text-xl font-bold text-white mb-6">Contests</h2>
               <nav className="space-y-2">
                 <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300">
@@ -205,7 +204,6 @@ export default function ContestsPage() {
               }
             >
               <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                <Logo size="md" className="mb-6 cursor-default" badge="Live Events" href={null} />
                 <h1 className="text-4xl font-bold text-white mb-4 relative">
                   Available Contests
                   <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />

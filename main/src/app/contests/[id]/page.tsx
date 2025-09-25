@@ -223,7 +223,6 @@ export default function ContestPage() {
               {/* Enhanced Contest Header */}
               <div className="flex justify-between items-start mb-8">
                 <div className="flex-1">
-                  <Logo size="sm" className="mb-4 cursor-default" badge="Contest" href={null} />
                   <h1 className="text-4xl font-bold text-white mb-4 relative">
                     {contest?.name}
                     <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />

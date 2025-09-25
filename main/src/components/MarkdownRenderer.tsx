@@ -8,6 +8,10 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+// Import defaultSchema directly instead of using require, so we stay typesafe
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - rehype-sanitize types may not export defaultSchema formally
+import { defaultSchema } from 'hast-util-sanitize';
 
 interface MarkdownRendererProps {
   content: string;
@@ -21,40 +25,38 @@ interface MarkdownRendererProps {
 const katexAllowedTags = [
   'span','math','mrow','mi','mo','mn','msup','msub','msubsup','mfrac','msqrt','mroot','mstyle','mspace','mtext','annotation','semantics'
 ];
-// Dynamically build a schema extension (defensive try/catch in case rehype-sanitize internal schema changes)
-let sanitizeOptions: any = {};
-try {
-  // Lazy require to avoid SSR bundling issues if default schema shape changes
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { defaultSchema } = require('hast-util-sanitize');
-  sanitizeOptions = {
-    ...defaultSchema,
-    tagNames: Array.from(new Set([...(defaultSchema.tagNames || []), ...katexAllowedTags])),
-    attributes: {
-      ...(defaultSchema.attributes || {}),
-      span: [
-        ...(defaultSchema.attributes?.span || []),
-        ['className', /^katex.*$/],
-        ['className', 'katex'],
-        ['className', 'katex-display'],
-        ['className', 'katex-html'],
-        ['className', 'katex-mathml'],
-      ],
-      math: [ ...(defaultSchema.attributes?.math || []), 'display' ],
-      annotation: [ ...(defaultSchema.attributes?.annotation || []), 'encoding' ],
-    },
-  };
-} catch (e) {
-  // Fallback: minimal allowlist if default schema unavailable
-  sanitizeOptions = {
-    tagNames: katexAllowedTags,
-    attributes: {
-      span: [['className', /^katex.*$/]],
-      annotation: ['encoding'],
-      math: ['display']
-    }
-  };
-}
+// Build a schema extension (defensive: fallback if defaultSchema missing expected shape)
+type SanitizeSchema = {
+  tagNames?: string[];
+  attributes?: Record<string, unknown>;
+  protocols?: unknown;
+};
+
+const base: SanitizeSchema = (defaultSchema as SanitizeSchema) || {};
+const sanitizeOptions: SanitizeSchema = {
+  ...base,
+  tagNames: Array.from(new Set([...(base.tagNames || []), ...katexAllowedTags])),
+  attributes: {
+    ...(base.attributes || {}),
+    span: [
+      // Preserve existing rules for span
+      ...(Array.isArray((base.attributes as any)?.span) ? (base.attributes as any).span : []),
+      ['className', /^katex.*$/],
+      ['className', 'katex'],
+      ['className', 'katex-display'],
+      ['className', 'katex-html'],
+      ['className', 'katex-mathml'],
+    ],
+    math: [
+      ...(Array.isArray((base.attributes as any)?.math) ? (base.attributes as any).math : []),
+      'display'
+    ],
+    annotation: [
+      ...(Array.isArray((base.attributes as any)?.annotation) ? (base.attributes as any).annotation : []),
+      'encoding'
+    ],
+  }
+};
 
 export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
   return (
@@ -63,11 +65,13 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[[rehypeSanitize, sanitizeOptions], rehypeKatex]}
         components={{
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          code({ inline, className, children, ...props }: any) {
+          code({ inline, className, children, ...props }: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { inline?: boolean; className?: string; children?: React.ReactNode }) {
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
               <SyntaxHighlighter
+                // Cast due to upstream type mismatch between exported style shape and expected index signature
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
                 style={vscDarkPlus}
                 language={match[1]}
                 PreTag="div"
