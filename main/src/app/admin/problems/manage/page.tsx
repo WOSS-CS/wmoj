@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
 import { useAuth } from '@/contexts/AuthContext';
-import Link from 'next/link';
+import { AdminSidebar } from '@/components/AdminSidebar';
 
 interface ProblemRow {
   id: string;
@@ -133,16 +133,7 @@ export default function ManageProblemsPage() {
       <AdminGuard>
         <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white">
           <div className="flex">
-            <aside className="w-64 bg-white/5 backdrop-blur-lg border-r border-white/10 min-h-screen p-6">
-              <h2 className="text-xl font-bold mb-6">Admin</h2>
-              <nav className="space-y-2">
-                <Link href="/admin/dashboard" className="block px-4 py-2 rounded bg-white/10 hover:bg-white/20 transition">Dashboard</Link>
-                <Link href="/admin/contests/create" className="block px-4 py-2 rounded hover:bg-white/10 transition">Create Contest</Link>
-                <Link href="/admin/problems/create" className="block px-4 py-2 rounded hover:bg-white/10 transition">Create Problem</Link>
-                <Link href="/admin/problems/manage" className="block px-4 py-2 rounded bg-green-600/20 border border-green-500 text-green-300">Manage Problems</Link>
-                <Link href="/admin/contests/manage" className="block px-4 py-2 rounded hover:bg-white/10 transition">Manage Contests</Link>
-              </nav>
-            </aside>
+            <AdminSidebar />
             <main className="flex-1 p-8">
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold">Manage Problems</h1>
