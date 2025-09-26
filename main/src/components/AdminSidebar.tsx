@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Logo } from './Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 
@@ -88,17 +87,7 @@ export function AdminSidebar() {
 
   return (
     <aside className="w-64 bg-white/5 backdrop-blur-lg border-r border-white/10 min-h-screen flex flex-col">
-      <div className="p-6 border-b border-white/10">
-        <div className="flex items-center gap-2 mb-4">
-          <Logo size="sm" />
-          <span className="text-sm text-gray-400">Admin Panel</span>
-        </div>
-        {mounted && (
-          <div className="text-xs px-3 py-2 rounded bg-red-400/10 text-red-300 border border-red-400/30">
-            Admin: {user?.user_metadata?.username || user?.email}
-          </div>
-        )}
-      </div>
+      <div className="h-16 border-b border-white/10" />
       <nav className="p-4 space-y-2 flex-1">
         {items.map(item => {
           const active = item.match(pathname || '');
@@ -114,9 +103,7 @@ export function AdminSidebar() {
           );
         })}
       </nav>
-      <div className="px-4 py-4 border-t border-white/10 text-[10px] text-gray-500 tracking-wide uppercase">
-        Consistent Sidebar v1
-      </div>
+      <div className="px-4 py-4 border-t border-white/10 text-[10px] text-gray-500 tracking-wide uppercase">Admin Navigation</div>
     </aside>
   );
 }
