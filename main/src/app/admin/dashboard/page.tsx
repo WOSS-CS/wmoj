@@ -162,9 +162,7 @@ export default function AdminDashboardPage() {
                             style={{ transitionDelay: `${index * 0.1}s` }}
                           >
                             <div className="flex items-center gap-4 mb-4">
-                              <div className={`text-4xl transition-all duration-300 ${
-                                hoveredCard === index ? 'animate-wiggle' : 'group-hover:animate-wiggle'
-                              }`}>
+                              <div className={`text-4xl`}>
                                 {card.icon}
                               </div>
                               <h3 className={`text-2xl font-bold transition-colors duration-300 ${
