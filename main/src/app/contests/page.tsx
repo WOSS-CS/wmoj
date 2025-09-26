@@ -19,6 +19,7 @@ export default function ContestsPage() {
   const [error, setError] = useState('');
   const [joinedContestId, setJoinedContestId] = useState<string | null>(null);
   const [loadingParticipation, setLoadingParticipation] = useState(false);
+  const [joinedHistory, setJoinedHistory] = useState<Set<string>>(new Set());
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredContest, setHoveredContest] = useState<string | null>(null);
@@ -53,19 +54,30 @@ export default function ContestsPage() {
   useEffect(() => {
     if (session?.access_token && !loadingParticipation) {
       setLoadingParticipation(true);
+      // Fetch current participation (active contest)
       fetch('/api/contests/participation', {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
       })
         .then(res => res.json())
         .then(json => {
-          if (json.contestId) {
-            setJoinedContestId(json.contestId);
+          if (json.contest_id) {
+            setJoinedContestId(json.contest_id);
           }
         })
         .catch(e => console.error('Error checking participation:', e))
         .finally(() => setLoadingParticipation(false));
+
+      // Fetch join history to allow viewing past contests' leaderboard
+      fetch('/api/contests/join-history', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      })
+        .then(res => res.json())
+        .then(json => {
+          if (Array.isArray(json.contest_ids)) {
+            setJoinedHistory(new Set<string>(json.contest_ids));
+          }
+        })
+        .catch(e => console.error('Error fetching join history:', e));
     }
   }, [session?.access_token, loadingParticipation]);
 
@@ -298,6 +310,17 @@ export default function ContestsPage() {
                               {joinedContestId === contest.id ? (
                                 <Link
                                   href={`/contests/${contest.id}`}
+                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors duration-300"
+                                >
+                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                  View
+                                </Link>
+                              ) : joinedHistory.has(contest.id) ? (
+                                <Link
+                                  href={`/contests/${contest.id}/leaderboard`}
                                   className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors duration-300"
                                 >
                                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

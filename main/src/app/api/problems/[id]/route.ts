@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseServer';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -14,6 +14,13 @@ export async function GET(
         { status: 400 }
       );
     }
+
+    // Build supabase client; prefer bearer if provided for participation checks
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    const bearer = authHeader?.toLowerCase().startsWith('bearer ')
+      ? authHeader.substring(7).trim()
+      : null;
+    const supabase = bearer ? getServerSupabaseFromToken(bearer) : await getServerSupabase();
 
     const { data: problem, error } = await supabase
       .from('problems')
@@ -33,6 +40,28 @@ export async function GET(
         { error: 'Failed to fetch problem' },
         { status: 500 }
       );
+    }
+
+    // If problem belongs to a contest, enforce participant-only access
+    if (problem.contest) {
+      // Anonymous or no token → forbid
+      if (!bearer) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      const { data: authUser, error: userErr } = await supabase.auth.getUser();
+      const userId = authUser?.user?.id;
+      if (userErr || !userId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      const { data: participant, error: partErr } = await supabase
+        .from('contest_participants')
+        .select('user_id')
+        .eq('user_id', userId)
+        .eq('contest_id', problem.contest)
+        .maybeSingle();
+      if (partErr || !participant) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     return NextResponse.json({ problem });

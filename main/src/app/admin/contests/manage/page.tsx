@@ -66,8 +66,10 @@ export default function ManageContestsPage() {
   const openEdit = async (c: ContestRow) => {
     setFetchingEditContent(true);
     try {
-      // Public contests endpoint returns a list; need single contest endpoint (already exists /api/contests/[id])
-      const res = await fetch(`/api/contests/${c.id}`);
+      // Use admin endpoint to fetch contest details (handles inactive too)
+      const res = await fetch(`/api/admin/contests/${c.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load contest');
       setEditing({ id: c.id, name: data.contest.name, description: data.contest.description || '', length: data.contest.length || null, is_active: !!c.is_active });
