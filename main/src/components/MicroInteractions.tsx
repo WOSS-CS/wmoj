@@ -116,45 +116,10 @@ export function MagneticEffect({ children, strength = 0.3, maxOffset = 12, class
   );
 }
 
-interface TiltEffectProps {
-  children: ReactNode;
-  maxTilt?: number;
-  className?: string;
-}
-
-export function TiltEffect({ children, maxTilt = 15, className = '' }: TiltEffectProps) {
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    const deltaX = (e.clientX - centerX) / (rect.width / 2);
-    const deltaY = (e.clientY - centerY) / (rect.height / 2);
-    
-    setTilt({
-      x: deltaY * maxTilt,
-      y: -deltaX * maxTilt
-    });
-  };
-
-  const handleMouseLeave = () => {
-    setTilt({ x: 0, y: 0 });
-  };
-
-  return (
-    <div
-      className={`transition-transform duration-300 ease-out ${className}`}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`
-      }}
-    >
-      {children}
-    </div>
-  );
+interface TiltEffectProps { children: ReactNode; className?: string; maxTilt?: number }
+// Neutralized TiltEffect: kept API shape so existing usages need no edits.
+export function TiltEffect({ children, className = '' }: TiltEffectProps) {
+  return <div className={className}>{children}</div>;
 }
 
 interface ParallaxEffectProps {
