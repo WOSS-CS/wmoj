@@ -108,27 +108,9 @@ export function HoverAnimation({
   effect = 'lift',
   className = ''
 }: HoverAnimationProps) {
-  const getEffectClass = () => {
-    switch (effect) {
-      case 'lift':
-        return 'hover-lift';
-      case 'scale':
-        return 'hover-scale';
-      case 'glow':
-        return 'hover-glow';
-      case 'rotate':
-        return 'hover-rotate';
-      case 'bounce':
-        return 'hover-bounce';
-      case 'wiggle':
-        return 'hover-wiggle';
-      default:
-        return 'hover-lift';
-    }
-  };
-
+  // Neutralized: remove all hover-induced movement effects
   return (
-    <div className={`${getEffectClass()} smooth-transition ${className}`}>
+    <div className={className}>
       {children}
     </div>
   );
