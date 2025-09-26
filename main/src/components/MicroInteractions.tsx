@@ -69,51 +69,10 @@ export function RippleEffect({ children, className = '', color = 'green' }: Ripp
   );
 }
 
-interface MagneticEffectProps {
-  children: ReactNode;
-  strength?: number;
-  maxOffset?: number;
-  className?: string;
-}
-
-function clamp(value: number, limit: number) {
-  if (!Number.isFinite(limit) || limit <= 0) return value;
-  return Math.max(-limit, Math.min(value, limit));
-}
-
-export function MagneticEffect({ children, strength = 0.3, maxOffset = 12, className = '' }: MagneticEffectProps) {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    const deltaX = (e.clientX - centerX) * strength;
-    const deltaY = (e.clientY - centerY) * strength;
-    
-    setPosition({
-      x: clamp(deltaX, maxOffset),
-      y: clamp(deltaY, maxOffset)
-    });
-  };
-
-  const handleMouseLeave = () => {
-    setPosition({ x: 0, y: 0 });
-  };
-
-  return (
-    <div
-      className={`transition-transform duration-300 ease-out ${className}`}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`
-      }}
-    >
-      {children}
-    </div>
-  );
+interface MagneticEffectProps { children: ReactNode; strength?: number; maxOffset?: number; className?: string }
+// Neutralized MagneticEffect: retains API but no longer applies motion.
+export function MagneticEffect({ children, className = '' }: MagneticEffectProps) {
+  return <div className={className}>{children}</div>;
 }
 
 interface TiltEffectProps { children: ReactNode; className?: string; maxTilt?: number }
