@@ -11,12 +11,14 @@ import { Problem } from '@/types/problem';
 import { supabase } from '@/lib/supabase';
 import { checkContestParticipation } from '@/utils/participationCheck';
 import { Logo } from '@/components/Logo';
+import { useCountdown } from '@/contexts/CountdownContext';
 
 export default function ProblemPage() {
   const routeParams = useParams<{ id: string }>();
   const problemId = Array.isArray(routeParams?.id) ? routeParams.id[0] : routeParams?.id;
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, session } = useAuth();
+  const { isActive, contestId } = useCountdown();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState<'description' | 'results' | 'stats'>('description');
@@ -43,7 +45,7 @@ export default function ProblemPage() {
   const [summary, setSummary] = useState<{ total: number; passed: number; failed: number } | null>(null);
   const [bestSummary, setBestSummary] = useState<{ total: number; passed: number; failed: number } | null>(null);
 
-  const JUDGE_URL = (process.env.NEXT_PUBLIC_JUDGE_URL as string) || 'http://localhost:4001';
+  // Submissions now go through a secure API route which enforces participation
 
   useEffect(() => {
     if (problemId) {
@@ -78,6 +80,15 @@ export default function ProblemPage() {
       setAccessChecked(true);
     })();
   }, [user, problem, router]);
+
+  // If the countdown ends while on a contest problem, redirect to /contests
+  useEffect(() => {
+    if (!problem?.contest) return;
+    // If countdown is inactive or tied to a different contest, redirect out
+    if (!isActive || (contestId && contestId !== problem.contest)) {
+      router.replace('/contests');
+    }
+  }, [isActive, contestId, problem?.contest, router]);
 
   useEffect(() => {
     if (user && problem) {
@@ -130,40 +141,20 @@ export default function ProblemPage() {
 
     try {
       const code = await codeFile.text();
-      const payload = {
-        language: selectedLanguage,
-        code,
-        input: problem.input,
-        output: problem.output,
-      };
-
-      const resp = await fetch(`${JUDGE_URL}/submit`, {
+      const resp = await fetch(`/api/problems/${problem.id}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ language: selectedLanguage, code }),
       });
-
       const data = await resp.json();
       if (!resp.ok) {
-        throw new Error(data?.error || 'Judge failed to evaluate submission');
+        throw new Error(data?.error || 'Submission failed');
       }
-
       setResults(data.results || []);
       setSummary(data.summary || null);
-
-      // Persist submission to Supabase
-      await supabase.from('submissions').insert({
-        problem_id: problem.id,
-        user_id: user.id,
-        language: selectedLanguage,
-        code,
-        input: problem.input,
-        output: problem.output,
-        results: data.results,
-        summary: data.summary,
-      });
-
-      // Refresh best submission indicator
       await fetchBestSubmission(user.id, problem.id);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Submission failed';

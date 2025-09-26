@@ -12,6 +12,7 @@ interface ProblemRow {
   id: string;
   name: string;
   contest: string | null;
+  contest_name?: string | null;
   is_active: boolean | null;
   created_at: string;
   updated_at: string;
@@ -66,11 +67,13 @@ export default function ManageProblemsPage() {
   const openEdit = async (p: ProblemRow) => {
     setFetchingEditContent(true);
     try {
-      // Fetch full problem content via existing public problem endpoint
-      const res = await fetch(`/api/problems/${p.id}`);
+      // Fetch full problem content via admin endpoint (ensures access to inactive/contest problems)
+      const res = await fetch(`/api/admin/problems/${p.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load problem');
-      setEditing({ id: p.id, name: data.problem.name, content: data.problem.content || '', is_active: !!p.is_active });
+      setEditing({ id: p.id, name: data.problem.name, content: data.problem.content || '', is_active: !!(data.problem.is_active ?? p.is_active) });
     } catch (e: unknown) {
       setActionMessage(e instanceof Error ? e.message : 'Failed to open editor');
     } finally {
@@ -186,7 +189,7 @@ export default function ManageProblemsPage() {
                       {problems.map(p => (
                         <tr key={p.id} className="border-t border-white/5 hover:bg-white/5">
                           <td className="py-2 px-3 font-medium text-white max-w-xs truncate" title={p.name}>{p.name}</td>
-                          <td className="py-2 px-3 text-gray-400">{p.contest || '-'}</td>
+                          <td className="py-2 px-3 text-gray-400">{p.contest_name || p.contest || '-'}</td>
                           <td className="py-2 px-3">
                             <span className={`px-2 py-1 rounded text-xs font-semibold ${p.is_active ? 'bg-green-600/30 text-green-300 border border-green-500/40' : 'bg-red-600/20 text-red-300 border border-red-500/30'}`}>
                               {p.is_active ? 'Active' : 'Inactive'}

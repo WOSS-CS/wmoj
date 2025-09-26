@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -43,13 +43,18 @@ export default function CreateProblemPage() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  useEffect(() => {
-    fetchContests();
-  }, []);
+  const token = session?.access_token;
 
-  const fetchContests = async () => {
+  useEffect(() => {
+    if (token) fetchContests();
+  }, [token]);
+
+  const fetchContests = useCallback(async () => {
     try {
-      const res = await fetch('/api/contests');
+      if (!token) return;
+      const res = await fetch('/api/admin/contests/list', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const json = await res.json();
       if (res.ok) {
         setContests(json.contests || []);
@@ -57,7 +62,7 @@ export default function CreateProblemPage() {
     } catch (e) {
       console.error('Error fetching contests:', e);
     }
-  };
+  }, [token]);
 
   const handleSignOut = async () => {
     await signOut();
