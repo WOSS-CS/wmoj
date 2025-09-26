@@ -19,6 +19,24 @@ async function getAdminSupabase(request: NextRequest) {
   return { supabase };
 }
 
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const auth = await getAdminSupabase(request);
+  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const { supabase } = auth;
+  const { data, error } = await supabase
+    .from('contests')
+    .select('id,name,description,length,is_active,created_at,updated_at')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) {
+    console.error('Fetch admin contest error:', error);
+    return NextResponse.json({ error: 'Failed to fetch contest' }, { status: 500 });
+  }
+  if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json({ contest: data });
+}
+
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const auth = await getAdminSupabase(request);
