@@ -83,12 +83,12 @@ export default function Home() {
         <div className="flex gap-4">
           {user ? (
             <>
-              <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-all duration-300 transform hover:scale-105">
+              <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-colors duration-300">
                 Welcome, {user.user_metadata?.username || user.email}
               </span>
               <button
                 onClick={handleSignOut}
-                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-600/25"
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
               >
                 Sign Out
               </button>
@@ -97,13 +97,13 @@ export default function Home() {
             <>
               <Link
                 href="/auth/login"
-                className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25"
+                className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-colors duration-300"
               >
                 Log In
               </Link>
               <Link
                 href="/auth/signup"
-                className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25"
+                className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors duration-300"
               >
                 Sign Up
               </Link>
@@ -140,12 +140,12 @@ export default function Home() {
               <>
                 <Link
                   href="/dashboard"
-                  className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-green-400/25 relative overflow-hidden group"
+                  className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 relative overflow-hidden group"
                 >
                   <span className="relative z-10">Start Coding Now</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </Link>
-                <button className="px-8 py-4 border-2 border-green-400 text-green-400 rounded-lg text-lg font-semibold hover:bg-green-400 hover:text-black transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25">
+                <button className="px-8 py-4 border-2 border-green-400 text-green-400 rounded-lg text-lg font-semibold hover:bg-green-400 hover:text-black transition-colors duration-300">
                   View Problems
                 </button>
               </>
@@ -153,12 +153,12 @@ export default function Home() {
               <>
                 <Link
                   href="/auth/signup"
-                  className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-green-400/25 relative overflow-hidden group"
+                  className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 relative overflow-hidden group"
                 >
                   <span className="relative z-10">Start Coding Now</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </Link>
-                <button className="px-8 py-4 border-2 border-green-400 text-green-400 rounded-lg text-lg font-semibold hover:bg-green-400 hover:text-black transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25">
+                <button className="px-8 py-4 border-2 border-green-400 text-green-400 rounded-lg text-lg font-semibold hover:bg-green-400 hover:text-black transition-colors duration-300">
                   Learn More
                 </button>
               </>
@@ -168,7 +168,7 @@ export default function Home() {
 
         {/* Enhanced Auth Form / User Dashboard */}
         <div className={`lg:w-1/2 max-w-md w-full transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.2s' }}>
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-green-400/10">
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/15 transition-colors duration-300">
             {user ? (
               <div className="space-y-6">
                 <div className="text-center">
@@ -188,13 +188,13 @@ export default function Home() {
                 <div className="space-y-4">
                   <Link
                     href="/dashboard"
-                    className="block w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 text-center relative overflow-hidden group"
+                    className="block w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 text-center relative overflow-hidden group"
                   >
                     <span className="relative z-10">View Dashboard</span>
                     <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </Link>
                   
-                  <button className="block w-full py-3 border border-green-400 text-green-400 rounded-lg font-semibold hover:bg-green-400 hover:text-black transition-all duration-300 text-center transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25">
+                  <button className="block w-full py-3 border border-green-400 text-green-400 rounded-lg font-semibold hover:bg-green-400 hover:text-black transition-colors duration-300 text-center">
                     Browse Problems
                   </button>
                 </div>
@@ -217,7 +217,7 @@ export default function Home() {
                   <div className="space-y-4">
                     <Link
                       href="/auth/signup"
-                      className="block w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 text-center relative overflow-hidden group"
+                      className="block w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 text-center relative overflow-hidden group"
                     >
                       <span className="relative z-10">Create Account</span>
                       <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -225,7 +225,7 @@ export default function Home() {
                     
                     <Link
                       href="/auth/login"
-                      className="block w-full py-3 border border-green-400 text-green-400 rounded-lg font-semibold hover:bg-green-400 hover:text-black transition-all duration-300 text-center transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25"
+                      className="block w-full py-3 border border-green-400 text-green-400 rounded-lg font-semibold hover:bg-green-400 hover:text-black transition-colors duration-300 text-center"
                     >
                       Sign In
                     </Link>
@@ -261,12 +261,12 @@ export default function Home() {
             ].map((feature, index) => (
               <div 
                 key={index}
-                className={`text-center p-8 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/10 group cursor-pointer ${
-                  activeFeature === index ? 'bg-white/10 scale-105 shadow-lg shadow-green-400/20' : ''
+                className={`text-center p-8 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors duration-300 group cursor-pointer ${
+                  activeFeature === index ? 'bg-white/10 ring-1 ring-green-400/40' : ''
                 }`}
                 onMouseEnter={() => setActiveFeature(index)}
               >
-                <div className={`text-6xl mb-6 transition-all duration-300 ${activeFeature === index ? 'scale-110' : 'group-hover:scale-110'}`}>
+                <div className={`text-6xl mb-6 transition-colors duration-300 ${activeFeature === index ? 'text-green-400' : ''}`}>
                   {feature.icon}
                 </div>
                 <h3 className={`text-xl font-semibold mb-4 transition-colors duration-300 ${activeFeature === index ? 'text-green-400' : 'text-white group-hover:text-green-400'}`}>

@@ -81,7 +81,7 @@ export default function AdminDashboardPage() {
             </span>
             <button
               onClick={handleSignOut}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-600/25"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
             >
               Sign Out
             </button>
@@ -154,7 +154,7 @@ export default function AdminDashboardPage() {
                       <RippleEffect color="green">
                         <HoverAnimation effect="lift">
                           <div 
-                            className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-all duration-300 flex flex-col transform hover:scale-[1.02] hover:shadow-lg hover:shadow-green-400/10 group cursor-pointer ${
+                            className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-colors duration-300 flex flex-col group cursor-pointer ${
                               hoveredCard === index ? 'bg-white/15 scale-[1.02] shadow-lg shadow-green-400/20 border-green-400/50' : ''
                             }`}
                             onMouseEnter={() => setHoveredCard(index)}
@@ -177,7 +177,7 @@ export default function AdminDashboardPage() {
                               {card.desc}
                             </p>
                             <Link href={card.href} className="mt-auto">
-                              <div className={`px-6 py-3 bg-gradient-to-r ${card.color} text-white rounded-lg hover:opacity-90 transition-all duration-300 transform hover:scale-[1.02]`}>
+                              <div className={`px-6 py-3 bg-gradient-to-r ${card.color} text-white rounded-lg hover:opacity-90 transition-colors duration-300`}>
                                 Get Started
                               </div>
                             </Link>
