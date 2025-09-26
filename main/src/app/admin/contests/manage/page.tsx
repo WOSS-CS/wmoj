@@ -6,6 +6,7 @@ import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminSidebar } from '@/components/AdminSidebar';
+import { Logo } from '@/components/Logo';
 
 interface ContestRow {
   id: string;
@@ -28,7 +29,7 @@ const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(
 const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
 
 export default function ManageContestsPage() {
-  const { session } = useAuth();
+  const { session, user, signOut } = useAuth();
   const [contests, setContests] = useState<ContestRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,7 +131,22 @@ export default function ManageContestsPage() {
   return (
     <AuthGuard requireAuth allowAuthenticated>
       <AdminGuard>
-        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white">
+        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white relative overflow-hidden">
+          {/* Top Navigation Bar */}
+          <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
+            <Logo size="md" className="cursor-pointer" />
+            <div className="flex items-center gap-4">
+              <span className="px-4 py-2 text-red-400 border border-red-400 rounded-lg bg-red-400/10 backdrop-blur-sm">
+                Admin: {user?.user_metadata?.username || user?.email}
+              </span>
+              <button
+                onClick={async () => { await signOut(); }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105"
+              >
+                Sign Out
+              </button>
+            </div>
+          </nav>
           <div className="flex">
             <AdminSidebar />
             <main className="flex-1 p-8">
