@@ -41,7 +41,8 @@ export async function GET() {
     const { data: problemsRaw, error: problemsErr } = await supabase
       .from('problems')
       .select('id,contest')
-      .in('contest', contestIds);
+      .in('contest', contestIds)
+      .eq('is_active', true);
 
     if (problemsErr) {
       console.warn('[contests API] problems aggregation error:', problemsErr);
