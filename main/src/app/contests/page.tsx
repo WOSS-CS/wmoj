@@ -151,7 +151,7 @@ export default function ContestsPage() {
             </span>
             <button
               onClick={handleSignOut}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
             >
               Sign Out
             </button>
@@ -298,7 +298,7 @@ export default function ContestsPage() {
                               {joinedContestId === contest.id ? (
                                 <Link
                                   href={`/contests/${contest.id}`}
-                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105"
+                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors duration-300"
                                 >
                                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -310,7 +310,7 @@ export default function ContestsPage() {
                                 <button
                                   onClick={() => handleJoinContest(contest.id, contest.name, contest.length)}
                                   disabled={joiningContest === contest.id || (joinedContestId !== null && joinedContestId !== contest.id)}
-                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {joiningContest === contest.id ? (
                                     <>

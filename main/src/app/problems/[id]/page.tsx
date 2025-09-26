@@ -269,23 +269,23 @@ export default function ProblemPage() {
             <button
               type="button"
               onClick={() => router.push('/problems')}
-              className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25"
+              className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-colors duration-300"
             >
               Back to Problems
             </button>
             <button
               type="button"
               onClick={() => router.push('/dashboard')}
-              className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25"
+              className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-colors duration-300"
             >
               Back to Dashboard
             </button>
-            <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-all duration-300 transform hover:scale-105">
+            <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-colors duration-300">
               {user?.user_metadata?.username || user?.email}
             </span>
             <button
               onClick={handleSignOut}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-600/25"
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
             >
               Sign Out
             </button>
@@ -335,7 +335,7 @@ export default function ProblemPage() {
               <button
                 type="button"
                 onClick={() => router.push('/problems')}
-                className="mt-4 inline-block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-600/25"
+                className="mt-4 inline-block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
               >
                 Back to Problems
               </button>
@@ -347,7 +347,7 @@ export default function ProblemPage() {
             <div className={`grid lg:grid-cols-3 gap-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
               {/* Enhanced Problem Description */}
               <div className="lg:col-span-2">
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-lg hover:shadow-green-400/10">
+                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/15 transition-colors duration-300">
                     <div className="flex flex-wrap items-center gap-4 mb-6">
                       <div className="relative">
                       <h1 className="text-3xl font-bold text-white">
@@ -370,7 +370,7 @@ export default function ProblemPage() {
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as 'description' | 'results' | 'stats')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
                           activeTab === tab.id
                             ? 'bg-green-400/20 text-green-400 border border-green-400/50'
                             : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
@@ -403,7 +403,7 @@ export default function ProblemPage() {
                             </div>
                             <div className="space-y-3">
                               {results.map((r) => (
-                                <div key={r.index} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-300 transform hover:scale-[1.02]">
+                                <div key={r.index} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors duration-300">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                       <span className={`px-2 py-0.5 rounded text-xs ${r.passed ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
@@ -475,7 +475,7 @@ export default function ProblemPage() {
 
               {/* Enhanced Code Submission Panel */}
               <div className="lg:col-span-1">
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 sticky top-8 hover:bg-white/15 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-green-400/10">
+                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 sticky top-8 hover:bg-white/15 transition-colors duration-300">
                   <h2 className="text-xl font-semibold text-white mb-6 relative">
                     Submit Solution
                     <div className="absolute -bottom-2 left-0 w-20 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
@@ -491,7 +491,7 @@ export default function ProblemPage() {
                         <select
                           value={selectedLanguage}
                           onChange={(e) => setSelectedLanguage(e.target.value)}
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-green-400 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25 appearance-none cursor-pointer"
+                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-green-400 transition-colors duration-300 appearance-none cursor-pointer"
                         >
                           {languages.map((lang) => (
                             <option key={lang.value} value={lang.value} className="bg-gray-800">
@@ -517,7 +517,7 @@ export default function ProblemPage() {
                           type="file"
                           onChange={handleFileChange}
                           accept=".py,.cpp,.java,.c,.h"
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 focus:outline-none focus:border-green-400 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25"
+                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 focus:outline-none focus:border-green-400 transition-colors duration-300"
                         />
                       </div>
                       {codeFile && (
@@ -570,7 +570,7 @@ export default function ProblemPage() {
                     <button
                       type="submit"
                       disabled={!codeFile || submitting}
-                      className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-green-400/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group"
+                      className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         {submitting ? (
@@ -598,7 +598,7 @@ export default function ProblemPage() {
                       <div className="absolute -bottom-2 left-0 w-16 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
                     </h3>
                     <div className="space-y-4">
-                      <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all duration-300 transform hover:scale-105">
+                      <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
                         <div className="flex justify-between items-center">
                           <span className="text-gray-300">Test Cases:</span>
                           <span className="text-green-400 font-bold text-lg">
@@ -606,7 +606,7 @@ export default function ProblemPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all duration-300 transform hover:scale-105">
+                      <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
                         <div className="flex justify-between items-center">
                           <span className="text-gray-300">Type:</span>
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -618,7 +618,7 @@ export default function ProblemPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all duration-300 transform hover:scale-105">
+                      <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
                         <div className="flex justify-between items-center">
                           <span className="text-gray-300">Created:</span>
                           <span className="text-white font-medium">

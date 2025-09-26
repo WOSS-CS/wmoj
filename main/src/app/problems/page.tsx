@@ -109,7 +109,7 @@ export default function ProblemsPage() {
             </span>
             <button
               onClick={handleSignOut}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
             >
               Sign Out
             </button>
@@ -188,7 +188,7 @@ export default function ProblemsPage() {
                 <p className="text-red-400">{error}</p>
                 <button
                   onClick={fetchStandaloneProblems}
-                  className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-600/25"
+                  className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
                 >
                   Try Again
                 </button>
@@ -252,7 +252,7 @@ export default function ProblemsPage() {
                             <div className="col-span-2">
                               <Link
                                 href={`/problems/${problem.id}`}
-                                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25"
+                                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors duration-300"
                               >
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

@@ -41,7 +41,7 @@ export function Logo({
   const content = (
     <>
       <span
-        className="relative flex items-center justify-center rounded-full border border-white/20 bg-white/5 shadow-[0_0_18px_rgba(34,197,94,0.18)] transition-transform duration-300 group-hover:scale-105"
+        className="relative flex items-center justify-center rounded-full border border-white/20 bg-white/5 shadow-[0_0_18px_rgba(34,197,94,0.18)]"
         style={{ width: wrapperSize, height: wrapperSize }}
       >
         <span className="absolute inset-0 rounded-full bg-green-400/15 blur-md" aria-hidden />
@@ -57,7 +57,7 @@ export function Logo({
       {withText && (
         <span className={`flex flex-col items-start leading-none ${textSizeClass} font-semibold tracking-wide text-white transition-colors duration-300 ${textClassName}`}>
           <span>
-            <span className="text-green-400 transition-transform duration-300 group-hover:scale-110 inline-block">
+            <span className="text-green-400 inline-block">
               W
             </span>
             <span className="ml-0.5">MOJ</span>

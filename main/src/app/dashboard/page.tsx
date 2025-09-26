@@ -75,12 +75,12 @@ export default function DashboardPage() {
         <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
           <Logo size="md" className="cursor-pointer" />
           <div className="flex items-center gap-4">
-            <span className="px-4 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-all duration-300 transform hover:scale-105">
+            <span className="px-4 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-colors duration-300">
               {user?.user_metadata?.username || user?.email}
             </span>
             <button
               onClick={handleSignOut}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-red-600/25"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
             >
               Sign Out
             </button>
@@ -159,8 +159,8 @@ export default function DashboardPage() {
                       <RippleEffect color="green">
                         <HoverAnimation effect="lift">
                           <div 
-                            className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-all duration-300 flex flex-col hover:shadow-lg hover:shadow-green-400/10 group cursor-pointer ${
-                              hoveredCard === index ? 'bg-white/15 shadow-lg shadow-green-400/20 border-green-400/50' : ''
+                            className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-colors duration-300 flex flex-col group cursor-pointer ${
+                              hoveredCard === index ? 'bg-white/15 border-green-400/50 ring-1 ring-green-400/40' : ''
                             }`}
                             onMouseEnter={() => setHoveredCard(index)}
                             onMouseLeave={() => setHoveredCard(null)}
@@ -183,7 +183,7 @@ export default function DashboardPage() {
                             </p>
                             {card.href ? (
                               <Link href={card.href} className="mt-auto">
-                                <div className={`px-4 py-2 bg-gradient-to-r ${card.color} text-white rounded-lg hover:opacity-90 transition-all duration-300 transform hover:scale-105`}>
+                                <div className={`px-4 py-2 bg-gradient-to-r ${card.color} text-white rounded-lg hover:opacity-90 transition-colors duration-300`}>
                                   Get Started
                                 </div>
                               </Link>
@@ -217,7 +217,7 @@ export default function DashboardPage() {
                 ].map((activity, index) => (
                   <div 
                     key={index}
-                    className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all duration-300 transform hover:scale-105 group"
+                    className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300 group"
                     style={{ transitionDelay: `${index * 0.1}s` }}
                   >
                     <div className={`w-3 h-3 rounded-full ${

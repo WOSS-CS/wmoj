@@ -130,7 +130,7 @@ export default function CreateContestPage() {
             </span>
             <button
               onClick={handleSignOut}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-105"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
             >
               Sign Out
             </button>
@@ -234,7 +234,7 @@ export default function CreateContestPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-purple-400/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ export default function CreateContestPage() {
                   
                   <Link
                     href="/admin/dashboard"
-                    className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-300 transform hover:scale-105"
+                    className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-300"
                   >
                     Cancel
                   </Link>

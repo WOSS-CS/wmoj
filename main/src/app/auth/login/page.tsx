@@ -99,7 +99,7 @@ export default function LoginPage() {
           <div className={`mb-6 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <Link 
               href="/" 
-              className="text-green-400 hover:text-green-300 flex items-center gap-2 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25"
+              className="text-green-400 hover:text-green-300 flex items-center gap-2 transition-colors duration-300"
             >
               <svg className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -210,13 +210,13 @@ export default function LoginPage() {
                 <label className="flex items-center cursor-pointer group">
                   <input 
                     type="checkbox" 
-                    className="mr-3 rounded border-white/20 bg-white/10 text-green-600 focus:ring-green-500 focus:ring-2 transition-all duration-300 group-hover:scale-110"
+                    className="mr-3 rounded border-white/20 bg-white/10 text-green-600 focus:ring-green-500 focus:ring-2 transition-colors duration-300"
                   />
                   <span className="text-gray-300 text-sm group-hover:text-white transition-colors duration-300">Remember me</span>
                 </label>
                 <Link 
                   href="#" 
-                  className="text-green-400 text-sm hover:text-green-300 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25 px-2 py-1 rounded"
+                  className="text-green-400 text-sm hover:text-green-300 transition-colors duration-300 px-2 py-1 rounded"
                 >
                   Forgot password?
                 </Link>
@@ -225,7 +225,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group/btn"
+                className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group/btn"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   {loading ? (
@@ -251,7 +251,7 @@ export default function LoginPage() {
                 Don&apos;t have an account?{' '}
                 <Link 
                   href="/auth/signup" 
-                  className="text-green-400 hover:text-green-300 font-medium transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-green-400/25 px-2 py-1 rounded"
+                  className="text-green-400 hover:text-green-300 font-medium transition-colors duration-300 px-2 py-1 rounded"
                 >
                   Sign up
                 </Link>
