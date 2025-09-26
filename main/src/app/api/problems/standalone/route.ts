@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getServerSupabase } from '@/lib/supabaseServer';
 
 export async function GET() {
   try {
     console.log('API: Fetching standalone problems...');
+    const supabase = await getServerSupabase();
     const { data: problems, error } = await supabase
       .from('problems')
       .select('*')
       .is('contest', null)
+      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     console.log('API: Supabase response:', { problems: problems?.length, error });
