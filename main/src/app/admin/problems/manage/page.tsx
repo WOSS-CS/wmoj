@@ -39,11 +39,12 @@ export default function ManageProblemsPage() {
   const token = session?.access_token;
 
   const fetchProblems = useCallback(async () => {
+    if (!token) return; // wait for token to avoid unauthorized flicker
     setLoading(true);
     setError(null);
     try {
       const res = await fetch('/api/admin/problems/list', {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load');
@@ -55,7 +56,12 @@ export default function ManageProblemsPage() {
     }
   }, [token]);
 
-  useEffect(() => { fetchProblems(); }, [fetchProblems]);
+  useEffect(() => {
+    if (token) {
+      setError(null);
+      fetchProblems();
+    }
+  }, [token, fetchProblems]);
 
   const openEdit = async (p: ProblemRow) => {
     setFetchingEditContent(true);
