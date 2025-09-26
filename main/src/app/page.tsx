@@ -172,7 +172,7 @@ export default function Home() {
             {user ? (
               <div className="space-y-6">
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full mx-auto mb-4 flex items-center justify-center animate-pulse hover:animate-bounce transition-all duration-300">
+                  <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full mx-auto mb-4 flex items-center justify-center animate-pulse transition-colors duration-300">
                     <span className="text-2xl font-bold text-black">
                       {(user.user_metadata?.username || user.email || 'U').charAt(0).toUpperCase()}
                     </span>
