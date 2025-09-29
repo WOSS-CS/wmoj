@@ -44,7 +44,9 @@ export default function ContestLeaderboardOnlyPage() {
         // Load contest meta and leaderboard
         const [contestRes, lbRes] = await Promise.all([
           fetch(`/api/contests/${params.id}`),
-          fetch(`/api/contests/${params.id}/leaderboard`),
+          fetch(`/api/contests/${params.id}/leaderboard`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }),
         ]);
         const contestJson = await contestRes.json();
         if (contestRes.ok && contestJson.contest?.name) setContestName(contestJson.contest.name);

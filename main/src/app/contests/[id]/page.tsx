@@ -73,7 +73,9 @@ export default function ContestPage() {
         if (resP.ok) setProblems(jsonP.problems || []);
         
         // Fetch leaderboard
-        const resL = await fetch(`/api/contests/${params.id}/leaderboard`);
+        const resL = await fetch(`/api/contests/${params.id}/leaderboard`, {
+          headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        });
         const jsonL = await resL.json();
         if (resL.ok) setLeaderboard(jsonL.leaderboard || []);
       } catch (e) {

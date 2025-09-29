@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSupabase } from '@/lib/supabaseServer';
+import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseServer';
 
 export async function GET(
   request: Request,
@@ -7,7 +7,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = await getServerSupabase();
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    const bearer = authHeader && authHeader.toLowerCase().startsWith('bearer ')
+      ? authHeader.substring(7).trim()
+      : null;
+    const supabase = bearer ? getServerSupabaseFromToken(bearer) : await getServerSupabase();
 
     // Get all problems for this contest first
     const { data: problems, error: problemsErr } = await supabase

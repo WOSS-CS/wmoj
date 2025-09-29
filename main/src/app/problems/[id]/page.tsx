@@ -48,7 +48,8 @@ export default function ProblemPage() {
   // Submissions now go through a secure API route which enforces participation
 
   useEffect(() => {
-    if (problemId) {
+    // Wait for a session to exist so we can forward Authorization for contest problems
+    if (problemId && session) {
       fetchProblem(problemId);
     }
     setIsLoaded(true);
@@ -57,7 +58,7 @@ export default function ProblemPage() {
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [problemId]);
+  }, [problemId, session]);
 
   // Check access permission for contest problems
   useEffect(() => {
@@ -99,7 +100,11 @@ export default function ProblemPage() {
   const fetchProblem = async (id: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/problems/${id}`);
+      const response = await fetch(`/api/problems/${id}`, {
+        headers: {
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+      });
       const data = await response.json();
 
       if (!response.ok) {
