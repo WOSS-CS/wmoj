@@ -320,7 +320,7 @@ export default function ContestsPage() {
                                 </Link>
                               ) : joinedHistory.has(contest.id) ? (
                                 <Link
-                                  href={`/contests/${contest.id}/leaderboard`}
+                                  href={`/contests/${contest.id}`}
                                   className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors duration-300"
                                 >
                                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
