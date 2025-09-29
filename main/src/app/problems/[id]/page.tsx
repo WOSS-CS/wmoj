@@ -84,9 +84,17 @@ export default function ProblemPage() {
 
   // If the countdown ends while on a contest problem, redirect to /contests
   useEffect(() => {
+    // Only consider redirect logic for contest problems
     if (!problem?.contest) return;
-    // If countdown is inactive or tied to a different contest, redirect out
+
+    // Wait until countdown context has resolved whether a contest is active and which ID
+    // Avoid redirecting while contestId is still null/undefined but countdown may still be initializing
+    const countdownResolved = isActive !== undefined && (contestId !== null || !isActive);
+    if (!countdownResolved) return;
+
+    // If countdown is inactive for this problem's contest, or the active contest differs, redirect out
     if (!isActive || (contestId && contestId !== problem.contest)) {
+      // Guard against repeated calls by only redirecting when we're currently on a contest problem
       router.replace('/contests');
     }
   }, [isActive, contestId, problem?.contest, router]);
