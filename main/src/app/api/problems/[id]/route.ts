@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseServer';
+import { checkTimerExpiry } from '@/utils/timerCheck';
 
 export async function GET(
   request: NextRequest,
@@ -42,7 +43,7 @@ export async function GET(
       );
     }
 
-    // If problem belongs to a contest, enforce participant-only access
+    // If problem belongs to a contest, enforce participant-only access and timer validity
     if (problem.contest) {
       // Anonymous or no token → forbid
       if (!bearer) {
@@ -61,6 +62,13 @@ export async function GET(
         .maybeSingle();
       if (partErr || !participant) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      // Check if timer has expired
+      const { expired } = await checkTimerExpiry(supabase, userId, problem.contest);
+      if (expired) {
+        console.log('Timer expired for user', userId, 'in contest', problem.contest);
+        return NextResponse.json({ error: 'Contest time has expired' }, { status: 403 });
       }
     }
 

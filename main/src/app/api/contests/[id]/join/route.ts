@@ -31,10 +31,10 @@ export async function POST(
       return NextResponse.json({ error: 'contest id and userId are required' }, { status: 400 });
     }
 
-    // Ensure contest is active
+    // Ensure contest is active and get contest details
     const { data: contest, error: contestErr } = await supabase
       .from('contests')
-      .select('id,is_active')
+      .select('id,is_active,length')
       .eq('id', id)
       .maybeSingle();
 
@@ -105,6 +105,24 @@ export async function POST(
     if (insertErr) {
       console.log('Insert participation error:', insertErr);
       return NextResponse.json({ error: 'Failed to join contest' }, { status: 500 });
+    }
+
+    // Create/update countdown timer on server
+    const { error: timerErr } = await supabase
+      .from('countdown_timers')
+      .upsert({
+        user_id: userId,
+        contest_id: id,
+        started_at: new Date().toISOString(),
+        duration_minutes: contest.length,
+        is_active: true
+      });
+
+    if (timerErr) {
+      console.log('Timer creation error:', timerErr);
+      // Don't fail the join if timer creation fails, but log it
+    } else {
+      console.log('Timer created for user', userId, 'in contest', id, 'duration:', contest.length, 'minutes');
     }
 
     return NextResponse.json({ ok: true });
