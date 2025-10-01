@@ -15,6 +15,7 @@ interface CountdownContextType {
   isPaused: boolean;
   totalDuration: number | null;
   progressPercentage: number;
+  syncWithServer: () => Promise<void>;
 }
 
 const CountdownContext = createContext<CountdownContextType | undefined>(undefined);
@@ -50,6 +51,57 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     }
   }, [timeRemaining, totalDuration]);
 
+  // Sync with server to get authoritative timer status
+  const syncWithServer = useCallback(async () => {
+    if (!user?.id || !contestId) return;
+    
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.access_token) return;
+      
+      const response = await fetch(`/api/contests/${contestId}/timer`, {
+        headers: {
+          'Authorization': `Bearer ${session.session.access_token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.isActive && data.remainingSeconds > 0) {
+          setTimeRemaining(data.remainingSeconds);
+          setIsActive(true);
+          if (data.contestName) {
+            setContestName(data.contestName);
+          }
+        } else {
+          // Timer expired or not active
+          setIsActive(false);
+          setTimeRemaining(null);
+          setContestId(null);
+          setContestName(null);
+          setTotalDuration(null);
+          setProgressPercentage(0);
+        }
+      } else {
+        // Timer not found or error
+        setIsActive(false);
+        setTimeRemaining(null);
+        setContestId(null);
+        setContestName(null);
+        setTotalDuration(null);
+        setProgressPercentage(0);
+      }
+    } catch (error) {
+      console.error('Error syncing with server:', error);
+    }
+  }, [user?.id, contestId]);
+
   const startCountdown = useCallback(async (id: string, name: string, durationMinutes: number) => {
     setContestId(id);
     setContestName(name);
@@ -59,25 +111,10 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     setIsActive(true);
     setIsPaused(false);
     
-    // Store in database for persistence
-    try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-      
-      await supabase.from('countdown_timers').upsert({
-        user_id: user?.id,
-        contest_id: id,
-        started_at: new Date().toISOString(),
-        duration_minutes: durationMinutes,
-        is_active: true
-      });
-    } catch (error) {
-      console.error('Error saving countdown to database:', error);
-    }
-  }, [user?.id]);
+    // Timer creation is now handled by the join API endpoint
+    // Just sync with server to get the authoritative state
+    setTimeout(() => syncWithServer(), 1000);
+  }, [syncWithServer]);
 
   const stopCountdown = useCallback(async () => {
     setContestId(null);
@@ -88,23 +125,8 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     setTotalDuration(null);
     setProgressPercentage(0);
     
-    // Remove from database
-    try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-      
-      if (user?.id && contestId) {
-        await supabase.from('countdown_timers').delete()
-          .eq('user_id', user.id)
-          .eq('contest_id', contestId);
-      }
-    } catch (error) {
-      console.error('Error removing countdown from database:', error);
-    }
-  }, [user?.id, contestId]);
+    // Timer cleanup is now handled by the leave API endpoint
+  }, []);
 
   const pauseCountdown = useCallback(() => {
     setIsPaused(true);
@@ -139,7 +161,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     }
   }, [contestId, user?.id, stopCountdown]);
 
-  // Load countdown from database on mount
+  // Load countdown from server on mount
   useEffect(() => {
     (async () => {
       if (!user?.id) {
@@ -151,6 +173,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
+      // Find active contest for user
       try {
         const { createClient } = await import('@supabase/supabase-js');
         const supabase = createClient(
@@ -158,62 +181,28 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         );
         
-        const { data: timer, error } = await supabase
-          .from('countdown_timers')
-          .select('*')
+        const { data: participant, error } = await supabase
+          .from('contest_participants')
+          .select('contest_id')
           .eq('user_id', user.id)
-          .eq('is_active', true)
-          .maybeSingle();
+          .limit(1);
         
-        if (error) {
-          console.error('Error loading countdown timer:', error);
+        if (error || !participant || participant.length === 0) {
           return;
         }
         
-        if (!timer) return;
+        const activeContestId = participant[0].contest_id;
+        setContestId(activeContestId);
         
-        const startTime = new Date(timer.started_at).getTime();
-        const now = Date.now();
-        const elapsed = Math.floor((now - startTime) / 1000);
-        const remaining = Math.max(0, (timer.duration_minutes * 60) - elapsed);
-        
-        if (remaining > 0) {
-          setContestId(timer.contest_id);
-          setTimeRemaining(remaining);
-          setIsActive(true);
-          
-          // Fetch contest name
-          try {
-            const { data: contest, error: contestErr } = await supabase
-              .from('contests')
-              .select('name')
-              .eq('id', timer.contest_id)
-              .single();
-            
-            if (!contestErr && contest) {
-              setContestName(contest.name);
-            } else {
-              setContestName(timer.contest_id); // Fallback to ID
-            }
-          } catch (error) {
-            console.error('Error fetching contest name:', error);
-            setContestName(timer.contest_id); // Fallback to ID
-          }
-        } else {
-          // Countdown expired, clean up
-          await supabase.from('countdown_timers').delete()
-            .eq('user_id', user.id)
-            .eq('contest_id', timer.contest_id);
-        }
+        // Sync with server to get timer status
+        await syncWithServer();
       } catch (error) {
-        console.error('Error loading countdown from database:', error);
-        // If there's a permission error or table doesn't exist, just continue without countdown
-        // This prevents the infinite loading issue
+        console.error('Error loading active contest:', error);
       }
     })();
-  }, [user?.id]);
+  }, [user?.id, syncWithServer]);
 
-  // Update countdown every second
+  // Update countdown every second (display only)
   useEffect(() => {
     if (!isActive || timeRemaining === null || isPaused) return;
 
@@ -231,6 +220,17 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [isActive, timeRemaining, isPaused, checkExpiration]);
 
+  // Periodic sync with server to prevent drift (every 30 seconds)
+  useEffect(() => {
+    if (!isActive || !contestId) return;
+
+    const syncInterval = setInterval(() => {
+      syncWithServer();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(syncInterval);
+  }, [isActive, contestId, syncWithServer]);
+
   const value = {
     timeRemaining,
     contestName,
@@ -243,6 +243,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     isPaused,
     totalDuration,
     progressPercentage,
+    syncWithServer,
   };
 
   return <CountdownContext.Provider value={value}>{children}</CountdownContext.Provider>;
