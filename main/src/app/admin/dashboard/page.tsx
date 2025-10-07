@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
 import { LoadingState, SkeletonText } from '@/components/LoadingStates';
-import Link from 'next/link';
+// Link not used on this page
 import { AdminSidebar } from '@/components/AdminSidebar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/Logo';
@@ -60,8 +60,8 @@ export default function AdminDashboardPage() {
         headers: { 'Authorization': `Bearer ${session.access_token}` }
       });
       if (res.ok) {
-        const json = await res.json();
-        setSubmissions((json.submissions || []).map((s: any) => ({
+        const json: { submissions?: Array<{ id: string; created_at: string; user: string; problem: string; passed: boolean }> } = await res.json();
+        setSubmissions((json.submissions || []).map((s) => ({
           id: s.id,
           user: s.user,
           problem: s.problem,
