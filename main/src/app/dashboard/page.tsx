@@ -3,18 +3,19 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
-import { HoverAnimation } from '@/components/AnimationWrapper';
-import { RippleEffect, MagneticEffect, TiltEffect } from '@/components/MicroInteractions';
-import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
+import { LoadingState, SkeletonText } from '@/components/LoadingStates';
+import { Activity } from '@/types/activity';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Logo } from '@/components/Logo';
+import { supabase } from '@/lib/supabase';
 
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -24,6 +25,53 @@ export default function DashboardPage() {
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
+  const fetchActivities = useCallback(async () => {
+    try {
+      setActivitiesLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const res = await fetch('/api/user/activity', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setActivities(data.activities || []);
+      }
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchActivities();
+    }
+  }, [user, fetchActivities]);
+
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+    const weeks = Math.floor(days / 7);
+    if (weeks < 4) return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+    const months = Math.floor(days / 30);
+    return `${months} month${months > 1 ? 's' : ''} ago`;
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -143,94 +191,42 @@ export default function DashboardPage() {
               </div>
             </LoadingState>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              <LoadingState 
-                isLoading={!isLoaded}
-                skeleton={<CardLoading count={3} />}
-              >
-                {[
-                  { icon: '💻', title: 'Start Solving', desc: 'Browse and solve coding challenges', href: '/problems', color: 'from-blue-600 to-blue-700' },
-                  { icon: '🏆', title: 'Join Contest', desc: 'Participate in live competitions', href: '/contests', color: 'from-purple-600 to-purple-700' },
-                  { icon: '📊', title: 'View Stats', desc: 'Track your progress and achievements', href: null, color: 'from-gray-600 to-gray-700' }
-                ].map((card, index) => (
-                  <TiltEffect key={index} maxTilt={4}>
-                    <MagneticEffect strength={0.12} maxOffset={8}>
-                      <RippleEffect color="green">
-                        <HoverAnimation effect="lift">
-                          <div 
-                            className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-colors duration-300 flex flex-col group cursor-pointer ${
-                              hoveredCard === index ? 'bg-white/15 border-green-400/50 ring-1 ring-green-400/40' : ''
-                            }`}
-                            onMouseEnter={() => setHoveredCard(index)}
-                            onMouseLeave={() => setHoveredCard(null)}
-                            style={{ transitionDelay: `${index * 0.1}s` }}
-                          >
-                            <div className="flex items-center gap-4 mb-4">
-                              <div className={`text-3xl`}>
-                                {card.icon}
-                              </div>
-                              <h3 className={`text-xl font-bold transition-colors duration-300 ${
-                                hoveredCard === index ? 'text-green-400' : 'text-white group-hover:text-green-400'
-                              }`}>
-                                {card.title}
-                              </h3>
-                            </div>
-                            <p className="text-gray-300 mb-4 text-sm leading-relaxed">
-                              {card.desc}
-                            </p>
-                            {card.href ? (
-                              <Link href={card.href} className="mt-auto">
-                                <div className={`px-4 py-2 bg-gradient-to-r ${card.color} text-white rounded-lg hover:opacity-90 transition-colors duration-300`}>
-                                  Get Started
-                                </div>
-                              </Link>
-                            ) : (
-                              <div className="mt-auto">
-                                <div className="px-4 py-2 bg-gray-600 text-gray-300 rounded-lg cursor-not-allowed">
-                                  Coming Soon
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </HoverAnimation>
-                      </RippleEffect>
-                    </MagneticEffect>
-                  </TiltEffect>
-                ))}
-              </LoadingState>
-            </div>
-
             {/* Recent Activity */}
             <div className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.3s' }}>
               <h2 className="text-2xl font-bold text-white mb-6 relative">
                 Recent Activity
                 <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
               </h2>
-              <div className="space-y-4">
-                {[
-                  { action: 'Solved', problem: 'Two Sum', time: '2 hours ago', status: 'success' },
-                  { action: 'Attempted', problem: 'Binary Search', time: '1 day ago', status: 'warning' },
-                  { action: 'Joined', contest: 'Weekly Contest #1', time: '3 days ago', status: 'info' }
-                ].map((activity, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300 group"
-                    style={{ transitionDelay: `${index * 0.1}s` }}
-                  >
-                    <div className={`w-3 h-3 rounded-full ${
-                      activity.status === 'success' ? 'bg-green-400' : 
-                      activity.status === 'warning' ? 'bg-yellow-400' : 'bg-blue-400'
-                    } animate-pulse`} />
-                    <div className="flex-1">
-                      <p className="text-white font-medium group-hover:text-green-400 transition-colors duration-300">
-                        {activity.action} {activity.problem || activity.contest}
-                      </p>
-                      <p className="text-gray-400 text-sm">{activity.time}</p>
+              {activitiesLoading ? (
+                <div className="space-y-4">
+                  <SkeletonText lines={3} />
+                </div>
+              ) : activities.length > 0 ? (
+                <div className="space-y-4">
+                  {activities.map((activity, index) => (
+                    <div 
+                      key={activity.id}
+                      className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300 group"
+                      style={{ transitionDelay: `${index * 0.1}s` }}
+                    >
+                      <div className={`w-3 h-3 rounded-full ${
+                        activity.status === 'success' ? 'bg-green-400' : 
+                        activity.status === 'warning' ? 'bg-yellow-400' : 'bg-blue-400'
+                      } animate-pulse`} />
+                      <div className="flex-1">
+                        <p className="text-white font-medium group-hover:text-green-400 transition-colors duration-300">
+                          {activity.action} {activity.item}
+                        </p>
+                        <p className="text-gray-400 text-sm">{formatTimeAgo(activity.timestamp)}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-400">No recent activity yet. Start solving problems or join a contest!</p>
+                </div>
+              )}
             </div>
           </main>
         </div>
