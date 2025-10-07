@@ -40,10 +40,22 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 });
     }
 
-    const submissions = (subs || []).map((s: any) => ({
+    type ProblemRef = { id: string; name: string };
+    type UserRef = { id: string; username?: string | null; email?: string | null };
+    type SubRow = {
+      id: string;
+      created_at: string;
+      summary: { allPassed?: boolean } | null;
+      problems: ProblemRef | ProblemRef[] | null;
+      users: UserRef | UserRef[] | null;
+    };
+
+    const rows = ((subs || []) as unknown as SubRow[]);
+
+    const submissions = rows.map((s) => ({
       id: s.id,
       created_at: s.created_at,
-      user: s.users?.username || s.users?.email || 'Unknown User',
+      user: (Array.isArray(s.users) ? s.users[0]?.username || s.users[0]?.email : s.users?.username || s.users?.email) || 'Unknown User',
       problem: (Array.isArray(s.problems) ? s.problems[0]?.name : s.problems?.name) || 'Unknown Problem',
       passed: !!s.summary?.allPassed,
     }));

@@ -43,14 +43,9 @@ export default function CreateProblemPage() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  const token = session?.access_token;
-
-  useEffect(() => {
-    if (token) fetchContests();
-  }, [token]);
-
   const fetchContests = useCallback(async () => {
     try {
+      const token = session?.access_token;
       if (!token) return;
       const res = await fetch('/api/admin/contests/list', {
         headers: { Authorization: `Bearer ${token}` },
@@ -62,7 +57,13 @@ export default function CreateProblemPage() {
     } catch (e) {
       console.error('Error fetching contests:', e);
     }
-  }, [token]);
+  }, [session?.access_token]);
+
+  const token = session?.access_token;
+
+  useEffect(() => {
+    if (token) fetchContests();
+  }, [token, fetchContests]);
 
   const handleSignOut = async () => {
     await signOut();
