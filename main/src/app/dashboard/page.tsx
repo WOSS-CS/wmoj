@@ -6,7 +6,7 @@ import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import { LoadingState, SkeletonText } from '@/components/LoadingStates';
 import { Activity } from '@/types/activity';
 import Link from 'next/link';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Logo } from '@/components/Logo';
 import { supabase } from '@/lib/supabase';
 
@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
+  const hasLoadedActivitiesRef = useRef(false);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -28,7 +29,8 @@ export default function DashboardPage() {
 
   const fetchActivities = useCallback(async () => {
     try {
-      setActivitiesLoading(true);
+      // Only show skeleton on first load to avoid flicker on token refreshes
+      setActivitiesLoading(!hasLoadedActivitiesRef.current);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return;
 
@@ -45,15 +47,16 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error fetching activities:', error);
     } finally {
+      hasLoadedActivitiesRef.current = true;
       setActivitiesLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       fetchActivities();
     }
-  }, [user, fetchActivities]);
+  }, [user?.id, fetchActivities]);
 
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
