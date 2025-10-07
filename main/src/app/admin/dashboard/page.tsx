@@ -3,19 +3,26 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
-import { HoverAnimation } from '@/components/AnimationWrapper';
-import { RippleEffect, MagneticEffect, TiltEffect } from '@/components/MicroInteractions';
-import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
+import { LoadingState, SkeletonText } from '@/components/LoadingStates';
 import Link from 'next/link';
 import { AdminSidebar } from '@/components/AdminSidebar';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/Logo';
+import { supabase } from '@/lib/supabase';
 
 export default function AdminDashboardPage() {
   const { user, signOut } = useAuth();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
+  const [submissions, setSubmissions] = useState<Array<{
+    id: string;
+    user: string;
+    problem: string;
+    passed: boolean;
+    timestamp: string;
+  }>>([]);
+  const hasLoadedActivitiesRef = useRef(false);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -29,6 +36,50 @@ export default function AdminDashboardPage() {
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  };
+
+  const fetchRecentSubmissions = useCallback(async () => {
+    try {
+      setActivitiesLoading(!hasLoadedActivitiesRef.current);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const res = await fetch('/api/admin/activity/recent-submissions', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setSubmissions((json.submissions || []).map((s: any) => ({
+          id: s.id,
+          user: s.user,
+          problem: s.problem,
+          passed: !!s.passed,
+          timestamp: s.created_at
+        })));
+      }
+    } catch (e) {
+      console.error('Failed to fetch recent submissions', e);
+    } finally {
+      hasLoadedActivitiesRef.current = true;
+      setActivitiesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRecentSubmissions();
+  }, [fetchRecentSubmissions]);
 
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
@@ -113,101 +164,39 @@ export default function AdminDashboardPage() {
               </div>
             </LoadingState>
 
-            {/* Admin Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <LoadingState 
-                isLoading={!isLoaded}
-                skeleton={<CardLoading count={2} />}
-              >
-                {[
-                  { 
-                    icon: '🏆', 
-                    title: 'Create Contest', 
-                    desc: 'Create new competitive programming contests with custom settings', 
-                    href: '/admin/contests/create', 
-                    color: 'from-purple-600 to-purple-700' 
-                  },
-                  { 
-                    icon: '📝', 
-                    title: 'Create Problem', 
-                    desc: 'Add new problems to contests or create standalone problems', 
-                    href: '/admin/problems/create', 
-                    color: 'from-blue-600 to-blue-700' 
-                  },
-                  {
-                    icon: '🧩',
-                    title: 'Manage Problems',
-                    desc: 'Edit, activate/deactivate or delete existing problems',
-                    href: '/admin/problems/manage',
-                    color: 'from-green-600 to-green-700'
-                  },
-                  {
-                    icon: '📋',
-                    title: 'Manage Contests',
-                    desc: 'Update contest settings and control visibility',
-                    href: '/admin/contests/manage',
-                    color: 'from-pink-600 to-pink-700'
-                  }
-                ].map((card, index) => (
-                  <TiltEffect key={index} maxTilt={2}>
-                    <MagneticEffect strength={0.06} maxOffset={4}>
-                      <RippleEffect color="green">
-                        <HoverAnimation effect="lift">
-                          <div 
-                            className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-colors duration-300 flex flex-col group cursor-pointer ${
-                              hoveredCard === index ? 'bg-white/15 scale-[1.02] shadow-lg shadow-green-400/20 border-green-400/50' : ''
-                            }`}
-                            onMouseEnter={() => setHoveredCard(index)}
-                            onMouseLeave={() => setHoveredCard(null)}
-                            style={{ transitionDelay: `${index * 0.1}s` }}
-                          >
-                            <div className="flex items-center gap-4 mb-4">
-                              <div className={`text-4xl`}>
-                                {card.icon}
-                              </div>
-                              <h3 className={`text-2xl font-bold transition-colors duration-300 ${
-                                hoveredCard === index ? 'text-green-400' : 'text-white group-hover:text-green-400'
-                              }`}>
-                                {card.title}
-                              </h3>
-                            </div>
-                            <p className="text-gray-300 mb-6 text-lg leading-relaxed">
-                              {card.desc}
-                            </p>
-                            <Link href={card.href} className="mt-auto">
-                              <div className={`px-6 py-3 bg-gradient-to-r ${card.color} text-white rounded-lg hover:opacity-90 transition-colors duration-300`}>
-                                Get Started
-                              </div>
-                            </Link>
-                          </div>
-                        </HoverAnimation>
-                      </RippleEffect>
-                    </MagneticEffect>
-                  </TiltEffect>
-                ))}
-              </LoadingState>
-            </div>
-
-            {/* Admin Stats */}
-            <div className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.3s' }}>
+            {/* Recent Activity (last 24 hours submissions) */}
+            <div className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.2s' }}>
               <h2 className="text-2xl font-bold text-white mb-6 relative">
-                Platform Statistics
+                Recent Activity
                 <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-red-400 to-red-600 rounded-full animate-pulse" />
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-4 bg-white/5 rounded-lg">
-                  <div className="text-3xl font-bold text-green-400 mb-2">12</div>
-                  <div className="text-gray-300">Active Contests</div>
+              {activitiesLoading ? (
+                <div className="space-y-3">
+                  <SkeletonText lines={3} />
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-lg">
-                  <div className="text-3xl font-bold text-blue-400 mb-2">156</div>
-                  <div className="text-gray-300">Total Problems</div>
+              ) : submissions.length > 0 ? (
+                <div className="space-y-3">
+                  {submissions.map((s, index) => (
+                    <div 
+                      key={s.id}
+                      className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300 group"
+                      style={{ transitionDelay: `${index * 0.05}s` }}
+                    >
+                      <div className={`w-3 h-3 rounded-full ${s.passed ? 'bg-green-400' : 'bg-yellow-400'} animate-pulse`} />
+                      <div className="flex-1">
+                        <p className="text-white font-medium group-hover:text-red-400 transition-colors duration-300">
+                          {s.passed ? 'Solved' : 'Attempted'} {s.problem} by {s.user}
+                        </p>
+                        <p className="text-gray-400 text-sm">{formatTimeAgo(s.timestamp)}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-lg">
-                  <div className="text-3xl font-bold text-purple-400 mb-2">1,234</div>
-                  <div className="text-gray-300">Registered Users</div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-400">No submissions in the last 24 hours.</p>
                 </div>
-              </div>
+              )}
             </div>
           </main>
         </div>
