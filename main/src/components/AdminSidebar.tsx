@@ -33,6 +33,16 @@ export function AdminSidebar() {
       match: (p) => p.startsWith('/admin/dashboard'),
     },
     {
+      href: '/admin/usermanagement',
+      label: 'User Management',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M7 10a4 4 0 118 0 4 4 0 01-8 0z" />
+        </svg>
+      ),
+      match: (p) => p.startsWith('/admin/usermanagement'),
+    },
+    {
       href: '/admin/contests/create',
       label: 'Create Contest',
       icon: (
