@@ -229,9 +229,9 @@ export default function ManageContestsPage() {
                             <td className="px-4 py-3 text-gray-400" title={c.updated_at}>{new Date(c.updated_at).toLocaleDateString()}</td>
                             <td className="px-4 py-3">
                               <div className="flex gap-2">
-                                <button onClick={() => openEdit(c)} className="px-3 py-1 text-xs rounded bg-blue-600 hover:bg-blue-700 text-white">Edit</button>
-                                <button onClick={() => toggleActive(c)} className="px-3 py-1 text-xs rounded bg-yellow-600 hover:bg-yellow-700 text-white">{c.is_active ? 'Deactivate' : 'Activate'}</button>
-                                <button onClick={() => deleteContest(c)} className="px-3 py-1 text-xs rounded bg-red-600 hover:bg-red-700 text-white">Delete</button>
+                                <button onClick={() => openEdit(c)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-blue-600 hover:bg-blue-700 text-white text-sm">Edit</button>
+                                <button onClick={() => toggleActive(c)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-yellow-600 hover:bg-yellow-700 text-white text-sm">{c.is_active ? 'Deactivate' : 'Activate'}</button>
+                                <button onClick={() => deleteContest(c)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-red-600 hover:bg-red-700 text-white text-sm">Delete</button>
                               </div>
                             </td>
                           </tr>
