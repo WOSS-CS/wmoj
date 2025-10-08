@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
@@ -36,6 +36,8 @@ export default function ManageContestsPage() {
   const [editing, setEditing] = useState<EditState | null>(null);
   const [fetchingEditContent, setFetchingEditContent] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const token = session?.access_token;
 
   const fetchContests = useCallback(async () => {
@@ -62,6 +64,16 @@ export default function ManageContestsPage() {
       fetchContests();
     }
   }, [token, fetchContests]);
+
+  const filteredContests = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return contests.filter(c => {
+      if (filter === 'active' && !c.is_active) return false;
+      if (filter === 'inactive' && c.is_active) return false;
+      if (!q) return true;
+      return c.name.toLowerCase().includes(q);
+    });
+  }, [contests, filter, search]);
 
   const openEdit = async (c: ContestRow) => {
     setFetchingEditContent(true);
@@ -158,9 +170,12 @@ export default function ManageContestsPage() {
           <div className="flex">
             <AdminSidebar />
             <main className="flex-1 p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-bold">Manage Contests</h1>
-                <button onClick={fetchContests} className="px-4 py-2 bg-green-600 rounded hover:bg-green-500 transition">Refresh</button>
+              <div className="mb-8">
+                <h1 className="text-4xl font-bold text-white mb-4 relative">
+                  Manage Contests
+                  <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-green-400 to-green-600 rounded-full animate-pulse" />
+                </h1>
+                <p className="text-gray-300 text-lg">Edit, activate/deactivate, or delete contests.</p>
               </div>
               {actionMessage && (
                 <div className="mb-4 p-3 rounded bg-white/10 border border-white/20 text-sm flex justify-between items-center">
@@ -169,47 +184,63 @@ export default function ManageContestsPage() {
                 </div>
               )}
               {error && <div className="text-red-400 mb-4">{error}</div>}
-              {loading ? (
-                <div className="animate-pulse text-gray-400">Loading contests...</div>
-              ) : (
-                <div className="overflow-x-auto rounded border border-white/10">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-white/10 text-gray-300">
-                      <tr>
-                        <th className="py-2 px-3">Name</th>
-                        <th className="py-2 px-3">Length (min)</th>
-                        <th className="py-2 px-3">Active</th>
-                        <th className="py-2 px-3">Updated</th>
-                        <th className="py-2 px-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {contests.map(c => (
-                        <tr key={c.id} className="border-t border-white/5 hover:bg-white/5">
-                          <td className="py-2 px-3 font-medium text-white max-w-xs truncate" title={c.name}>{c.name}</td>
-                          <td className="py-2 px-3 text-gray-300">{c.length ?? '-'}</td>
-                          <td className="py-2 px-3">
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${c.is_active ? 'bg-green-600/30 text-green-300 border border-green-500/40' : 'bg-red-600/20 text-red-300 border border-red-500/30'}`}>
-                              {c.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td className="py-2 px-3 text-gray-400" title={c.updated_at}>{new Date(c.updated_at).toLocaleDateString()}</td>
-                          <td className="py-2 px-3 text-right space-x-2">
-                            <button onClick={() => openEdit(c)} className="px-2 py-1 text-xs rounded bg-blue-600 hover:bg-blue-500">Edit</button>
-                            <button onClick={() => toggleActive(c)} className="px-2 py-1 text-xs rounded bg-yellow-600 hover:bg-yellow-500">{c.is_active ? 'Deactivate' : 'Activate'}</button>
-                            <button onClick={() => deleteContest(c)} className="px-2 py-1 text-xs rounded bg-red-600 hover:bg-red-500">Delete</button>
-                          </td>
-                        </tr>
-                      ))}
-                      {contests.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="py-6 text-center text-gray-400">No contests found.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+                  <input
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search by name..."
+                    className="flex-1 px-4 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-400"
+                  />
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter==='all'?'text-green-400 border-green-400/40 bg-green-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>All</button>
+                    <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter==='active'?'text-green-400 border-green-400/40 bg-green-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>Active</button>
+                    <button onClick={() => setFilter('inactive')} className={`px-3 py-2 rounded-lg border ${filter==='inactive'?'text-green-400 border-green-400/40 bg-green-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>Inactive</button>
+                  </div>
                 </div>
-              )}
+
+                {loading ? (
+                  <div className="animate-pulse text-gray-400">Loading contests...</div>
+                ) : filteredContests.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">No contests match your filters.</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-left">
+                      <thead>
+                        <tr className="text-gray-300">
+                          <th className="px-4 py-2">Name</th>
+                          <th className="px-4 py-2">Length (min)</th>
+                          <th className="px-4 py-2">Status</th>
+                          <th className="px-4 py-2">Updated</th>
+                          <th className="px-4 py-2">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredContests.map(c => (
+                          <tr key={c.id} className="border-t border-white/10 hover:bg-white/5">
+                            <td className="px-4 py-3 text-white font-medium" title={c.name}>{c.name}</td>
+                            <td className="px-4 py-3 text-gray-300">{c.length ?? '-'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 rounded text-xs ${c.is_active ? 'bg-green-400/10 text-green-400 border border-green-400/30' : 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/30'}`}>
+                                {c.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-400" title={c.updated_at}>{new Date(c.updated_at).toLocaleDateString()}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-2">
+                                <button onClick={() => openEdit(c)} className="px-3 py-1 text-xs rounded bg-blue-600 hover:bg-blue-700 text-white">Edit</button>
+                                <button onClick={() => toggleActive(c)} className="px-3 py-1 text-xs rounded bg-yellow-600 hover:bg-yellow-700 text-white">{c.is_active ? 'Deactivate' : 'Activate'}</button>
+                                <button onClick={() => deleteContest(c)} className="px-3 py-1 text-xs rounded bg-red-600 hover:bg-red-700 text-white">Delete</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
 
               {editing && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
