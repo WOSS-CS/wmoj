@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountdown } from '@/contexts/CountdownContext';
@@ -24,6 +24,7 @@ export default function ContestsPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredContest, setHoveredContest] = useState<string | null>(null);
   const [joiningContest, setJoiningContest] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -108,6 +109,15 @@ export default function ContestsPage() {
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const filteredContests = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return contests;
+    return contests.filter(c => 
+      c.name.toLowerCase().includes(q) ||
+      (c.description || '').toLowerCase().includes(q)
+    );
+  }, [contests, search]);
 
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
@@ -253,7 +263,27 @@ export default function ContestsPage() {
                     <p className="text-gray-300">Please check back later.</p>
                   </div>
                 ) : (
-                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 overflow-hidden">
+                  <>
+                    {/* Search Bar */}
+                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 mb-4">
+                      <input
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Search contests by name or description..."
+                        className="w-full px-4 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-400"
+                      />
+                    </div>
+
+                    {filteredContests.length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="text-6xl mb-4">🔍</div>
+                        <h3 className="text-2xl font-semibold text-white mb-2">No Contests Found</h3>
+                        <p className="text-gray-300">
+                          No contests match your search criteria. Try a different search term.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 overflow-hidden">
                     {/* Table Header */}
                     <div className="bg-white/5 px-6 py-4 border-b border-white/10">
                       <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-300">
@@ -267,7 +297,7 @@ export default function ContestsPage() {
                     
                     {/* Table Body */}
                     <div className="divide-y divide-white/10">
-                      {contests.map((contest, index) => (
+                      {filteredContests.map((contest, index) => (
                         <div
                           key={contest.id}
                           className={`px-6 py-4 hover:bg-white/5 transition-all duration-300 ${
@@ -355,7 +385,9 @@ export default function ContestsPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
