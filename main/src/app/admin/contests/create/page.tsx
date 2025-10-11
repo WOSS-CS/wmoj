@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -23,6 +24,8 @@ export default function CreateContestPage() {
     description: '',
     length: 60
   });
+  const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(m => m.MarkdownEditor), { ssr: false });
+  const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
 
   useEffect(() => {
     setIsLoaded(true);
@@ -183,18 +186,26 @@ export default function CreateContestPage() {
 
                 <div>
                   <label htmlFor="description" className="block text-sm font-medium text-white mb-2">
-                    Description *
+                    Description (Markdown) *
                   </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    required
-                    rows={4}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 resize-none"
-                    placeholder="Enter contest description"
-                  />
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="flex flex-col gap-2 min-h-[360px]">
+                      <MarkdownEditor
+                        value={formData.description}
+                        onChange={(value: string) => setFormData(prev => ({ ...prev, description: value }))}
+                        placeholder="Write contest description in Markdown..."
+                        height={360}
+                      />
+                    </div>
+                    <div className="border border-white/20 rounded-lg p-4 bg-black/30 overflow-auto max-h-[480px]">
+                      <div className="text-xs uppercase tracking-wide text-gray-400 mb-3 flex items-center gap-2">
+                        <span className="inline-block w-2 h-2 rounded-full bg-purple-400 animate-pulse" /> Live Preview
+                      </div>
+                      <div className="prose prose-invert max-w-none text-sm leading-relaxed">
+                        <MarkdownRenderer content={formData.description || '*Nothing yet...*'} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div>

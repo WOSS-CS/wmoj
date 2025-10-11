@@ -110,6 +110,20 @@ export default function ContestsPage() {
     await signOut();
   };
 
+  // Produce a short, readable preview by stripping common markdown tokens
+  const stripMarkdown = (input: string): string => {
+    return input
+      .replace(/`{1,3}[^`]*`{1,3}/g, '') // inline / fenced code
+      .replace(/\*\*|__/g, '') // bold
+      .replace(/\*|_/g, '') // emphasis
+      .replace(/^>\s?/gm, '') // blockquote markers
+      .replace(/^\s{0,3}#{1,6}\s+/gm, '') // headings
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // links
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // images
+      .replace(/\r?\n/g, ' ') // newlines to spaces
+      .trim();
+  };
+
   const filteredContests = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return contests;
@@ -318,7 +332,11 @@ export default function ContestsPage() {
                                 </span>
                               </div>
                               <p className="text-gray-400 text-sm line-clamp-2">
-                                {contest.description || 'No description available'}
+                                {(() => {
+                                  const raw = contest.description || 'No description available';
+                                  const clean = stripMarkdown(raw);
+                                  return clean.length > 160 ? clean.slice(0, 160) + '…' : clean;
+                                })()}
                               </p>
                             </div>
                             <div className="col-span-2">
@@ -357,28 +375,18 @@ export default function ContestsPage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                   </svg>
-                                  View
+                                  Spectate
                                 </Link>
                               ) : (
-                                <button
-                                  onClick={() => handleJoinContest(contest.id, contest.name, contest.length)}
-                                  disabled={joiningContest === contest.id || (joinedContestId !== null && joinedContestId !== contest.id)}
-                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                <Link
+                                  href={`/contests/${contest.id}/view`}
+                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors duration-300"
                                 >
-                                  {joiningContest === contest.id ? (
-                                    <>
-                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                                      Joining...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                      </svg>
-                                      Join
-                                    </>
-                                  )}
-                                </button>
+                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                  View
+                                </Link>
                               )}
                             </div>
                           </div>
