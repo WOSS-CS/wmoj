@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -17,6 +17,7 @@ export default function ProblemsPage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredProblem, setHoveredProblem] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchStandaloneProblems();
@@ -54,6 +55,15 @@ export default function ProblemsPage() {
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const filteredProblems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return problems;
+    return problems.filter(p => 
+      p.name.toLowerCase().includes(q) ||
+      (p.content || '').toLowerCase().includes(q)
+    );
+  }, [problems, search]);
 
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
@@ -207,7 +217,27 @@ export default function ProblemsPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 overflow-hidden">
+                  <>
+                    {/* Search Bar */}
+                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 mb-4">
+                      <input
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Search problems by name..."
+                        className="w-full px-4 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-400"
+                      />
+                    </div>
+
+                    {filteredProblems.length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="text-6xl mb-4">🔍</div>
+                        <h3 className="text-2xl font-semibold text-white mb-2">No Problems Found</h3>
+                        <p className="text-gray-300">
+                          No problems match your search criteria. Try a different search term.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 overflow-hidden">
                     {/* Table Header */}
                     <div className="bg-white/5 px-6 py-4 border-b border-white/10">
                       <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-300">
@@ -220,7 +250,7 @@ export default function ProblemsPage() {
                     
                     {/* Table Body */}
                     <div className="divide-y divide-white/10">
-                      {problems.map((problem, index) => (
+                      {filteredProblems.map((problem, index) => (
                         <div
                           key={problem.id}
                           className={`px-6 py-4 hover:bg-white/5 transition-all duration-300 ${
@@ -264,7 +294,9 @@ export default function ProblemsPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
