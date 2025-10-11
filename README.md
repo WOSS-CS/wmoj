@@ -6,7 +6,6 @@ WMOJ is a full‑stack coding contest platform. It provides:
 - A stateless judge service to compile/run submissions and compute verdicts
 - Auth, roles, and access control backed by Supabase
 
-This document onboards new developers with the architecture, data model, flows, and development conventions.
 
 
 ## Monorepo Layout
@@ -293,10 +292,3 @@ Submit flow (server → judge):
     }
 ```
 
-
-## Future Enhancements
-
-- Add rate limiting and payload size enforcement on API endpoints.
-- Sandboxing for judge execution (containers, seccomp, or Firecracker) with resource limits.
-- Problem versioning and richer result telemetry.
-- Policy‑guarded RLS on Supabase with typed RPCs for sensitive actions.
