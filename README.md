@@ -47,7 +47,7 @@ Judge service:
 
 ## Data Model (Supabase Tables)
 
-Inferred from code. Columns may include more fields in the actual DB; align migrations accordingly.
+Columns may include more fields in the actual DB; align migrations accordingly.
 - `users`: `{ id, username, email, created_at, updated_at, last_login, is_active?, profile_data? }`
 - `admins`: `{ id, is_active?, last_login?, updated_at? }`
 - `contests`: `{ id, name, description, length, is_active, created_at?, updated_at? }`
