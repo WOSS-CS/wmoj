@@ -11,7 +11,7 @@ WMOJ is a full‑stack coding contest platform. It provides:
 ## Monorepo Layout
 
 ```
-/Users/adham/Desktop/CS/wmoj/
+wmoj/
   ├─ main/           # Next.js (App Router) web app + API routes (edge/server)
   └─ judge/          # Node.js Express judge microservice
 ```
