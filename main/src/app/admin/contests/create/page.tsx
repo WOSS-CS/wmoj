@@ -11,6 +11,9 @@ import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { AdminSidebar } from '@/components/AdminSidebar';
 
+const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(m => m.MarkdownEditor), { ssr: false });
+const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
+
 export default function CreateContestPage() {
   const { user, signOut, session } = useAuth();
   const router = useRouter();
@@ -24,8 +27,6 @@ export default function CreateContestPage() {
     description: '',
     length: 60
   });
-  const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(m => m.MarkdownEditor), { ssr: false });
-  const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
 
   useEffect(() => {
     setIsLoaded(true);
