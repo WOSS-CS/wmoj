@@ -331,13 +331,7 @@ export default function ContestsPage() {
                                   {(contest.problems_count ?? 0)} problem{(contest.problems_count ?? 0) === 1 ? '' : 's'}
                                 </span>
                               </div>
-                              <p className="text-gray-400 text-sm line-clamp-2">
-                                {(() => {
-                                  const raw = contest.description || 'No description available';
-                                  const clean = stripMarkdown(raw);
-                                  return clean.length > 160 ? clean.slice(0, 160) + '…' : clean;
-                                })()}
-                              </p>
+                              
                             </div>
                             <div className="col-span-2">
                               <span className="text-white font-medium">
