@@ -254,6 +254,118 @@ app.post('/submit', async (req, res) => {
   }
 });
 
+// Compile and run a C++ generator that emits input JSON on stdout and output JSON on stderr
+app.post('/generate-tests', async (req, res) => {
+  const { language, code } = req.body || {};
+  try { console.log(`[judge] generate-tests: lang=${language}, code_len=${code ? String(code).length : 0}`); } catch(_) {}
+
+  if (!code || (language && language !== 'cpp')) {
+    return res.status(400).json({ error: 'Invalid payload. Required: code (C++). language must be cpp if provided.' });
+  }
+
+  try {
+    const workDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'judge-'));
+
+    async function findExecutable(candidates, versionArgs = ['--version']) {
+      for (const candidate of candidates) {
+        try {
+          await new Promise((resolve, reject) => {
+            const p = spawn(candidate, versionArgs);
+            p.on('error', reject);
+            p.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`code ${code}`))));
+          });
+          return candidate;
+        } catch (_) { /* try next */ }
+      }
+      return null;
+    }
+
+    const gpp = await findExecutable(['g++'], ['--version']);
+    if (!gpp) {
+      await fs.promises.rm(workDir, { recursive: true, force: true });
+      return res.status(501).json({ error: 'g++ compiler not available on server' });
+    }
+
+    const filePath = path.join(workDir, 'Generator.cpp');
+    const outPath = path.join(workDir, 'gen.out');
+    await fs.promises.writeFile(filePath, code ?? '', 'utf8');
+
+    // Compile
+    try {
+      await new Promise((resolve, reject) => {
+        const p = spawn(gpp, ['-O2', '-std=gnu++17', filePath, '-o', outPath], { cwd: workDir });
+        let stderr = '';
+        p.on('error', (err) => reject(err));
+        p.stderr.on('data', (d) => (stderr += d.toString()));
+        p.on('close', (code) => {
+          if (code !== 0) reject(new Error(`Compilation failed (code ${code})\n${stderr}`));
+          else resolve();
+        });
+      });
+    } catch (e) {
+      try { await fs.promises.rm(workDir, { recursive: true, force: true }); } catch (_) {}
+      return res.status(400).json({ error: String(e && e.message ? e.message : e) });
+    }
+
+    // Run (no stdin). The generator prints input JSON to stdout, output JSON to stderr
+    const runResult = await new Promise((resolve) => {
+      const child = spawn(outPath, [], { cwd: workDir });
+      let stdout = '';
+      let stderr = '';
+      let timedOut = false;
+
+      const timer = setTimeout(() => {
+        timedOut = true;
+        child.kill('SIGKILL');
+      }, 5000);
+
+      child.stdout.on('data', (d) => (stdout += d.toString()));
+      child.stderr.on('data', (d) => (stderr += d.toString()));
+      child.on('error', (err) => {
+        clearTimeout(timer);
+        resolve({ code: null, stdout, stderr, timedOut: false, error: `spawn error: ${String(err && err.message ? err.message : err)}` });
+      });
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        resolve({ code, stdout, stderr, timedOut });
+      });
+    });
+
+    // Cleanup workdir best-effort after processing
+    try { await fs.promises.rm(workDir, { recursive: true, force: true }); } catch (_) {}
+
+    if (runResult.timedOut) {
+      return res.status(400).json({ error: 'Generator timed out', inputJson: runResult.stdout, outputJson: runResult.stderr });
+    }
+    if (runResult.code !== 0) {
+      return res.status(400).json({ error: `Generator exited with code ${runResult.code}`, inputJson: runResult.stdout, outputJson: runResult.stderr });
+    }
+
+    const inputRaw = runResult.stdout ?? '';
+    const outputRaw = runResult.stderr ?? '';
+
+    // Validate JSON arrays of strings, same length
+    let inputArr, outputArr;
+    try { inputArr = JSON.parse(inputRaw); } catch (e) { return res.status(400).json({ error: `Invalid JSON on stdout: ${String(e && e.message ? e.message : e)}`, inputJson: inputRaw, outputJson: outputRaw }); }
+    try { outputArr = JSON.parse(outputRaw); } catch (e) { return res.status(400).json({ error: `Invalid JSON on stderr: ${String(e && e.message ? e.message : e)}`, inputJson: inputRaw, outputJson: outputRaw }); }
+
+    if (!Array.isArray(inputArr) || !Array.isArray(outputArr)) {
+      return res.status(400).json({ error: 'Both stdout and stderr must be JSON arrays', inputJson: inputRaw, outputJson: outputRaw });
+    }
+    if (inputArr.length !== outputArr.length) {
+      return res.status(400).json({ error: 'Input and output arrays must be the same length', inputJson: inputRaw, outputJson: outputRaw });
+    }
+    const allStrings = (arr) => arr.every((x) => typeof x === 'string');
+    if (!allStrings(inputArr) || !allStrings(outputArr)) {
+      return res.status(400).json({ error: 'Arrays must contain only strings', inputJson: inputRaw, outputJson: outputRaw });
+    }
+
+    return res.json({ inputJson: inputRaw, outputJson: outputRaw, input: inputArr, output: outputArr });
+  } catch (err) {
+    return res.status(500).json({ error: String(err && err.message ? err.message : err) });
+  }
+});
+
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.get('/selftest/python', async (_req, res) => {

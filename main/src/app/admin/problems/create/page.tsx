@@ -30,9 +30,12 @@ export default function CreateProblemPage() {
     content: '',
     contest: ''
   });
-  const [testCases, setTestCases] = useState<Array<{ id: string; input: string; output: string }>>([
-    { id: crypto.randomUUID(), input: '', output: '' }
-  ]);
+  // Generator-based testcases
+  const [generatorFile, setGeneratorFile] = useState<File | null>(null);
+  const [genLoading, setGenLoading] = useState(false);
+  const [generatedInput, setGeneratedInput] = useState<string[] | null>(null);
+  const [generatedOutput, setGeneratedOutput] = useState<string[] | null>(null);
+  const [genError, setGenError] = useState('');
 
   useEffect(() => {
     setIsLoaded(true);
@@ -77,16 +80,47 @@ export default function CreateProblemPage() {
     }));
   };
 
-  const addTestCase = () => {
-    setTestCases(prev => [...prev, { id: crypto.randomUUID(), input: '', output: '' }]);
+  const handleGeneratorSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setGenError('');
+    setGeneratedInput(null);
+    setGeneratedOutput(null);
+    const file = e.target.files?.[0] || null;
+    setGeneratorFile(file);
   };
 
-  const removeTestCase = (id: string) => {
-    setTestCases(prev => prev.length === 1 ? prev : prev.filter(tc => tc.id !== id));
-  };
-
-  const updateTestCase = (id: string, field: 'input' | 'output', value: string) => {
-    setTestCases(prev => prev.map(tc => tc.id === id ? { ...tc, [field]: value } : tc));
+  const handleGenerate = async () => {
+    if (!generatorFile) return;
+    setGenLoading(true);
+    setGenError('');
+    setError('');
+    setSuccess('');
+    try {
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      const fd = new FormData();
+      fd.append('file', generatorFile);
+      const res = await fetch('/api/admin/problems/generator/generate', {
+        method: 'POST',
+        headers,
+        body: fd
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setGenError(json.error || 'Failed to generate test cases');
+        setGeneratedInput(null);
+        setGeneratedOutput(null);
+      } else {
+        setGeneratedInput(json.input || null);
+        setGeneratedOutput(json.output || null);
+      }
+    } catch (e) {
+      console.error('Generator error:', e);
+      setGenError('Unexpected error running generator');
+    } finally {
+      setGenLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,23 +130,18 @@ export default function CreateProblemPage() {
     setSuccess('');
 
     try {
-      // Validation & transformation of test cases
-      const cleaned = testCases.map(tc => ({
-        input: tc.input.replace(/\r\n/g, '\n'),
-        output: tc.output.replace(/\r\n/g, '\n')
-      }));
-
-      if (cleaned.some(c => !c.input.trim() || !c.output.trim())) {
-        setError('All test cases must have both input and expected output.');
+      if (!generatedInput || !generatedOutput) {
+        setError('Please generate test cases before creating the problem.');
         setLoading(false);
         return;
       }
-
-      const inputArray = cleaned.map(c => c.input);
-      const outputArray = cleaned.map(c => c.output);
-
-      if (inputArray.length === 0) {
-        setError('At least one test case is required.');
+      if (generatedInput.length === 0 || generatedOutput.length === 0) {
+        setError('Generated test cases are empty.');
+        setLoading(false);
+        return;
+      }
+      if (generatedInput.length !== generatedOutput.length) {
+        setError('Generated input and output arrays must be the same length.');
         setLoading(false);
         return;
       }
@@ -129,8 +158,8 @@ export default function CreateProblemPage() {
         headers,
         body: JSON.stringify({
           ...formData,
-          input: inputArray,
-          output: outputArray,
+          input: generatedInput,
+          output: generatedOutput,
           contest: formData.contest || null
         })
       });
@@ -140,7 +169,10 @@ export default function CreateProblemPage() {
       if (res.ok) {
         setSuccess('Problem created successfully!');
         setFormData({ name: '', content: '', contest: '' });
-        setTestCases([{ id: crypto.randomUUID(), input: '', output: '' }]);
+        setGeneratorFile(null);
+        setGeneratedInput(null);
+        setGeneratedOutput(null);
+        setGenError('');
         setTimeout(() => {
           router.push('/admin/dashboard');
         }, 2000);
@@ -290,63 +322,38 @@ export default function CreateProblemPage() {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-white">
-                      Test Cases *
-                    </label>
+                  <label className="block text-sm font-medium text-white mb-2">Generator (C++) *</label>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                    <input
+                      type="file"
+                      accept=".cpp"
+                      onChange={handleGeneratorSelect}
+                      className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+                    />
                     <button
                       type="button"
-                      onClick={addTestCase}
-                      className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors duration-300"
+                      onClick={handleGenerate}
+                      disabled={!generatorFile || genLoading}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Add Test Case
+                      {genLoading ? 'Generating…' : 'Generate Test Cases'}
                     </button>
                   </div>
-                  <p className="text-gray-400 text-sm mb-4">
-                    Enter raw stdin input and expected stdout output for each test case. Newlines are preserved. Do not wrap in JSON.
-                  </p>
-                  <div className="space-y-6">
-                    {testCases.map((tc, idx) => (
-                      <div key={tc.id} className="p-4 rounded-xl border border-white/10 bg-white/5 relative">
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="text-white font-semibold">Test Case #{idx + 1}</h4>
-                          {testCases.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeTestCase(tc.id)}
-                              className="text-red-400 hover:text-red-300 text-sm"
-                            >
-                              Remove
-                            </button>
-                          )}
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-300 mb-1">Input (stdin)</label>
-                            <textarea
-                              value={tc.input}
-                              onChange={(e) => updateTestCase(tc.id, 'input', e.target.value)}
-                              rows={4}
-                              required
-                              className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                              placeholder={"e.g.\n3\n1 2\n4 5\n7 8"}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-300 mb-1">Expected Output (stdout)</label>
-                            <textarea
-                              value={tc.output}
-                              onChange={(e) => updateTestCase(tc.id, 'output', e.target.value)}
-                              rows={4}
-                              required
-                              className="w-full px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                              placeholder={"e.g.\n6 7\n9 9"}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-gray-400 text-sm mt-1">Upload a C++ generator. It must print input JSON to stdout and output JSON to stderr.</p>
+
+                  {genError && (
+                    <div className="mt-3 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                      <p className="text-red-400 whitespace-pre-wrap break-words">{genError}</p>
+                    </div>
+                  )}
+
+                  {generatedInput && generatedOutput && (
+                    <div className="mt-3 bg-white/5 border border-white/10 rounded-lg p-4">
+                      <div className="text-gray-300 text-sm">Generated cases: {generatedInput.length}</div>
+                      <div className="text-gray-400 text-xs mt-1">First input sample: {generatedInput[0]}</div>
+                      <div className="text-gray-400 text-xs">First output sample: {generatedOutput[0]}</div>
+                    </div>
+                  )}
                 </div>
 
                 {error && (
