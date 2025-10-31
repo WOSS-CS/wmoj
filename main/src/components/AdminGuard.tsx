@@ -87,5 +87,18 @@ export function AdminGuard({ children }: AdminGuardProps) {
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {/* Persistent Help button overlay for admin pages */}
+      <div className="fixed top-3 right-3 z-50">
+        <a
+          href="/admin/help"
+          className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors duration-300 border border-white/10"
+        >
+          Help
+        </a>
+      </div>
+      {children}
+    </>
+  );
 }
