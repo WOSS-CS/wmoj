@@ -82,6 +82,16 @@ export function AdminSidebar() {
       ),
       match: (p) => p.startsWith('/admin/contests/manage'),
     },
+    {
+      href: '/admin/help',
+      label: 'Help',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10a4 4 0 118 0c0 1.657-1 2.5-2.5 3.5-.88.6-1.5 1-1.5 2m0 3h.01" />
+        </svg>
+      ),
+      match: (p) => p.startsWith('/admin/help'),
+    },
   ];
 
   return (
