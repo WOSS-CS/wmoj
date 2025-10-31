@@ -37,12 +37,6 @@ export default function AdminHelpPage() {
               <span className="px-4 py-2 text-red-400 border border-red-400 rounded-lg bg-red-400/10 backdrop-blur-sm">
                 Admin: {user?.user_metadata?.username || user?.email}
               </span>
-              <Link
-                href="/admin/help"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300"
-              >
-                Help
-              </Link>
               <button
                 onClick={() => signOut()}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
