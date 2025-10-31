@@ -62,7 +62,6 @@ export default function AdminHelpPage() {
                 <section>
                   <h2 className="text-2xl font-semibold text-white mb-3">Contents</h2>
                   <ul className="list-disc list-inside space-y-1 text-gray-300">
-                    <li><a href="#roles" className="text-blue-400 hover:underline">Roles & Access Control</a></li>
                     <li><a href="#problems" className="text-blue-400 hover:underline">Creating Problems</a></li>
                     <li><a href="#generators" className="text-blue-400 hover:underline">Test Case Generators (C++)</a></li>
                     <li><a href="#manage-problems" className="text-blue-400 hover:underline">Managing Problems</a></li>
@@ -71,12 +70,6 @@ export default function AdminHelpPage() {
                     <li><a href="#timers" className="text-blue-400 hover:underline">Contest Timers & Participation</a></li>
                     <li><a href="#troubleshooting" className="text-blue-400 hover:underline">Troubleshooting</a></li>
                   </ul>
-                </section>
-
-                <section id="roles" className="space-y-3">
-                  <h2 className="text-2xl font-semibold text-white">Roles & Access Control</h2>
-                  <p>- Admin-only pages are protected by <code className="px-1 py-0.5 bg-black/40 rounded">AdminGuard</code>. You must be present in the <code className="px-1 py-0.5 bg-black/40 rounded">admins</code> table.</p>
-                  <p>- If access is denied, verify your account exists in <code className="px-1 py-0.5 bg-black/40 rounded">admins</code> and is active.</p>
                 </section>
 
                 <section id="problems" className="space-y-3">
