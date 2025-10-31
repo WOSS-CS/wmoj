@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { getUserRole, getUserDashboardPath } from '@/utils/userRole';
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [userDashboardPath, setUserDashboardPath] = useState<string | null>(null);
-  const [profileCreationInProgress, setProfileCreationInProgress] = useState(false);
+  const profileCreationInProgressRef = useRef(false);
 
   // moved effect below callbacks to avoid TDZ on createUserProfile
 
@@ -104,12 +104,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const createUserProfile = useCallback(async (user: User) => {
-    if (profileCreationInProgress) {
+    if (profileCreationInProgressRef.current) {
       console.log('Profile creation already in progress, skipping...');
       return;
     }
     
-    setProfileCreationInProgress(true);
+    profileCreationInProgressRef.current = true;
     try {
       console.log('Starting profile creation for:', user.email);
       // First, check if user is an admin
@@ -191,9 +191,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error in createUserProfile:', error);
     } finally {
       console.log('Profile creation completed for:', user.email);
-      setProfileCreationInProgress(false);
+      profileCreationInProgressRef.current = false;
     }
-  }, [updateUserRoleAndPath, profileCreationInProgress]);
+  }, [updateUserRoleAndPath]);
 
   useEffect(() => {
     let isMounted = true;
