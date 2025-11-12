@@ -12,7 +12,7 @@ export default function Home() {
   const router = useRouter();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
-  const [activeFeature, setActiveFeature] = useState(0);
+  // Removed unused rotating feature indicator to satisfy linter
 
   useEffect(() => {
     setIsLoaded(true);
@@ -21,14 +21,8 @@ export default function Home() {
     };
     window.addEventListener('mousemove', handleMouseMove);
 
-    // Auto-rotate features
-    const interval = setInterval(() => {
-      setActiveFeature(prev => (prev + 1) % 3);
-    }, 3000);
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      clearInterval(interval);
     };
   }, []);
 

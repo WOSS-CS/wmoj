@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -58,7 +58,7 @@ export default function ProblemPage() {
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [problemId, session]);
+  }, [problemId, session, /* eslint-disable-line react-hooks/exhaustive-deps */]);
 
   // Check access permission for contest problems
   useEffect(() => {
@@ -105,7 +105,7 @@ export default function ProblemPage() {
     }
   }, [user, problem]);
 
-  const fetchProblem = async (id: string) => {
+  const fetchProblem = useCallback(async (id: string) => {
     try {
       setLoading(true);
       const response = await fetch(`/api/problems/${id}`, {
@@ -126,7 +126,7 @@ export default function ProblemPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.access_token]);
 
   const handleSignOut = async () => {
     await signOut();
