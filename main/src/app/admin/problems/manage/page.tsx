@@ -27,7 +27,6 @@ interface EditState {
 
 // Lazy load Markdown components (avoid SSR issues if any)
 const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(m => m.MarkdownEditor), { ssr: false });
-const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
 
 export default function ManageProblemsPage() {
   const { session, user, signOut } = useAuth();
@@ -296,26 +295,16 @@ export default function ManageProblemsPage() {
                             </div>
                           </div>
 
-                          {/* Editor & Preview */}
+                          {/* Editor */}
                           <div className="space-y-2">
                             <label className="block text-sm font-medium">Content (Markdown)</label>
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                              <div className="flex flex-col gap-2 min-h-[500px]">
-                                <MarkdownEditor
-                                  value={editing.content}
-                                  onChange={(val: string) => setEditing(s => s ? { ...s, content: val } : s)}
-                                  placeholder="Write problem statement in Markdown..."
-                                  height={500}
-                                />
-                              </div>
-                              <div className="border border-white/10 rounded-lg p-4 bg-black/40 overflow-auto max-h-[600px] relative">
-                                <div className="text-xs uppercase tracking-wide text-gray-400 mb-3 flex items-center gap-2">
-                                  <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" /> Live Preview
-                                </div>
-                                <div className="prose prose-invert max-w-none text-sm leading-relaxed">
-                                  <MarkdownRenderer content={editing.content || '*Nothing yet...*'} />
-                                </div>
-                              </div>
+                            <div className="flex flex-col gap-2 min-h-[500px]">
+                              <MarkdownEditor
+                                value={editing.content}
+                                onChange={(val: string) => setEditing(s => s ? { ...s, content: val } : s)}
+                                placeholder="Write problem statement in Markdown..."
+                                height={500}
+                              />
                             </div>
                           </div>
                         </>
