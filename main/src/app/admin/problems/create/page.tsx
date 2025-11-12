@@ -352,7 +352,7 @@ export default function CreateProblemPage() {
                       <div className="text-gray-300 text-sm">Generated cases: {generatedInput.length}</div>
                       <div className="text-gray-400 text-xs mt-1">First input sample: {generatedInput[0]}</div>
                       <div className="text-gray-400 text-xs">First output sample: {generatedOutput[0]}</div>
-                    </div>
+                        </div>
                   )}
                 </div>
 
