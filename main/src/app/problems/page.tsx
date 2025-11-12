@@ -8,6 +8,7 @@ import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
 import { Logo } from '@/components/Logo';
 import { Problem } from '@/types/problem';
+import { supabase } from '@/lib/supabase';
 
 export default function ProblemsPage() {
   const { user, signOut } = useAuth();
@@ -18,6 +19,7 @@ export default function ProblemsPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredProblem, setHoveredProblem] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [statusByProblem, setStatusByProblem] = useState<Record<string, 'solved' | 'attempted' | 'not_attempted'>>({});
 
   useEffect(() => {
     fetchStandaloneProblems();
@@ -51,6 +53,51 @@ export default function ProblemsPage() {
       setLoading(false);
     }
   };
+
+  // Build a per-problem status map (solved/attempted/not_attempted)
+  useEffect(() => {
+    const loadStatuses = async () => {
+      try {
+        if (!user?.id || problems.length === 0) {
+          setStatusByProblem({});
+          return;
+        }
+        const problemIds = problems.map(p => p.id);
+        const { data, error } = await supabase
+          .from('submissions')
+          .select('problem_id, summary')
+          .eq('user_id', user.id)
+          .in('problem_id', problemIds);
+        if (error) {
+          console.error('Status load error:', error);
+          return;
+        }
+        const map: Record<string, 'solved' | 'attempted' | 'not_attempted'> = {};
+        // Default all to not_attempted
+        for (const id of problemIds) map[id] = 'not_attempted';
+        // Aggregate by problem
+        const perProblem: Record<string, { any: boolean; solved: boolean }> = {};
+        for (const row of data || []) {
+          const pid = row.problem_id as string;
+          const s = (row.summary || {}) as { total?: number; passed?: number; failed?: number };
+          const total = Number(s.total ?? 0);
+          const passed = Number(s.passed ?? 0);
+          const failed = Number(s.failed ?? 0);
+          const solved = total > 0 && failed === 0 && passed === total;
+          if (!perProblem[pid]) perProblem[pid] = { any: false, solved: false };
+          perProblem[pid].any = true;
+          perProblem[pid].solved = perProblem[pid].solved || solved;
+        }
+        for (const [pid, agg] of Object.entries(perProblem)) {
+          map[pid] = agg.solved ? 'solved' : 'attempted';
+        }
+        setStatusByProblem(map);
+      } catch (e) {
+        console.error('Unexpected status calc error:', e);
+      }
+    };
+    loadStatuses();
+  }, [user?.id, problems]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -265,9 +312,6 @@ export default function ProblemsPage() {
                               <h3 className="text-lg font-semibold text-white mb-1">
                                 {problem.name}
                               </h3>
-                              <p className="text-gray-400 text-sm line-clamp-2">
-                                {problem.content?.substring(0, 100)}...
-                              </p>
                             </div>
                             <div className="col-span-2">
                               <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm">
@@ -275,9 +319,16 @@ export default function ProblemsPage() {
                               </span>
                             </div>
                             <div className="col-span-2">
-                              <span className="px-3 py-1 bg-gray-400/20 text-gray-400 rounded-full text-sm">
-                                Not Attempted
-                              </span>
+                            {(() => {
+                              const status = statusByProblem[problem.id] || 'not_attempted';
+                              if (status === 'solved') {
+                                return <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm">Solved</span>;
+                              }
+                              if (status === 'attempted') {
+                                return <span className="px-3 py-1 bg-yellow-400/20 text-yellow-400 rounded-full text-sm">Attempted</span>;
+                              }
+                              return <span className="px-3 py-1 bg-gray-400/20 text-gray-400 rounded-full text-sm">Not Attempted</span>;
+                            })()}
                             </div>
                             <div className="col-span-2">
                               <Link
