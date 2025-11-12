@@ -110,7 +110,7 @@ export function HoverAnimation({
 }: HoverAnimationProps) {
   // Neutralized: remove all hover-induced movement effects
   return (
-    <div className={className}>
+    <div className={className} data-effect={effect}>
       {children}
     </div>
   );

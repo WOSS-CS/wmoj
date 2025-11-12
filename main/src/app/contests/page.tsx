@@ -23,7 +23,7 @@ export default function ContestsPage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredContest, setHoveredContest] = useState<string | null>(null);
-  const [joiningContest, setJoiningContest] = useState<string | null>(null);
+  // Removed unused join flow state to satisfy linter (join handled on contest view page)
   const [search, setSearch] = useState('');
   const router = useRouter();
 
@@ -82,47 +82,13 @@ export default function ContestsPage() {
     }
   }, [session?.access_token, loadingParticipation]);
 
-  const handleJoinContest = async (contestId: string, contestName: string, contestLength: number) => {
-    if (joiningContest) return;
-    setJoiningContest(contestId);
-    try {
-      const res = await fetch(`/api/contests/${contestId}/join`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ userId: user?.id })
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || 'Failed to join contest');
-      setJoinedContestId(contestId);
-      startCountdown(contestId, contestName, contestLength);
-      router.push(`/contests/${contestId}`);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to join contest');
-    } finally {
-      setJoiningContest(null);
-    }
-  };
+  // Join is initiated on the contest view page; remove unused handler to satisfy linter.
 
   const handleSignOut = async () => {
     await signOut();
   };
 
-  // Produce a short, readable preview by stripping common markdown tokens
-  const stripMarkdown = (input: string): string => {
-    return input
-      .replace(/`{1,3}[^`]*`{1,3}/g, '') // inline / fenced code
-      .replace(/\*\*|__/g, '') // bold
-      .replace(/\*|_/g, '') // emphasis
-      .replace(/^>\s?/gm, '') // blockquote markers
-      .replace(/^\s{0,3}#{1,6}\s+/gm, '') // headings
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1') // links
-      .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // images
-      .replace(/\r?\n/g, ' ') // newlines to spaces
-      .trim();
-  };
+  // Removed unused stripMarkdown helper to satisfy linter.
 
   const filteredContests = useMemo(() => {
     const q = search.trim().toLowerCase();
