@@ -26,7 +26,6 @@ interface EditState {
 }
 
 const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(m => m.MarkdownEditor), { ssr: false });
-const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
 
 export default function ManageContestsPage() {
   const { session, user, signOut } = useAuth();
@@ -302,23 +301,13 @@ export default function ManageContestsPage() {
                           </div>
                           <div className="space-y-2">
                             <label className="block text-sm font-medium">Description (Markdown)</label>
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                              <div className="flex flex-col gap-2 min-h-[420px]">
-                                <MarkdownEditor
-                                  value={editing.description}
-                                  onChange={(val: string) => setEditing(s => s ? { ...s, description: val } : s)}
-                                  placeholder="Write contest description in Markdown..."
-                                  height={420}
-                                />
-                              </div>
-                              <div className="border border-white/10 rounded-lg p-4 bg-black/40 overflow-auto max-h-[560px] relative">
-                                <div className="text-xs uppercase tracking-wide text-gray-400 mb-3 flex items-center gap-2">
-                                  <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" /> Live Preview
-                                </div>
-                                <div className="prose prose-invert max-w-none text-sm leading-relaxed">
-                                  <MarkdownRenderer content={editing.description || '*Nothing yet...*'} />
-                                </div>
-                              </div>
+                            <div className="flex flex-col gap-2 min-h-[420px]">
+                              <MarkdownEditor
+                                value={editing.description}
+                                onChange={(val: string) => setEditing(s => s ? { ...s, description: val } : s)}
+                                placeholder="Write contest description in Markdown..."
+                                height={420}
+                              />
                             </div>
                           </div>
                         </>
