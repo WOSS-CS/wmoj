@@ -12,6 +12,68 @@ export default function AdminHelpPage() {
   const { user, signOut } = useAuth();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
+  const generatorExample = String.raw`// generator.cpp for a problem where you add two integers together.
+
+#include <bits/stdc++.h>
+
+using namespace std;
+
+string json_escape(const string &s) {
+    string out;
+    out.reserve(s.size());
+    for (char c : s) {
+        if (c == '\\') out += "\\\\";
+        else if (c == '\"') out += "\\\"";
+        else if (c == '\b') out += "\\b";
+        else if (c == '\f') out += "\\f";
+        else if (c == '\n') out += "\\n";
+        else if (c == '\r') out += "\\r";
+        else if (c == '\t') out += "\\t";
+        else out += c;
+    }
+    return out;
+}
+
+int main() {
+    const int N = 50;
+    std::mt19937_64 rng(123456789); // fixed seed for reproducibility
+    std::uniform_int_distribution<long long> dist(-1000000000LL, 1000000000LL);
+
+    vector<string> inputs;
+    vector<string> outputs;
+    inputs.reserve(N);
+    outputs.reserve(N);
+
+    for (int i = 0; i < N; ++i) {
+        long long a = dist(rng);
+        long long b = dist(rng);
+        long long s = a + b;
+
+        string in = to_string(a) + " " + to_string(b);
+        string out = to_string(s);
+
+        inputs.push_back(in);
+        outputs.push_back(out);
+    }
+
+    // Print input JSON array to stdout
+    cout << "[";
+    for (size_t i = 0; i < inputs.size(); ++i) {
+        if (i) cout << ", ";
+        cout << "\"" << json_escape(inputs[i]) << "\"";
+    }
+    cout << "]" << endl;
+
+    // Print output JSON array to stderr
+    cerr << "[";
+    for (size_t i = 0; i < outputs.size(); ++i) {
+        if (i) cerr << ", ";
+        cerr << "\"" << json_escape(outputs[i]) << "\"";
+    }
+    cerr << "]" << endl;
+
+    return 0;
+}`;
 
   useEffect(() => {
     setIsLoaded(true);
@@ -64,6 +126,7 @@ export default function AdminHelpPage() {
                   <ul className="list-disc list-inside space-y-1 text-gray-300">
                     <li><a href="#problems" className="text-blue-400 hover:underline">Creating Problems</a></li>
                     <li><a href="#generators" className="text-blue-400 hover:underline">Test Case Generators (C++)</a></li>
+                    <li><a href="#generator-guide" className="text-blue-400 hover:underline">Detailed Generator Guide</a></li>
                     <li><a href="#manage-problems" className="text-blue-400 hover:underline">Managing Problems</a></li>
                     <li><a href="#contests" className="text-blue-400 hover:underline">Contests (Create & Manage)</a></li>
                     <li><a href="#judge" className="text-blue-400 hover:underline">Judge Service</a></li>
@@ -92,6 +155,34 @@ export default function AdminHelpPage() {
                   <pre className="bg-black/50 text-gray-100 p-4 rounded-lg overflow-x-auto"><code>{`stdout: ["6 7", "10 5", "3 3"]
 stderr: ["13", "15", "6"]`}</code></pre>
                   <p>- On failure (compile/runtime/JSON), errors appear on the page so you can fix and reupload.</p>
+                  <p>- See the detailed guide below for a complete template.</p>
+                </section>
+
+                <section id="generator-guide" className="space-y-4">
+                  <h2 className="text-2xl font-semibold text-white">Detailed Generator Guide</h2>
+                  <p>Every generator must emit <strong>verbatim JSON arrays</strong>:</p>
+                  <ul className="list-disc list-inside ml-4 space-y-1">
+                    <li><code className="px-1 py-0.5 bg-black/40 rounded">stdout</code> → JSON array of input strings (one entry per test case).</li>
+                    <li><code className="px-1 py-0.5 bg-black/40 rounded">stderr</code> → JSON array of output strings in the same order.</li>
+                    <li>The arrays must be the same length, contain only strings, and be valid JSON (quoted, escaped, comma separated, enclosed in <code>[]</code>).</li>
+                  </ul>
+                  <p className="text-gray-300">Recommended structure:</p>
+                  <ol className="list-decimal list-inside ml-4 space-y-1 text-gray-300">
+                    <li>Include headers and helper functions (e.g., <code>json_escape</code>) to escape quotes, newlines, and backslashes.</li>
+                    <li>Seed a random number generator (fixed seed preferred for reproducibility) and produce deterministic inputs/outputs.</li>
+                    <li>Store generated strings in two <code>std::vector&lt;std::string&gt;</code> containers so you can print them once at the end.</li>
+                    <li>When printing, wrap each string in quotes and separate entries with commas to form valid JSON arrays.</li>
+                    <li>Use <code>std::cout</code> for the input array and <code>std::cerr</code> for the output array, then flush/terminate with <code>std::endl</code>.</li>
+                  </ol>
+                  <p className="text-gray-300">Example generator:</p>
+                  <pre className="bg-black/50 text-gray-100 p-4 rounded-lg overflow-x-auto"><code>{generatorExample}</code></pre>
+                  <p>Key takeaways:</p>
+                  <ul className="list-disc list-inside ml-4 space-y-1">
+                    <li><code>json_escape</code> ensures control characters or quotes within strings do not break the JSON.</li>
+                    <li>Inputs and outputs are paired by index; make sure both vectors have identical lengths.</li>
+                    <li>You can replace the random logic with handcrafted cases for edge coverage—just keep the printing format identical.</li>
+                    <li>Do not print debugging text or additional lines; only the JSON arrays should be emitted.</li>
+                  </ul>
                 </section>
 
                 <section id="manage-problems" className="space-y-3">
