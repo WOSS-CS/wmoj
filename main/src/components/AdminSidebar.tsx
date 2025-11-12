@@ -3,8 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { useEffect, useState } from 'react';
+// Removed unused user/mounted state
 
 interface NavItem {
   href: string;
@@ -17,9 +16,6 @@ const baseClasses = "flex items-center gap-3 px-4 py-3 rounded-lg transition-col
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const items: NavItem[] = [
     {
