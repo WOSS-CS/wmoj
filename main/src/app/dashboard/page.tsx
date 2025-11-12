@@ -205,25 +205,54 @@ export default function DashboardPage() {
                   <SkeletonText lines={3} />
                 </div>
               ) : activities.length > 0 ? (
-                <div className="space-y-4">
-                  {activities.map((activity, index) => (
-                    <div 
-                      key={activity.id}
-                      className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300 group"
-                      style={{ transitionDelay: `${index * 0.1}s` }}
-                    >
-                      <div className={`w-3 h-3 rounded-full ${
-                        activity.status === 'success' ? 'bg-green-400' : 
-                        activity.status === 'warning' ? 'bg-yellow-400' : 'bg-blue-400'
-                      } animate-pulse`} />
-                      <div className="flex-1">
-                        <p className="text-white font-medium group-hover:text-green-400 transition-colors duration-300">
-                          {activity.action} {activity.item}
-                        </p>
-                        <p className="text-gray-400 text-sm">{formatTimeAgo(activity.timestamp)}</p>
+                <div className="space-y-3">
+                  {activities.map((a, index) => {
+                    const color =
+                      a.status === 'success' ? 'green' :
+                      a.status === 'warning' ? 'yellow' : 'blue';
+                    const timeAgo = formatTimeAgo(a.timestamp);
+                    const exact = new Date(a.timestamp).toLocaleString();
+                    const score = a.passed != null && a.total != null ? `${a.passed}/${a.total}` : null;
+                    return (
+                      <div
+                        key={a.id}
+                        className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300 group"
+                        style={{ transitionDelay: `${index * 0.05}s` }}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={`mt-1 w-3 h-3 rounded-full bg-${color}-400 animate-pulse`} />
+                          <div className="flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-white font-medium group-hover:text-green-400 transition-colors duration-300">
+                                {a.action} {a.item}
+                              </span>
+                              <span className={`px-2 py-0.5 text-xs rounded-full bg-${color}-400/20 text-${color}-400 border border-${color}-400/20`}>
+                                {a.type === 'submission' ? (a.status === 'success' ? 'Solved' : 'Attempted') : 'Joined'}
+                              </span>
+                              {a.type === 'submission' && score && (
+                                <span className="text-xs text-gray-300">Score: <span className="text-white font-semibold">{score}</span></span>
+                              )}
+                              {a.type === 'submission' && a.contestName && (
+                                <span className="text-xs text-gray-300">Contest: <span className="text-white">{a.contestName}</span></span>
+                              )}
+                            </div>
+                            <div className="text-gray-400 text-xs mt-1">
+                              <span>{timeAgo}</span>
+                              <span className="mx-2">•</span>
+                              <span>{exact}</span>
+                            </div>
+                          </div>
+                          <div className="shrink-0">
+                            {a.type === 'submission' ? (
+                              <Link href={`/problems/${a.itemId}`} className="text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 transition-colors">View Problem</Link>
+                            ) : (
+                              <Link href={`/contests`} className="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors">View Contest</Link>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8">

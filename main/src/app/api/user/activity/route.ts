@@ -17,16 +17,36 @@ export async function GET(request: Request) {
     }
     const userId = authData.user.id;
 
-    // Fetch recent submissions with problem details
+    // Fetch recent submissions with problem details (and contest id)
     const { data: submissions, error: submissionsErr } = await supabase
       .from('submissions')
-      .select('id, problem_id, created_at, summary, problems(id, name)')
+      .select('id, problem_id, created_at, summary, problems(id, name, contest)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(100);
 
     if (submissionsErr) {
       console.error('Error fetching submissions:', submissionsErr);
+    }
+
+    // Collect contest ids from problems to look up names
+    const contestIdSet = new Set<string>();
+    for (const sub of submissions || []) {
+      const problem = Array.isArray(sub.problems) ? sub.problems[0] : sub.problems;
+      const c = problem?.contest;
+      if (c) contestIdSet.add(c as string);
+    }
+    let contestNameById: Record<string, string> = {};
+    if (contestIdSet.size > 0) {
+      const { data: contestsData, error: contestsErr } = await supabase
+        .from('contests')
+        .select('id, name')
+        .in('id', Array.from(contestIdSet));
+      if (contestsErr) {
+        console.error('Error fetching contests for submissions:', contestsErr);
+      } else {
+        contestNameById = Object.fromEntries((contestsData || []).map((c: any) => [c.id, c.name]));
+      }
     }
 
     // Fetch recent contest joins with contest details
@@ -35,27 +55,38 @@ export async function GET(request: Request) {
       .select('id, contest_id, joined_at, contests(id, name)')
       .eq('user_id', userId)
       .order('joined_at', { ascending: false })
-      .limit(5);
+      .limit(100);
 
     if (joinsErr) {
       console.error('Error fetching contest joins:', joinsErr);
     }
 
     // Combine and sort activities
-    const activities = [];
+    const activities: Array<any> = [];
 
     // Add submissions
     if (submissions) {
       for (const sub of submissions) {
         const problem = Array.isArray(sub.problems) ? sub.problems[0] : sub.problems;
+        const s = (sub.summary || {}) as { total?: number; passed?: number; failed?: number };
+        const total = Number(s.total ?? 0);
+        const passed = Number(s.passed ?? 0);
+        const failed = Number(s.failed ?? 0);
+        const solved = total > 0 && failed === 0 && passed === total;
+        const contestId = problem?.contest as string | null | undefined;
+        const contestName = contestId ? contestNameById[contestId] : undefined;
         activities.push({
           id: `sub-${sub.id}`,
           type: 'submission',
-          action: sub.summary?.allPassed ? 'Solved' : 'Attempted',
+          action: solved ? 'Solved' : 'Attempted',
           item: problem?.name || 'Unknown Problem',
           itemId: sub.problem_id,
           timestamp: sub.created_at,
-          status: sub.summary?.allPassed ? 'success' : 'warning'
+          status: solved ? 'success' : 'warning',
+          passed,
+          total,
+          contestId: contestId || null,
+          contestName: contestName || null,
         });
       }
     }
@@ -79,8 +110,8 @@ export async function GET(request: Request) {
     // Sort by timestamp descending
     activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-    // Return top 10
-    return NextResponse.json({ activities: activities.slice(0, 10) });
+    // Return activities (recent up to fetched limits)
+    return NextResponse.json({ activities });
   } catch (e) {
     console.error('Activity fetch error:', e);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
