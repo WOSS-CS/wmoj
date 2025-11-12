@@ -3,17 +3,17 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCountdown } from '@/contexts/CountdownContext';
+// import { useCountdown } from '@/contexts/CountdownContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
 import { Logo } from '@/components/Logo';
 import { Contest } from '@/types/contest';
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 
 export default function ContestsPage() {
   const { user, signOut, session } = useAuth();
-  const { startCountdown } = useCountdown();
+  // const { startCountdown } = useCountdown();
   const [contests, setContests] = useState<Contest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -25,7 +25,7 @@ export default function ContestsPage() {
   const [hoveredContest, setHoveredContest] = useState<string | null>(null);
   // Removed unused join flow state to satisfy linter (join handled on contest view page)
   const [search, setSearch] = useState('');
-  const router = useRouter();
+  // const router = useRouter();
 
   useEffect(() => {
     (async () => {

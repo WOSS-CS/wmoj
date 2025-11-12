@@ -91,7 +91,7 @@ export default function ContestPage() {
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [params.id, accessChecked]);
+  }, [params.id, accessChecked, session?.access_token]);
 
   const handleSignOut = async () => { await signOut(); };
 

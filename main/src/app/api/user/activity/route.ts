@@ -45,7 +45,10 @@ export async function GET(request: Request) {
       if (contestsErr) {
         console.error('Error fetching contests for submissions:', contestsErr);
       } else {
-        contestNameById = Object.fromEntries((contestsData || []).map((c: any) => [c.id, c.name]));
+        contestNameById = (contestsData || []).reduce<Record<string, string>>((acc, c: { id: string; name: string }) => {
+          acc[c.id] = c.name;
+          return acc;
+        }, {});
       }
     }
 
@@ -62,7 +65,20 @@ export async function GET(request: Request) {
     }
 
     // Combine and sort activities
-    const activities: Array<any> = [];
+    type ActivityResponse = {
+      id: string;
+      type: 'submission' | 'contest_join';
+      action: string;
+      item: string;
+      itemId: string;
+      timestamp: string;
+      status: 'success' | 'warning' | 'info';
+      passed?: number;
+      total?: number;
+      contestId?: string | null;
+      contestName?: string | null;
+    };
+    const activities: ActivityResponse[] = [];
 
     // Add submissions
     if (submissions) {
