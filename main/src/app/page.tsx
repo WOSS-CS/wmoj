@@ -20,12 +20,12 @@ export default function Home() {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
     window.addEventListener('mousemove', handleMouseMove);
-    
+
     // Auto-rotate features
     const interval = setInterval(() => {
       setActiveFeature(prev => (prev + 1) % 3);
     }, 3000);
-    
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       clearInterval(interval);
@@ -132,38 +132,10 @@ export default function Home() {
           <p className="text-xl text-gray-300 mb-8 leading-relaxed">
             {user 
               ? `Welcome back to WMOJ, ${user.user_metadata?.username || 'competitive programmer'}! Ready to solve some problems?`
-              : 'Join WMOJ, the ultimate platform for competitive programmers. Solve challenging problems, participate in contests, and climb the leaderboards.'
+              : 'Join WMOJ, the official White Oaks Secondary School Competitive Programming Platform.'
             }
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-            {user ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 relative overflow-hidden group"
-                >
-                  <span className="relative z-10">Start Coding Now</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </Link>
-                <button className="px-8 py-4 border-2 border-green-400 text-green-400 rounded-lg text-lg font-semibold hover:bg-green-400 hover:text-black transition-colors duration-300">
-                  View Problems
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/auth/signup"
-                  className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 relative overflow-hidden group"
-                >
-                  <span className="relative z-10">Start Coding Now</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </Link>
-                <button className="px-8 py-4 border-2 border-green-400 text-green-400 rounded-lg text-lg font-semibold hover:bg-green-400 hover:text-black transition-colors duration-300">
-                  Learn More
-                </button>
-              </>
-            )}
-          </div>
+          {/* Buttons removed as per instructions */}
         </div>
 
         {/* Enhanced Auth Form / User Dashboard */}
@@ -243,50 +215,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Enhanced Features Section */}
-      <div className="relative z-10 py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-center mb-8">
-            <span className="px-4 py-1 rounded-full border border-green-400/40 bg-white/5 text-green-300 text-xs font-semibold tracking-[0.3em] uppercase">Why Choose</span>
-          </div>
-          <h2 className="text-4xl font-bold text-white text-center mb-16 relative">
-            Why Choose WMOJ?
-            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full" />
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { icon: '🏆', title: 'Competitions', desc: 'Participate in regular contests and climb the global leaderboards.' },
-              { icon: '💻', title: 'Practice', desc: 'Access thousands of problems with detailed solutions and explanations.' },
-              { icon: '📈', title: 'Progress', desc: 'Track your improvement with detailed analytics and skill assessments.' }
-            ].map((feature, index) => (
-              <div 
-                key={index}
-                className={`text-center p-8 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors duration-300 group cursor-pointer ${
-                  activeFeature === index ? 'bg-white/10 ring-1 ring-green-400/40' : ''
-                }`}
-                onMouseEnter={() => setActiveFeature(index)}
-              >
-                <div className={`text-6xl mb-6 transition-colors duration-300 ${activeFeature === index ? 'text-green-400' : ''}`}>
-                  {feature.icon}
-                </div>
-                <h3 className={`text-xl font-semibold mb-4 transition-colors duration-300 ${activeFeature === index ? 'text-green-400' : 'text-white group-hover:text-green-400'}`}>
-                  {feature.title}
-                </h3>
-                <p className="text-gray-300 leading-relaxed">
-                  {feature.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
+      
       {/* Enhanced Footer */}
       <footer className="relative z-10 py-8 px-6 border-t border-white/10 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto text-center space-y-4">
-          <span className="text-sm font-semibold tracking-[0.3em] uppercase text-green-300">Competitive Programming Platform</span>
+          <span className="text-sm font-semibold tracking-[0.3em] uppercase text-green-300">CP Platform</span>
           <p className="text-gray-400">
-            © 2024 WMOJ. All rights reserved. Built for competitive programmers.
+            © 2025 WMOJ. All rights reserved.
           </p>
         </div>
       </footer>
