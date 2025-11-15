@@ -71,8 +71,9 @@ export default function DashboardPage() {
           .from('problems')
           .select('id, name, contest')
           .in('id', problemIds);
-        problemInfo = (probs || []).reduce((acc: Record<string, { name: string; contest: string | null }>, p: any) => {
-          acc[p.id] = { name: p.name, contest: p.contest || null };
+        type Prob = { id: string; name: string; contest: string | null };
+        problemInfo = (probs || []).reduce((acc: Record<string, { name: string; contest: string | null }>, p: Prob) => {
+          acc[p.id] = { name: p.name, contest: p.contest };
           return acc;
         }, {});
       }
@@ -114,7 +115,8 @@ export default function DashboardPage() {
           .from('contests')
           .select('id, name')
           .in('id', joinContestIds);
-        contestNames = (contests || []).reduce((acc: Record<string, string>, c: any) => {
+        type ContestRow = { id: string; name: string };
+        contestNames = (contests || []).reduce((acc: Record<string, string>, c: ContestRow) => {
           acc[c.id] = c.name;
           return acc;
         }, {});
@@ -140,7 +142,7 @@ export default function DashboardPage() {
       hasLoadedActivitiesRef.current = true;
       setActivitiesLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (user?.id) {
