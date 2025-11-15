@@ -136,7 +136,7 @@ export default function AdminUserManagementPage() {
                 </div>
               </LoadingState>
 
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+              <div>
                 <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
                   <input
                     value={search}
@@ -167,7 +167,7 @@ export default function AdminUserManagementPage() {
                         </thead>
                         <tbody>
                           {filteredUsers.map((u) => (
-                            <tr key={u.id} className="border-t border-white/10 hover:bg-white/5">
+                            <tr key={u.id} className="">
                               <td className="px-4 py-3 text-white">{u.username}</td>
                               <td className="px-4 py-3 text-gray-300">{u.email}</td>
                               <td className="px-4 py-3">

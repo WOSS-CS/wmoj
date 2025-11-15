@@ -167,7 +167,7 @@ export default function CreateContestPage() {
             </LoadingState>
 
             {/* Create Contest Form */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+            <div className="p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
@@ -198,7 +198,7 @@ export default function CreateContestPage() {
                         height={360}
                       />
                     </div>
-                    <div className="border border-white/20 rounded-lg p-4 bg-black/30 overflow-auto max-h-[480px]">
+                    <div className="p-4 overflow-auto max-h-[480px]">
                       <div className="text-xs uppercase tracking-wide text-gray-400 mb-3 flex items-center gap-2">
                         <span className="inline-block w-2 h-2 rounded-full bg-purple-400 animate-pulse" /> Live Preview
                       </div>
