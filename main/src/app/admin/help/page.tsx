@@ -120,7 +120,7 @@ int main() {
                 <p className="text-gray-300 text-lg">Everything you need to effectively administer WMOJ.</p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 text-gray-200 space-y-10">
+              <div className="p-8 text-gray-200 space-y-10">
                 <section>
                   <h2 className="text-2xl font-semibold text-white mb-3">Contents</h2>
                   <ul className="list-disc list-inside space-y-1 text-gray-300">

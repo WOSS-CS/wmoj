@@ -283,7 +283,7 @@ export default function ContestPage() {
               </div>
               {/* Enhanced Countdown Timer */}
               {isActive && timeRemaining !== null && (
-                <div className="bg-gradient-to-r from-green-400/10 to-emerald-400/10 border border-green-400/30 rounded-xl p-6 mb-8 backdrop-blur-sm hover:bg-gradient-to-r hover:from-green-400/15 hover:to-emerald-400/15 transition-all duration-300">
+                <div className="p-6 mb-8 transition-all duration-300">
                   <div className="flex items-center space-x-4">
                     <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
                     <div className="flex-1">
@@ -310,7 +310,7 @@ export default function ContestPage() {
               
               {/* Enhanced Dynamic Leaderboard */}
               {showLeaderboard && (
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 mb-8 hover:bg-white/15 transition-all duration-300">
+                <div className="p-8 mb-8 transition-all duration-300">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-semibold text-white flex items-center gap-3">
                       <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -337,12 +337,7 @@ export default function ContestPage() {
                       {leaderboard.map((entry, index) => (
                         <div 
                           key={entry.user_id} 
-                          className={`flex items-center justify-between bg-white/5 rounded-xl p-6 hover:bg-white/10 transition-colors duration-300 ${
-                            index === 0 ? 'border border-yellow-400/30 bg-gradient-to-r from-yellow-400/5 to-yellow-400/10' :
-                            index === 1 ? 'border border-gray-400/30 bg-gradient-to-r from-gray-400/5 to-gray-400/10' :
-                            index === 2 ? 'border border-orange-400/30 bg-gradient-to-r from-orange-400/5 to-orange-400/10' :
-                            'border border-white/10'
-                          }`}
+                          className="flex items-center justify-between p-6 transition-colors duration-300"
                           style={{ transitionDelay: `${index * 0.1}s` }}
                         >
                           <div className="flex items-center space-x-4">

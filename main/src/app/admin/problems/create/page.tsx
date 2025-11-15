@@ -271,7 +271,7 @@ export default function CreateProblemPage() {
             </LoadingState>
 
             {/* Create Problem Form */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+            <div className="p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
@@ -348,7 +348,7 @@ export default function CreateProblemPage() {
                   )}
 
                   {generatedInput && generatedOutput && (
-                    <div className="mt-3 bg-white/5 border border-white/10 rounded-lg p-4">
+                    <div className="mt-3 p-4">
                       <div className="text-gray-300 text-sm">Generated cases: {generatedInput.length}</div>
                       <div className="text-gray-400 text-xs mt-1">First input sample: {generatedInput[0]}</div>
                       <div className="text-gray-400 text-xs">First output sample: {generatedOutput[0]}</div>

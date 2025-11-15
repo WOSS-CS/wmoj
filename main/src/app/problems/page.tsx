@@ -258,7 +258,7 @@ export default function ProblemsPage() {
                 ) : (
                   <>
                     {/* Search Bar */}
-                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 mb-4">
+                    <div className="mb-4">
                       <input
                         value={search}
                         onChange={e => setSearch(e.target.value)}
@@ -276,9 +276,9 @@ export default function ProblemsPage() {
                         </p>
                       </div>
                     ) : (
-                      <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 overflow-hidden">
+                      <div>
                     {/* Table Header */}
-                    <div className="bg-white/5 px-6 py-4 border-b border-white/10">
+                    <div className="px-6 py-4">
                       <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-300">
                         <div className="col-span-6">Problem</div>
                         <div className="col-span-2">Difficulty</div>
@@ -288,11 +288,11 @@ export default function ProblemsPage() {
                     </div>
                     
                     {/* Table Body */}
-                    <div className="divide-y divide-white/10">
+                    <div>
                       {filteredProblems.map((problem, index) => (
                         <div
                           key={problem.id}
-                          className={`px-6 py-4 hover:bg-white/5 transition-all duration-300 ${
+                          className={`px-6 py-4 transition-all duration-300 ${
                             hoveredProblem === problem.id ? 'bg-white/10' : ''
                           }`}
                           onMouseEnter={() => setHoveredProblem(problem.id)}
