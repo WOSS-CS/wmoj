@@ -344,13 +344,13 @@ export default function ProblemPage() {
             <div className={`grid lg:grid-cols-3 gap-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
               {/* Enhanced Problem Description */}
               <div className="lg:col-span-2">
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/15 transition-colors duration-300">
+                <div className="p-8 transition-colors duration-300">
                     <div className="flex flex-wrap items-center gap-4 mb-6">
                       <div className="relative">
                       <h1 className="text-3xl font-bold text-white">
                         {problem.name}
                       </h1>
-                      <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
+                      <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
                     </div>
                     <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm animate-pulse">
                       {problem.contest ? 'Contest Problem' : 'Standalone'}
@@ -400,7 +400,7 @@ export default function ProblemPage() {
                             </div>
                             <div className="space-y-3">
                               {results.map((r) => (
-                                <div key={r.index} className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors duration-300">
+                                <div key={r.index} className="p-4 transition-colors duration-300">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                       <span className={`px-2 py-0.5 rounded text-xs ${r.passed ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
@@ -438,17 +438,17 @@ export default function ProblemPage() {
                     {activeTab === 'stats' && (
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                        <div className="p-4">
                             <div className="text-2xl font-bold text-green-400">{problem.input.length}</div>
                             <div className="text-sm text-gray-400">Test Cases</div>
                           </div>
-                          <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                        <div className="p-4">
                             <div className="text-2xl font-bold text-blue-400">{problem.contest ? 'Contest' : 'Practice'}</div>
                             <div className="text-sm text-gray-400">Type</div>
                           </div>
                         </div>
                         {bestSummary && (
-                          <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                        <div className="p-4">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-sm text-gray-400">Best Score</span>
                               <span className={`px-2 py-1 rounded text-xs ${bestSummary.failed === 0 ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
@@ -472,10 +472,10 @@ export default function ProblemPage() {
 
               {/* Enhanced Code Submission Panel */}
               <div className="lg:col-span-1">
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 sticky top-8 hover:bg-white/15 transition-colors duration-300">
+                <div className="p-6 sticky top-8 transition-colors duration-300">
                   <h2 className="text-xl font-semibold text-white mb-6 relative">
                     Submit Solution
-                    <div className="absolute -bottom-2 left-0 w-20 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
+                    <div className="absolute -bottom-2 left-0 w-20 h-1 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
                   </h2>
                   
                   <form onSubmit={handleSubmit} className="space-y-6">

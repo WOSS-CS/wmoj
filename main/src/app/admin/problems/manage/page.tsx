@@ -189,7 +189,7 @@ export default function ManageProblemsPage() {
               )}
               {error && <div className="text-red-400 mb-4">{error}</div>}
 
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+              <div>
                 <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
                   <input
                     value={search}
@@ -222,7 +222,7 @@ export default function ManageProblemsPage() {
                       </thead>
                       <tbody>
                         {filteredProblems.map(p => (
-                          <tr key={p.id} className="border-t border-white/10 hover:bg-white/5">
+                          <tr key={p.id} className="">
                             <td className="px-4 py-3 text-white font-medium" title={p.name}>{p.name}</td>
                             <td className="px-4 py-3 text-gray-300">{p.contest_name || p.contest || '-'}</td>
                             <td className="px-4 py-3">

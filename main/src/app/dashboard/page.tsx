@@ -282,10 +282,10 @@ export default function DashboardPage() {
             </LoadingState>
 
             {/* Recent Activity */}
-            <div className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.3s' }}>
+            <div className={`p-0 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.3s' }}>
               <h2 className="text-2xl font-bold text-white mb-6 relative">
                 Recent Activity
-                <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
+                <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
               </h2>
               {activitiesLoading ? (
                 <div className="space-y-4">
@@ -301,11 +301,7 @@ export default function DashboardPage() {
                     const exact = new Date(a.timestamp).toLocaleString();
                     const score = a.passed != null && a.total != null ? `${a.passed}/${a.total}` : null;
                     return (
-                      <div
-                        key={a.id}
-                        className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300 group"
-                        style={{ transitionDelay: `${index * 0.05}s` }}
-                      >
+                      <div key={a.id} className="p-4 transition-colors duration-300 group" style={{ transitionDelay: `${index * 0.05}s` }}>
                         <div className="flex items-start gap-4">
                           <div className={`mt-1 w-3 h-3 rounded-full bg-${color}-400 animate-pulse`} />
                           <div className="flex-1">
