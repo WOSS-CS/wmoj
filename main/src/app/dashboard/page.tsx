@@ -42,8 +42,98 @@ export default function DashboardPage() {
       
       if (res.ok) {
         const data = await res.json();
-        setActivities(data.activities || []);
+        if (Array.isArray(data.activities) && data.activities.length > 0) {
+          setActivities(data.activities);
+          return;
+        }
       }
+
+      // Fallback: query Supabase directly if API returns nothing
+      if (!user?.id) return;
+      const userId = user.id;
+
+      // Pull recent submissions without joins
+      const { data: subs, error: subsErr } = await supabase
+        .from('submissions')
+        .select('id, problem_id, created_at, summary')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (subsErr) {
+        console.warn('[dashboard] fallback submissions error:', subsErr);
+      }
+
+      // Lookup problem names/contest ids
+      const problemIds = Array.from(new Set((subs || []).map(s => s.problem_id).filter(Boolean)));
+      let problemInfo: Record<string, { name: string; contest: string | null }> = {};
+      if (problemIds.length > 0) {
+        const { data: probs } = await supabase
+          .from('problems')
+          .select('id, name, contest')
+          .in('id', problemIds);
+        problemInfo = (probs || []).reduce((acc: Record<string, { name: string; contest: string | null }>, p: any) => {
+          acc[p.id] = { name: p.name, contest: p.contest || null };
+          return acc;
+        }, {});
+      }
+
+      // Build submission activities
+      const subActivities = (subs || []).map((s) => {
+        const summary = (s.summary || {}) as { passed?: number; failed?: number; total?: number };
+        const total = Number(summary.total ?? 0);
+        const passed = Number(summary.passed ?? 0);
+        const failed = Number(summary.failed ?? 0);
+        const solved = total > 0 && failed === 0 && passed === total;
+        const pinfo = problemInfo[s.problem_id] || { name: 'Unknown Problem', contest: null };
+        return {
+          id: `sub-${s.id}`,
+          type: 'submission' as const,
+          action: solved ? 'Solved' : 'Attempted',
+          item: pinfo.name,
+          itemId: s.problem_id as string,
+          timestamp: s.created_at as string,
+          status: solved ? 'success' as const : 'warning' as const,
+          passed,
+          total,
+          contestId: pinfo.contest,
+          contestName: undefined as string | undefined,
+        };
+      });
+
+      // Fetch contest joins and contest names
+      const { data: joins } = await supabase
+        .from('join_history')
+        .select('id, contest_id, joined_at')
+        .eq('user_id', userId)
+        .order('joined_at', { ascending: false })
+        .limit(100);
+      const joinContestIds = Array.from(new Set((joins || []).map(j => j.contest_id).filter(Boolean)));
+      let contestNames: Record<string, string> = {};
+      if (joinContestIds.length > 0) {
+        const { data: contests } = await supabase
+          .from('contests')
+          .select('id, name')
+          .in('id', joinContestIds);
+        contestNames = (contests || []).reduce((acc: Record<string, string>, c: any) => {
+          acc[c.id] = c.name;
+          return acc;
+        }, {});
+      }
+      const joinActivities = (joins || []).map(j => ({
+        id: `join-${j.id}`,
+        type: 'contest_join' as const,
+        action: 'Joined',
+        item: contestNames[j.contest_id as string] || 'Unknown Contest',
+        itemId: j.contest_id as string,
+        timestamp: j.joined_at as string,
+        status: 'info' as const,
+      }));
+
+      // Merge and sort
+      const merged = [...subActivities, ...joinActivities].sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      setActivities(merged);
     } catch (error) {
       console.error('Error fetching activities:', error);
     } finally {
