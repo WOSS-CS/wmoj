@@ -145,9 +145,6 @@ export default function ContestsPage() {
         <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
           <Logo size="md" className="cursor-pointer" />
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="px-4 py-2 text-white border border-white/20 rounded-lg hover:bg-white/10 transition-all duration-300">
-              Dashboard
-            </Link>
             <span className="px-4 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm">
               {user?.user_metadata?.username || user?.email}
             </span>

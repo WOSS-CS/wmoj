@@ -277,13 +277,6 @@ export default function ProblemPage() {
             >
               Back to Problems
             </button>
-            <button
-              type="button"
-              onClick={() => router.push('/dashboard')}
-              className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-colors duration-300"
-            >
-              Back to Dashboard
-            </button>
             <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-colors duration-300">
               {user?.user_metadata?.username || user?.email}
             </span>

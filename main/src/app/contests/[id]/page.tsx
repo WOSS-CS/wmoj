@@ -177,7 +177,6 @@ export default function ContestPage() {
         <nav className="relative z-10 flex justify-between items-center p-6 backdrop-blur-sm">
           <Logo size="md" className="cursor-pointer" />
           <div className="flex gap-4">
-            <Link href="/dashboard" className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-colors duration-300">Dashboard</Link>
             <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-colors duration-300">{user?.user_metadata?.username || user?.email}</span>
             <button onClick={handleSignOut} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300">Sign Out</button>
           </div>
