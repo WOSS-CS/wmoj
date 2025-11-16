@@ -7,6 +7,7 @@ import { AuthGuard } from '@/components/AuthGuard';
 import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
 import { Logo } from '@/components/Logo';
+import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { Problem } from '@/types/problem';
 import { supabase } from '@/lib/supabase';
 
@@ -277,66 +278,71 @@ export default function ProblemsPage() {
                       </div>
                     ) : (
                       <div>
-                    {/* Table Header */}
-                    <div className="px-6 py-4">
-                      <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-300">
-                        <div className="col-span-6">Problem</div>
-                        <div className="col-span-2">Difficulty</div>
-                        <div className="col-span-2">Status</div>
-                        <div className="col-span-2">Actions</div>
-                      </div>
-                    </div>
-                    
-                    {/* Table Body */}
-                    <div>
-                      {filteredProblems.map((problem, index) => (
-                        <div
-                          key={problem.id}
-                          className={`px-6 py-4 transition-all duration-300 ${
-                            hoveredProblem === problem.id ? 'bg-white/10' : ''
-                          }`}
-                          onMouseEnter={() => setHoveredProblem(problem.id)}
-                          onMouseLeave={() => setHoveredProblem(null)}
-                          style={{ transitionDelay: `${index * 0.05}s` }}
-                        >
-                          <div className="grid grid-cols-12 gap-4 items-center">
-                            <div className="col-span-6">
-                              <h3 className="text-lg font-semibold text-white mb-1">
-                                {problem.name}
-                              </h3>
-                            </div>
-                            <div className="col-span-2">
-                              <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm">
-                                Easy
-                              </span>
-                            </div>
-                            <div className="col-span-2">
-                            {(() => {
-                              const status = statusByProblem[problem.id] || 'not_attempted';
-                              if (status === 'solved') {
-                                return <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm">Solved</span>;
-                              }
-                              if (status === 'attempted') {
-                                return <span className="px-3 py-1 bg-yellow-400/20 text-yellow-400 rounded-full text-sm">Attempted</span>;
-                              }
-                              return <span className="px-3 py-1 bg-gray-400/20 text-gray-400 rounded-full text-sm">Not Attempted</span>;
-                            })()}
-                            </div>
-                            <div className="col-span-2">
-                              <Link
-                                href={`/problems/${problem.id}`}
-                                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors duration-300"
-                              >
-                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                                Start Solving
-                              </Link>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        {(() => {
+                          type Row = Problem;
+                          const columns: Array<DataTableColumn<Row>> = [
+                            {
+                              key: 'name',
+                              header: 'Problem',
+                              className: 'w-[50%]',
+                              sortable: true,
+                              sortAccessor: (r) => r.name.toLowerCase(),
+                              render: (r) => (
+                                <h3 className="text-white font-semibold">{r.name}</h3>
+                              ),
+                            },
+                            {
+                              key: 'difficulty',
+                              header: 'Difficulty',
+                              className: 'w-[15%]',
+                              render: () => (
+                                <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-xs">
+                                  Easy
+                                </span>
+                              ),
+                            },
+                            {
+                              key: 'status',
+                              header: 'Status',
+                              className: 'w-[15%]',
+                              render: (r) => {
+                                const st = statusByProblem[r.id] || 'not_attempted';
+                                if (st === 'solved') {
+                                  return <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-xs">Solved</span>;
+                                }
+                                if (st === 'attempted') {
+                                  return <span className="px-3 py-1 bg-yellow-400/20 text-yellow-400 rounded-full text-xs">Attempted</span>;
+                                }
+                                return <span className="px-3 py-1 bg-gray-400/20 text-gray-400 rounded-full text-xs">Not Attempted</span>;
+                              },
+                            },
+                            {
+                              key: 'actions',
+                              header: 'Actions',
+                              className: 'w-[20%]',
+                              render: (r) => (
+                                <Link
+                                  href={`/problems/${r.id}`}
+                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors duration-300"
+                                >
+                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                  Start Solving
+                                </Link>
+                              ),
+                            },
+                          ];
+                          return (
+                            <DataTable<Problem>
+                              columns={columns}
+                              rows={filteredProblems}
+                              rowKey={(r) => r.id}
+                              headerVariant="green"
+                              className="shadow-inner"
+                            />
+                          );
+                        })()}
                       </div>
                     )}
                   </>

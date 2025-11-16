@@ -9,6 +9,7 @@ import { AdminSidebar } from '@/components/AdminSidebar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Logo } from '@/components/Logo';
 import { supabase } from '@/lib/supabase';
+import DataTable, { type DataTableColumn } from '@/components/DataTable';
 
 export default function AdminDashboardPage() {
   const { user, signOut } = useAuth();
@@ -175,23 +176,59 @@ export default function AdminDashboardPage() {
                   <SkeletonText lines={3} />
                 </div>
               ) : submissions.length > 0 ? (
-                <div className="space-y-3">
-                  {submissions.map((s, index) => (
-                    <div 
-                      key={s.id}
-                      className="flex items-center gap-4 p-4 transition-colors duration-300 group"
-                      style={{ transitionDelay: `${index * 0.05}s` }}
-                    >
-                      <div className={`w-3 h-3 rounded-full ${s.passed ? 'bg-green-400' : 'bg-yellow-400'} animate-pulse`} />
-                      <div className="flex-1">
-                        <p className="text-white font-medium group-hover:text-red-400 transition-colors duration-300">
-                          {s.passed ? 'Solved' : 'Attempted'} {s.problem} by {s.user}
-                        </p>
-                        <p className="text-gray-400 text-sm">{formatTimeAgo(s.timestamp)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  {(() => {
+                    type Row = { id: string; user: string; problem: string; passed: boolean; timestamp: string };
+                    const columns: Array<DataTableColumn<Row>> = [
+                      {
+                        key: 'user',
+                        header: 'User',
+                        className: 'w-[25%]',
+                        sortable: true,
+                        sortAccessor: (r) => r.user.toLowerCase(),
+                        render: (r) => <span className="text-white font-medium">{r.user}</span>,
+                      },
+                      {
+                        key: 'problem',
+                        header: 'Problem',
+                        className: 'w-[35%]',
+                        sortable: true,
+                        sortAccessor: (r) => r.problem.toLowerCase(),
+                        render: (r) => <span className="text-gray-200">{r.problem}</span>,
+                      },
+                      {
+                        key: 'result',
+                        header: 'Result',
+                        className: 'w-[15%]',
+                        sortable: true,
+                        sortAccessor: (r) => (r.passed ? 1 : 0),
+                        render: (r) => (
+                          <span className={`px-2 py-0.5 text-xs rounded-full border ${r.passed ? 'text-green-400 bg-green-400/20 border-green-400/20' : 'text-yellow-400 bg-yellow-400/20 border-yellow-400/20'}`}>
+                            {r.passed ? 'Solved' : 'Attempted'}
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'when',
+                        header: 'When',
+                        className: 'w-[25%]',
+                        sortable: true,
+                        sortAccessor: (r) => new Date(r.timestamp).getTime(),
+                        render: (r) => (
+                          <span className="text-gray-400 text-sm">{formatTimeAgo(r.timestamp)}</span>
+                        ),
+                      },
+                    ];
+                    return (
+                      <DataTable<Row>
+                        columns={columns}
+                        rows={submissions}
+                        rowKey={(r) => r.id}
+                        headerVariant="red"
+                      />
+                    );
+                  })()}
+                </>
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-400">No submissions in the last 24 hours.</p>

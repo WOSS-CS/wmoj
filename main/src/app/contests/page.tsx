@@ -8,6 +8,7 @@ import { AuthGuard } from '@/components/AuthGuard';
 import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import { LoadingState, CardLoading, SkeletonText } from '@/components/LoadingStates';
 import { Logo } from '@/components/Logo';
+import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { Contest } from '@/types/contest';
 // import { useRouter } from 'next/navigation';
 
@@ -256,95 +257,114 @@ export default function ContestsPage() {
                       </div>
                     ) : (
                       <div>
-                    {/* Table Header */}
-                    <div className="px-6 py-4">
-                      <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-300">
-                        <div className="col-span-4">Contest</div>
-                        <div className="col-span-2">Duration</div>
-                        <div className="col-span-2">Status</div>
-                        <div className="col-span-2">Participants</div>
-                        <div className="col-span-2">Actions</div>
-                      </div>
-                    </div>
-                    
-                    {/* Table Body */}
-                    <div>
-                      {filteredContests.map((contest, index) => (
-                        <div
-                          key={contest.id}
-                          className={`px-6 py-4 transition-all duration-300 ${
-                            hoveredContest === contest.id ? 'bg-white/10' : ''
-                          }`}
-                          onMouseEnter={() => setHoveredContest(contest.id)}
-                          onMouseLeave={() => setHoveredContest(null)}
-                          style={{ transitionDelay: `${index * 0.05}s` }}
-                        >
-                          <div className="grid grid-cols-12 gap-4 items-center">
-                            <div className="col-span-4">
-                              <div className="flex items-center gap-3 mb-1 flex-wrap">
-                                <h3 className="text-lg font-semibold text-white">
-                                  {contest.name || 'Untitled Contest'}
-                                </h3>
-                                <span className="px-2 py-0.5 text-xs rounded-full bg-green-400/15 text-green-300 border border-green-400/30">
-                                  {(contest.problems_count ?? 0)} problem{(contest.problems_count ?? 0) === 1 ? '' : 's'}
+                        {(() => {
+                          type Row = Contest;
+                          const columns: Array<DataTableColumn<Row>> = [
+                            {
+                              key: 'name',
+                              header: 'Contest',
+                              className: 'w-[35%]',
+                              sortable: true,
+                              sortAccessor: (r) => (r.name || '').toLowerCase(),
+                              render: (r) => (
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  <h3 className="text-white font-semibold">
+                                    {r.name || 'Untitled Contest'}
+                                  </h3>
+                                  <span className="px-2 py-0.5 text-xs rounded-full bg-green-400/15 text-green-300 border border-green-400/30">
+                                    {(r.problems_count ?? 0)} problem{(r.problems_count ?? 0) === 1 ? '' : 's'}
+                                  </span>
+                                </div>
+                              ),
+                            },
+                            {
+                              key: 'length',
+                              header: 'Duration',
+                              className: 'w-[15%]',
+                              sortable: true,
+                              sortAccessor: (r) => r.length,
+                              render: (r) => (
+                                <span className="text-white font-medium">{r.length} min</span>
+                              ),
+                            },
+                            {
+                              key: 'status',
+                              header: 'Status',
+                              className: 'w-[15%]',
+                              sortable: true,
+                              sortAccessor: (r) => (r.is_active ? 1 : 0),
+                              render: (r) => (
+                                <span className={`px-3 py-1 rounded-full text-xs ${
+                                  r.is_active ? 'bg-green-400/20 text-green-400' : 'bg-gray-400/20 text-gray-400'
+                                }`}>
+                                  {r.is_active ? 'Active' : 'Inactive'}
                                 </span>
-                              </div>
-                              
-                            </div>
-                            <div className="col-span-2">
-                              <span className="text-white font-medium">
-                                {contest.length} min
-                              </span>
-                            </div>
-                            <div className="col-span-2">
-                              <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm">
-                                Active
-                              </span>
-                            </div>
-                            <div className="col-span-2">
-                              <span className="text-gray-400 text-sm">
-                                {(contest.participants_count ?? 0)} participant{(contest.participants_count ?? 0) === 1 ? '' : 's'}
-                              </span>
-                            </div>
-                            <div className="col-span-2">
-                              {joinedContestId === contest.id ? (
-                                <Link
-                                  href={`/contests/${contest.id}`}
-                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors duration-300"
-                                >
-                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                  Continue
-                                </Link>
-                              ) : joinedHistory.has(contest.id) ? (
-                                <Link
-                                  href={`/contests/${contest.id}/leaderboard`}
-                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors duration-300"
-                                >
-                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                  Spectate
-                                </Link>
-                              ) : (
-                                <Link
-                                  href={`/contests/${contest.id}/view`}
-                                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors duration-300"
-                                >
-                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                  View
-                                </Link>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                              ),
+                            },
+                            {
+                              key: 'participants',
+                              header: 'Participants',
+                              className: 'w-[15%]',
+                              sortable: true,
+                              sortAccessor: (r) => r.participants_count ?? 0,
+                              render: (r) => (
+                                <span className="text-gray-300 text-sm">
+                                  {(r.participants_count ?? 0)} participant{(r.participants_count ?? 0) === 1 ? '' : 's'}
+                                </span>
+                              ),
+                            },
+                            {
+                              key: 'actions',
+                              header: 'Actions',
+                              className: 'w-[20%]',
+                              render: (r) => (
+                                <>
+                                  {joinedContestId === r.id ? (
+                                    <Link
+                                      href={`/contests/${r.id}`}
+                                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors duration-300"
+                                    >
+                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                      Continue
+                                    </Link>
+                                  ) : joinedHistory.has(r.id) ? (
+                                    <Link
+                                      href={`/contests/${r.id}/leaderboard`}
+                                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors duration-300"
+                                    >
+                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                      Spectate
+                                    </Link>
+                                  ) : (
+                                    <Link
+                                      href={`/contests/${r.id}/view`}
+                                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors duration-300"
+                                    >
+                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                      </svg>
+                                      View
+                                    </Link>
+                                  )}
+                                </>
+                              ),
+                            },
+                          ];
+                          return (
+                            <DataTable<Contest>
+                              columns={columns}
+                              rows={filteredContests}
+                              rowKey={(r) => r.id}
+                              headerVariant="green"
+                            />
+                          );
+                        })()}
                       </div>
                     )}
                   </>

@@ -8,6 +8,7 @@ import { AdminSidebar } from '@/components/AdminSidebar';
 import { LoadingState, SkeletonText } from '@/components/LoadingStates';
 import { supabase } from '@/lib/supabase';
 import { Logo } from '@/components/Logo';
+import DataTable, { type DataTableColumn } from '@/components/DataTable';
 
 interface ManagedUser {
   id: string;
@@ -156,37 +157,60 @@ export default function AdminUserManagementPage() {
                     <div className="text-center py-12 text-gray-400">No users match your filters.</div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="min-w-full text-left">
-                        <thead>
-                          <tr className="text-gray-300">
-                            <th className="px-4 py-2">Username</th>
-                            <th className="px-4 py-2">Email</th>
-                            <th className="px-4 py-2">Status</th>
-                            <th className="px-4 py-2">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredUsers.map((u) => (
-                            <tr key={u.id} className="">
-                              <td className="px-4 py-3 text-white">{u.username}</td>
-                              <td className="px-4 py-3 text-gray-300">{u.email}</td>
-                              <td className="px-4 py-3">
-                                <span className={`px-2 py-1 rounded text-xs ${u.is_active ? 'bg-green-400/10 text-green-400 border border-green-400/30' : 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/30'}`}>
-                                  {u.is_active ? 'Active' : 'Disabled'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <button
-                                  onClick={() => handleToggle(u.id, !u.is_active)}
-                                  className={`px-3 py-2 rounded-lg transition-colors duration-300 ${u.is_active ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white`}
-                                >
-                                  {u.is_active ? 'Disable' : 'Enable'}
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      {(() => {
+                        type Row = ManagedUser;
+                        const columns: Array<DataTableColumn<Row>> = [
+                          {
+                            key: 'username',
+                            header: 'Username',
+                            className: 'w-[25%]',
+                            sortable: true,
+                            sortAccessor: (r) => r.username.toLowerCase(),
+                            render: (r) => <span className="text-white font-medium">{r.username}</span>,
+                          },
+                          {
+                            key: 'email',
+                            header: 'Email',
+                            className: 'w-[35%]',
+                            sortable: true,
+                            sortAccessor: (r) => r.email.toLowerCase(),
+                            render: (r) => <span className="text-gray-300">{r.email}</span>,
+                          },
+                          {
+                            key: 'status',
+                            header: 'Status',
+                            className: 'w-[15%]',
+                            sortable: true,
+                            sortAccessor: (r) => (r.is_active ? 1 : 0),
+                            render: (r) => (
+                              <span className={`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-green-400/10 text-green-400 border-green-400/30' : 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30'}`}>
+                                {r.is_active ? 'Active' : 'Disabled'}
+                              </span>
+                            ),
+                          },
+                          {
+                            key: 'actions',
+                            header: 'Actions',
+                            className: 'w-[25%]',
+                            render: (r) => (
+                              <button
+                                onClick={() => handleToggle(r.id, !r.is_active)}
+                                className={`px-3 py-2 rounded-lg transition-colors duration-300 ${r.is_active ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white`}
+                              >
+                                {r.is_active ? 'Disable' : 'Enable'}
+                              </button>
+                            ),
+                          },
+                        ];
+                        return (
+                          <DataTable<Row>
+                            columns={columns}
+                            rows={filteredUsers}
+                            rowKey={(r) => r.id}
+                            headerVariant="red"
+                          />
+                        );
+                      })()}
                     </div>
                   )}
                 </LoadingState>

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Logo } from '@/components/Logo';
 import { supabase } from '@/lib/supabase';
+import DataTable, { type DataTableColumn } from '@/components/DataTable';
 
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
@@ -292,51 +293,103 @@ export default function DashboardPage() {
                   <SkeletonText lines={3} />
                 </div>
               ) : activities.length > 0 ? (
-                <div className="space-y-3">
-                  {activities.map((a, index) => {
-                    const color =
-                      a.status === 'success' ? 'green' :
-                      a.status === 'warning' ? 'yellow' : 'blue';
-                    const timeAgo = formatTimeAgo(a.timestamp);
-                    const exact = new Date(a.timestamp).toLocaleString();
-                    const score = a.passed != null && a.total != null ? `${a.passed}/${a.total}` : null;
+                <>
+                  {(() => {
+                    const columns: Array<DataTableColumn<Activity>> = [
+                      {
+                        key: 'item',
+                        header: 'Item',
+                        className: 'w-[30%]',
+                        sortable: true,
+                        sortAccessor: (r) => r.item.toLowerCase(),
+                        render: (r) => (
+                          <span className="text-white font-medium">{r.item}</span>
+                        ),
+                      },
+                      {
+                        key: 'type',
+                        header: 'Type',
+                        className: 'w-[15%]',
+                        sortable: true,
+                        sortAccessor: (r) => r.type,
+                        render: (r) => (
+                          <span className="text-gray-300 text-sm">
+                            {r.type === 'submission' ? 'Submission' : 'Contest Join'}
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'status',
+                        header: 'Status',
+                        className: 'w-[15%]',
+                        sortable: true,
+                        sortAccessor: (r) => r.status,
+                        render: (r) => {
+                          const color =
+                            r.status === 'success' ? 'text-green-400 bg-green-400/20 border-green-400/20' :
+                            r.status === 'warning' ? 'text-yellow-400 bg-yellow-400/20 border-yellow-400/20' :
+                            'text-blue-400 bg-blue-400/20 border-blue-400/20';
+                          const label =
+                            r.type === 'submission'
+                              ? r.status === 'success' ? 'Solved' : 'Attempted'
+                              : 'Joined';
+                          return (
+                            <span className={`px-2 py-0.5 text-xs rounded-full border ${color}`}>
+                              {label}
+                            </span>
+                          );
+                        },
+                      },
+                      {
+                        key: 'score',
+                        header: 'Score',
+                        className: 'w-[10%]',
+                        sortable: true,
+                        sortAccessor: (r) => (r.passed ?? -1) / Math.max(1, r.total ?? 1),
+                        render: (r) => (
+                          <span className="text-gray-300 text-sm">
+                            {r.type === 'submission' && r.passed != null && r.total != null
+                              ? `${r.passed}/${r.total}`
+                              : '-'}
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'when',
+                        header: 'When',
+                        className: 'w-[20%]',
+                        sortable: true,
+                        sortAccessor: (r) => new Date(r.timestamp).getTime(),
+                        render: (r) => (
+                          <div className="text-xs text-gray-400">
+                            <span>{formatTimeAgo(r.timestamp)}</span>
+                            <span className="mx-2">•</span>
+                            <span>{new Date(r.timestamp).toLocaleString()}</span>
+                          </div>
+                        ),
+                      },
+                      {
+                        key: 'actions',
+                        header: 'Actions',
+                        className: 'w-[10%]',
+                        render: (r) =>
+                          r.type === 'submission' ? (
+                            <Link href={`/problems/${r.itemId}`} className="text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 transition-colors">View Problem</Link>
+                          ) : (
+                            <Link href={`/contests`} className="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors">View Contest</Link>
+                          ),
+                      },
+                    ];
                     return (
-                      <div key={a.id} className="p-4 transition-colors duration-300 group" style={{ transitionDelay: `${index * 0.05}s` }}>
-                        <div className="flex items-start gap-4">
-                          <div className={`mt-1 w-3 h-3 rounded-full bg-${color}-400 animate-pulse`} />
-                          <div className="flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-white font-medium group-hover:text-green-400 transition-colors duration-300">
-                                {a.action} {a.item}
-                              </span>
-                              <span className={`px-2 py-0.5 text-xs rounded-full bg-${color}-400/20 text-${color}-400 border border-${color}-400/20`}>
-                                {a.type === 'submission' ? (a.status === 'success' ? 'Solved' : 'Attempted') : 'Joined'}
-                              </span>
-                              {a.type === 'submission' && score && (
-                                <span className="text-xs text-gray-300">Score: <span className="text-white font-semibold">{score}</span></span>
-                              )}
-                              {a.type === 'submission' && a.contestName && (
-                                <span className="text-xs text-gray-300">Contest: <span className="text-white">{a.contestName}</span></span>
-                              )}
-                            </div>
-                            <div className="text-gray-400 text-xs mt-1">
-                              <span>{timeAgo}</span>
-                              <span className="mx-2">•</span>
-                              <span>{exact}</span>
-                            </div>
-                          </div>
-                          <div className="shrink-0">
-                            {a.type === 'submission' ? (
-                              <Link href={`/problems/${a.itemId}`} className="text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 transition-colors">View Problem</Link>
-                            ) : (
-                              <Link href={`/contests`} className="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors">View Contest</Link>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                      <DataTable<Activity>
+                        columns={columns}
+                        rows={activities}
+                        rowKey={(r) => r.id}
+                        headerVariant="green"
+                      />
                     );
-                  })}
-                </div>
+                  })()}
+                </>
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-400">No recent activity yet. Start solving problems or join a contest!</p>
