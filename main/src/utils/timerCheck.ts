@@ -83,13 +83,34 @@ export async function getTimerStatus(
     const remainingSeconds = Math.max(0, totalDurationSeconds - elapsedSeconds);
 
     if (remainingSeconds <= 0) {
-      // Timer expired, clean up
-      await supabase
-        .from('countdown_timers')
-        .delete()
-        .eq('user_id', userId)
-        .eq('contest_id', contestId);
-      
+      // Timer expired, clean up timer and mark user as having left the contest
+      try {
+        await supabase
+          .from('countdown_timers')
+          .delete()
+          .eq('user_id', userId)
+          .eq('contest_id', contestId);
+      } catch (e) {
+        console.warn('Timer cleanup failed:', e);
+      }
+      try {
+        // Remove from active participants so UI shows spectator state
+        await supabase
+          .from('contest_participants')
+          .delete()
+          .eq('user_id', userId)
+          .eq('contest_id', contestId);
+      } catch (e) {
+        console.warn('Participant cleanup failed:', e);
+      }
+      try {
+        // Record left_at for join history (best-effort)
+        await supabase
+          .from('join_history')
+          .upsert({ user_id: userId, contest_id: contestId, left_at: new Date().toISOString() });
+      } catch (e) {
+        console.warn('Join history left_at upsert failed:', e);
+      }
       return { isActive: false };
     }
 

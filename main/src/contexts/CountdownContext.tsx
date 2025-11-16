@@ -140,14 +140,20 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     if (!contestId || !user?.id) return;
     
     try {
+      // Acquire a fresh access token
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
       const res = await fetch(`/api/contests/${contestId}/leave`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await import('@supabase/supabase-js')).createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-          ).auth.getSession().then(s => s.data.session?.access_token)}`
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         }
       });
       
