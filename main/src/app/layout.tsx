@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CountdownProvider } from "@/contexts/CountdownContext";
 import { CountdownOverlay } from "@/components/CountdownOverlay";
+import { ActiveContestRedirect } from "@/components/ActiveContestRedirect";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
               {children}
             </div>
             <CountdownOverlay />
+            <ActiveContestRedirect />
           </CountdownProvider>
         </AuthProvider>
       </body>
