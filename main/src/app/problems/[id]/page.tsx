@@ -265,7 +265,7 @@ export default function ProblemPage() {
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={() => router.push('/problems')}
+              onClick={() => router.push(problem?.contest ? `/contests/${problem.contest}` : '/problems')}
               className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-colors duration-300"
             >
               Back to Problems
