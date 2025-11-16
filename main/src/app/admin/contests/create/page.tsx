@@ -10,6 +10,7 @@ import { LoadingState, SkeletonText } from '@/components/LoadingStates';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { AdminSidebar } from '@/components/AdminSidebar';
+import DataTable, { type DataTableColumn } from '@/components/DataTable';
 
 const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(m => m.MarkdownEditor), { ssr: false });
 const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
@@ -228,6 +229,30 @@ export default function CreateContestPage() {
                   <p className="text-gray-400 text-sm mt-1">
                     Contest duration in minutes (1-1440 minutes)
                   </p>
+                </div>
+
+                {/* Summary Preview Table */}
+                <div className="mt-4">
+                  {(() => {
+                    type Row = { name: string; description: string; length: number; active: boolean };
+                    const columns: Array<DataTableColumn<Row>> = [
+                      { key: 'name', header: 'Name', className: 'w-[25%]', render: (r) => <span className="text-white font-medium">{r.name || '-'}</span> },
+                      { key: 'description', header: 'Description (preview)', className: 'w-[50%]', render: (r) => <div className="text-gray-300 text-sm line-clamp-2 break-words">{r.description || '-'}</div> },
+                      { key: 'length', header: 'Length (min)', className: 'w-[15%]', render: (r) => <span className="text-gray-300">{r.length || 0}</span> },
+                      { key: 'active', header: 'Active', className: 'w-[10%]', render: (r) => <span className="px-2 py-0.5 rounded text-xs border bg-green-400/10 text-green-400 border-green-400/30">{r.active ? 'Yes' : 'No'}</span> },
+                    ];
+                    const rows: Row[] = [
+                      { name: formData.name, description: formData.description, length: formData.length, active: true },
+                    ];
+                    return (
+                      <DataTable<Row>
+                        columns={columns}
+                        rows={rows}
+                        rowKey={(_r, i) => String(i)}
+                        headerVariant="emerald"
+                      />
+                    );
+                  })()}
                 </div>
 
                 {error && (
