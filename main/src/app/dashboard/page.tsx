@@ -372,12 +372,15 @@ export default function DashboardPage() {
                         key: 'actions',
                         header: 'Actions',
                         className: 'w-[10%]',
-                        render: (r) =>
-                          r.type === 'submission' ? (
-                            <Link href={`/problems/${r.itemId}`} className="text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 transition-colors">View Problem</Link>
-                          ) : (
-                            <Link href={`/contests`} className="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors">View Contest</Link>
-                          ),
+                        render: (r) => (
+                          <div className="flex items-center">
+                            {r.type === 'submission' ? (
+                              <Link href={`/problems/${r.itemId}`} className="inline-flex items-center text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 transition-colors whitespace-nowrap">View Problem</Link>
+                            ) : (
+                              <Link href={`/contests`} className="inline-flex items-center text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors whitespace-nowrap">View Contest</Link>
+                            )}
+                          </div>
+                        ),
                       },
                     ];
                     return (
