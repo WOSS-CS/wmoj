@@ -13,7 +13,7 @@ export type DataTableColumn<Row> = {
 
 type SortValue = string | number | boolean | null | undefined;
 
-export type DataTableProps<Row extends Record<string, unknown>> = {
+export type DataTableProps<Row extends object> = {
   columns: Array<DataTableColumn<Row>>;
   rows: Row[];
   rowKey?: (row: Row, index: number) => string;
@@ -29,7 +29,7 @@ type SortState<Row> = {
   column?: DataTableColumn<Row> | null;
 };
 
-export function DataTable<Row extends Record<string, unknown>>(props: DataTableProps<Row>) {
+export function DataTable<Row extends object>(props: DataTableProps<Row>) {
   const {
     columns,
     rows,
@@ -53,14 +53,12 @@ export function DataTable<Row extends Record<string, unknown>>(props: DataTableP
     const accessor =
       sort.column.sortAccessor ||
       ((row: Row): SortValue => {
-        const raw = row[sort.key as keyof Row] as unknown;
-        let out: SortValue;
+        const rec = row as unknown as Record<string, unknown>;
+        const raw = rec[sort.key as string] as unknown;
         if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean' || raw == null) {
-          out = raw as SortValue;
-        } else {
-          out = String(raw);
+          return raw as SortValue;
         }
-        return out;
+        return String(raw);
       });
     const list = [...rows];
     list.sort((a, b) => {
@@ -126,12 +124,20 @@ export function DataTable<Row extends Record<string, unknown>>(props: DataTableP
             </tr>
           ) : (
             sortedRows.map((row, index) => {
-              const key = rowKey ? rowKey(row, index) : (row.id ? String(row.id) : String(index));
+              const key = rowKey
+                ? rowKey(row, index)
+                : (() => {
+                    const rec = row as unknown as Record<string, unknown>;
+                    const val = rec.id;
+                    return val != null ? String(val) : String(index);
+                  })();
               return (
                 <tr key={key} className={`${theme.zebra} ${theme.rowHover}`}>
                   {columns.map((col) => (
                     <td key={col.key} className={`px-4 py-3 align-middle ${col.className || ''}`}>
-                      {col.render ? col.render(row) : (row[col.key as keyof Row] as ReactNode)}
+                      {col.render
+                        ? col.render(row)
+                        : ((row as unknown as Record<string, unknown>)[col.key] as ReactNode)}
                     </td>
                   ))}
                 </tr>
