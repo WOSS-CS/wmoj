@@ -10,6 +10,7 @@ import { MarkdownEditor } from '@/components/MarkdownEditor';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { AdminSidebar } from '@/components/AdminSidebar';
+import DataTable, { type DataTableColumn } from '@/components/DataTable';
 
 interface Contest {
   id: string;
@@ -348,11 +349,33 @@ export default function CreateProblemPage() {
                   )}
 
                   {generatedInput && generatedOutput && (
-                    <div className="mt-3 p-4">
-                      <div className="text-gray-300 text-sm">Generated cases: {generatedInput.length}</div>
-                      <div className="text-gray-400 text-xs mt-1">First input sample: {generatedInput[0]}</div>
-                      <div className="text-gray-400 text-xs">First output sample: {generatedOutput[0]}</div>
-                        </div>
+                    <div className="mt-4 p-4 border border-white/10 rounded-lg bg-white/5">
+                      <div className="mb-3 text-gray-300 text-sm">Generated cases: {generatedInput.length}</div>
+                      {(() => {
+                        type Row = { idx: number; input: string; output: string };
+                        const columns: Array<DataTableColumn<Row>> = [
+                          { key: 'idx', header: '#', className: 'w-[5%]', sortable: true, sortAccessor: (r) => r.idx, render: (r) => <span className="text-gray-400">{r.idx + 1}</span> },
+                          { key: 'input', header: 'Input', className: 'w-[45%]', render: (r) => <pre className="text-gray-200 text-xs whitespace-pre-wrap break-words">{r.input}</pre> },
+                          { key: 'output', header: 'Output', className: 'w-[45%]', render: (r) => <pre className="text-gray-200 text-xs whitespace-pre-wrap break-words">{r.output}</pre> },
+                        ];
+                        const rows: Row[] = generatedInput.slice(0, Math.min(10, generatedInput.length)).map((inp, i) => ({
+                          idx: i,
+                          input: String(inp),
+                          output: String(generatedOutput[i] ?? ''),
+                        }));
+                        return (
+                          <DataTable<Row>
+                            columns={columns}
+                            rows={rows}
+                            rowKey={(r) => String(r.idx)}
+                            headerVariant="blue"
+                          />
+                        );
+                      })()}
+                      {generatedInput.length > 10 && (
+                        <div className="mt-2 text-xs text-gray-400">Showing first 10 of {generatedInput.length} cases…</div>
+                      )}
+                    </div>
                   )}
                 </div>
 

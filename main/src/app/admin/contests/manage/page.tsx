@@ -7,6 +7,7 @@ import { AdminGuard } from '@/components/AdminGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminSidebar } from '@/components/AdminSidebar';
 import { Logo } from '@/components/Logo';
+import DataTable, { type DataTableColumn } from '@/components/DataTable';
 
 interface ContestRow {
   id: string;
@@ -205,38 +206,67 @@ export default function ManageContestsPage() {
                   <div className="text-center py-12 text-gray-400">No contests match your filters.</div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="min-w-full text-left">
-                      <thead>
-                        <tr className="text-gray-300">
-                          <th className="px-4 py-2">Name</th>
-                          <th className="px-4 py-2">Length (min)</th>
-                          <th className="px-4 py-2">Status</th>
-                          <th className="px-4 py-2">Updated</th>
-                          <th className="px-4 py-2">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredContests.map(c => (
-                          <tr key={c.id} className="">
-                            <td className="px-4 py-3 text-white font-medium" title={c.name}>{c.name}</td>
-                            <td className="px-4 py-3 text-gray-300">{c.length ?? '-'}</td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-1 rounded text-xs ${c.is_active ? 'bg-green-400/10 text-green-400 border border-green-400/30' : 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/30'}`}>
-                                {c.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-gray-400" title={c.updated_at}>{new Date(c.updated_at).toLocaleDateString()}</td>
-                            <td className="px-4 py-3">
-                              <div className="flex gap-2">
-                                <button onClick={() => openEdit(c)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-blue-600 hover:bg-blue-700 text-white text-sm">Edit</button>
-                                <button onClick={() => toggleActive(c)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-yellow-600 hover:bg-yellow-700 text-white text-sm">{c.is_active ? 'Deactivate' : 'Activate'}</button>
-                                <button onClick={() => deleteContest(c)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-red-600 hover:bg-red-700 text-white text-sm">Delete</button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    {(() => {
+                      type Row = ContestRow;
+                      const columns: Array<DataTableColumn<Row>> = [
+                        {
+                          key: 'name',
+                          header: 'Name',
+                          className: 'w-[30%]',
+                          sortable: true,
+                          sortAccessor: (r) => r.name.toLowerCase(),
+                          render: (r) => <span className="text-white font-medium" title={r.name}>{r.name}</span>,
+                        },
+                        {
+                          key: 'length',
+                          header: 'Length (min)',
+                          className: 'w-[15%]',
+                          sortable: true,
+                          sortAccessor: (r) => r.length ?? 0,
+                          render: (r) => <span className="text-gray-300">{r.length ?? '-'}</span>,
+                        },
+                        {
+                          key: 'status',
+                          header: 'Status',
+                          className: 'w-[15%]',
+                          sortable: true,
+                          sortAccessor: (r) => (r.is_active ? 1 : 0),
+                          render: (r) => (
+                            <span className={`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-green-400/10 text-green-400 border-green-400/30' : 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30'}`}>
+                              {r.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          ),
+                        },
+                        {
+                          key: 'updated',
+                          header: 'Updated',
+                          className: 'w-[15%]',
+                          sortable: true,
+                          sortAccessor: (r) => new Date(r.updated_at).getTime(),
+                          render: (r) => <span className="text-gray-400" title={r.updated_at}>{new Date(r.updated_at).toLocaleDateString()}</span>,
+                        },
+                        {
+                          key: 'actions',
+                          header: 'Actions',
+                          className: 'w-[25%]',
+                          render: (r) => (
+                            <div className="flex gap-2">
+                              <button onClick={() => openEdit(r)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-blue-600 hover:bg-blue-700 text-white text-sm">Edit</button>
+                              <button onClick={() => toggleActive(r)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-yellow-600 hover:bg-yellow-700 text-white text-sm">{r.is_active ? 'Deactivate' : 'Activate'}</button>
+                              <button onClick={() => deleteContest(r)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-red-600 hover:bg-red-700 text-white text-sm">Delete</button>
+                            </div>
+                          ),
+                        },
+                      ];
+                      return (
+                        <DataTable<Row>
+                          columns={columns}
+                          rows={filteredContests}
+                          rowKey={(r) => r.id}
+                          headerVariant="emerald"
+                        />
+                      );
+                    })()}
                   </div>
                 )}
               </div>
