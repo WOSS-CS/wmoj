@@ -7,11 +7,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCountdown } from '@/contexts/CountdownContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
+import dynamic from 'next/dynamic';
 import { LoadingState, CardLoading, SkeletonText, LeaderboardLoading } from '@/components/LoadingStates';
 import { checkContestParticipation } from '@/utils/participationCheck';
 import type { Contest } from '@/types/contest';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
+
+const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
 
 export default function ContestPage() {
   const params = useParams<{ id: string }>();
@@ -230,7 +233,11 @@ export default function ContestPage() {
                     {contest?.name}
                     <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
                   </h1>
-                  <div className="text-gray-300 mb-4 text-lg leading-relaxed max-w-2xl">{contest?.description}</div>
+                  <div className="mb-4 max-w-2xl">
+                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                      <MarkdownRenderer content={contest?.description || '*No description provided*'} />
+                    </div>
+                  </div>
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2 text-gray-400">
                       <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
