@@ -558,6 +558,29 @@ export default function ProblemPage() {
                       <div className="absolute -bottom-2 left-0 w-16 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
                     </h3>
                     <div className="space-y-4">
+                      {bestSummary && (
+                        <div className="p-4 bg-gradient-to-r from-green-400/10 to-emerald-400/10 rounded-lg border border-green-400/20">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-gray-300">Best Score</span>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              bestSummary.failed === 0 
+                                ? 'bg-green-400/20 text-green-400' 
+                                : 'bg-yellow-400/20 text-yellow-400'
+                            }`}>
+                              {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
+                            </span>
+                          </div>
+                          <div className="text-2xl font-bold text-white mb-2">
+                            {bestSummary.passed}/{bestSummary.total}
+                          </div>
+                          <div className="w-full bg-gray-700 rounded-full h-2">
+                            <div 
+                              className="bg-gradient-to-r from-green-400 to-emerald-400 h-2 rounded-full transition-all duration-500"
+                              style={{ width: `${(bestSummary.passed / bestSummary.total) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
                       <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
                         <div className="flex justify-between items-center">
                           <span className="text-gray-300">Test Cases:</span>
@@ -586,29 +609,6 @@ export default function ProblemPage() {
                           </span>
                         </div>
                       </div>
-                      {bestSummary && (
-                        <div className="p-4 bg-gradient-to-r from-green-400/10 to-emerald-400/10 rounded-lg border border-green-400/20">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-gray-300">Best Score</span>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              bestSummary.failed === 0 
-                                ? 'bg-green-400/20 text-green-400' 
-                                : 'bg-yellow-400/20 text-yellow-400'
-                            }`}>
-                              {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
-                            </span>
-                          </div>
-                          <div className="text-2xl font-bold text-white mb-2">
-                            {bestSummary.passed}/{bestSummary.total}
-                          </div>
-                          <div className="w-full bg-gray-700 rounded-full h-2">
-                            <div 
-                              className="bg-gradient-to-r from-green-400 to-emerald-400 h-2 rounded-full transition-all duration-500"
-                              style={{ width: `${(bestSummary.passed / bestSummary.total) * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
