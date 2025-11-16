@@ -129,7 +129,9 @@ export default function ContestPage() {
     if (!showLeaderboard) {
       setLeaderboardLoading(true);
       try {
-        const res = await fetch(`/api/contests/${params.id}/leaderboard`);
+        const res = await fetch(`/api/contests/${params.id}/leaderboard`, {
+          headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        });
         const json = await res.json();
         if (res.ok) setLeaderboard(json.leaderboard || []);
       } catch (e) {
