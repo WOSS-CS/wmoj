@@ -18,7 +18,6 @@ export default function ProblemsPage() {
   const [error, setError] = useState('');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
-  const [hoveredProblem, setHoveredProblem] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusByProblem, setStatusByProblem] = useState<Record<string, 'solved' | 'attempted' | 'not_attempted'>>({});
 

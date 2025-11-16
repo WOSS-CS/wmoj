@@ -23,7 +23,6 @@ export default function ContestsPage() {
   const [joinedHistory, setJoinedHistory] = useState<Set<string>>(new Set());
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
-  const [hoveredContest, setHoveredContest] = useState<string | null>(null);
   // Removed unused join flow state to satisfy linter (join handled on contest view page)
   const [search, setSearch] = useState('');
   // const router = useRouter();

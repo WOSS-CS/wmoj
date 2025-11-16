@@ -11,7 +11,9 @@ export type DataTableColumn<Row> = {
   sortAccessor?: (row: Row) => string | number | boolean | null | undefined;
 };
 
-export type DataTableProps<Row extends { [key: string]: any }> = {
+type SortValue = string | number | boolean | null | undefined;
+
+export type DataTableProps<Row extends Record<string, unknown>> = {
   columns: Array<DataTableColumn<Row>>;
   rows: Row[];
   rowKey?: (row: Row, index: number) => string;
@@ -27,7 +29,7 @@ type SortState<Row> = {
   column?: DataTableColumn<Row> | null;
 };
 
-export function DataTable<Row extends { [key: string]: any }>(props: DataTableProps<Row>) {
+export function DataTable<Row extends Record<string, unknown>>(props: DataTableProps<Row>) {
   const {
     columns,
     rows,
@@ -50,9 +52,15 @@ export function DataTable<Row extends { [key: string]: any }>(props: DataTablePr
     if (!sort.key || !sort.column) return rows;
     const accessor =
       sort.column.sortAccessor ||
-      ((row: Row) => {
-        const v = row[sort.key as keyof Row] as unknown as any;
-        return v;
+      ((row: Row): SortValue => {
+        const raw = row[sort.key as keyof Row] as unknown;
+        let out: SortValue;
+        if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean' || raw == null) {
+          out = raw as SortValue;
+        } else {
+          out = String(raw);
+        }
+        return out;
       });
     const list = [...rows];
     list.sort((a, b) => {
@@ -123,7 +131,7 @@ export function DataTable<Row extends { [key: string]: any }>(props: DataTablePr
                 <tr key={key} className={`${theme.zebra} ${theme.rowHover}`}>
                   {columns.map((col) => (
                     <td key={col.key} className={`px-4 py-3 align-middle ${col.className || ''}`}>
-                      {col.render ? col.render(row) : (row[col.key] as ReactNode)}
+                      {col.render ? col.render(row) : (row[col.key as keyof Row] as ReactNode)}
                     </td>
                   ))}
                 </tr>
