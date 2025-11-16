@@ -290,32 +290,7 @@ export default function ContestPage() {
                   </button>
                 </div>
               </div>
-              {/* Enhanced Countdown Timer */}
-              {isActive && timeRemaining !== null && (
-                <div className="p-6 mb-8 transition-all duration-300">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
-                    <div className="flex-1">
-                      <div className="text-green-400 text-sm font-medium mb-1 flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Contest Active
-                      </div>
-                      <div className="text-white text-2xl font-bold">
-                        {Math.floor(timeRemaining / 3600) > 0 
-                          ? `${Math.floor(timeRemaining / 3600)}:${Math.floor((timeRemaining % 3600) / 60).toString().padStart(2, '0')}:${(timeRemaining % 60).toString().padStart(2, '0')}`
-                          : `${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}`
-                        } remaining
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-green-400 text-sm">Time Left</div>
-                      <div className="w-16 h-16 border-4 border-green-400/30 border-t-green-400 rounded-full animate-spin"></div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* In-page countdown removed; rely solely on the global bottom-right overlay */}
               
               {/* Enhanced Dynamic Leaderboard */}
               {showLeaderboard && (
