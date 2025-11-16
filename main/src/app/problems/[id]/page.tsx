@@ -22,8 +22,6 @@ export default function ProblemPage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState<'description' | 'results' | 'stats'>('description');
-  const [codePreview, setCodePreview] = useState<string>('');
-  const [showCodePreview, setShowCodePreview] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -136,11 +134,6 @@ export default function ProblemPage() {
     const file = e.target.files?.[0];
     if (file) {
       setCodeFile(file);
-      // Preview code content
-      file.text().then(content => {
-        setCodePreview(content);
-        setShowCodePreview(true);
-      });
     }
   };
 
@@ -523,39 +516,9 @@ export default function ProblemPage() {
                             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                             Selected: {codeFile.name}
                           </p>
-                          <button
-                            type="button"
-                            onClick={() => setShowCodePreview(!showCodePreview)}
-                            className="mt-2 text-xs text-green-400 hover:text-green-300 transition-colors"
-                          >
-                            {showCodePreview ? 'Hide' : 'Show'} Code Preview
-                          </button>
                         </div>
                       )}
                     </div>
-
-                    {/* Code Preview Modal */}
-                    {showCodePreview && codePreview && (
-                      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                        <div className="bg-gray-900 rounded-2xl p-6 max-w-4xl w-full max-h-[80vh] overflow-hidden">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-white">Code Preview</h3>
-                            <button
-                              type="button"
-                              onClick={() => setShowCodePreview(false)}
-                              className="text-gray-400 hover:text-white transition-colors"
-                            >
-                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                          <div className="bg-black rounded-lg p-4 overflow-auto max-h-96">
-                            <pre className="text-green-400 text-sm font-mono whitespace-pre-wrap">{codePreview}</pre>
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Enhanced Submit Button */}
                     {submitError && (
