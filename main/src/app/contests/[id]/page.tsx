@@ -19,7 +19,7 @@ const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').t
 export default function ContestPage() {
   const params = useParams<{ id: string }>();
   const { user, session, signOut } = useAuth();
-  const { timeRemaining, isActive } = useCountdown();
+  const { timeRemaining, isActive, stopCountdown } = useCountdown();
   const router = useRouter();
   const [contest, setContest] = useState<Contest | null>(null);
   const [problems, setProblems] = useState<{ id: string; name: string }[]>([]);
@@ -118,7 +118,9 @@ export default function ContestPage() {
         throw new Error(json?.error || 'Failed to leave contest');
       }
       
-      // Redirect to contests page
+      // Immediately clear countdown context to prevent redirect loops,
+      // then redirect to contests page.
+      stopCountdown();
       router.push('/contests');
     } catch (error) {
       console.error('Error leaving contest:', error);
