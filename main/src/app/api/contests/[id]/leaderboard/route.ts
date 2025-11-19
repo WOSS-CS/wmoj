@@ -13,7 +13,7 @@ export async function GET(
       : null;
     const supabase = bearer ? getServerSupabaseFromToken(bearer) : await getServerSupabase();
 
-    // Get all problems for this contest first
+    // Get all problems for this contest first.
     const { data: problems, error: problemsErr } = await supabase
       .from('problems')
       .select('id')
