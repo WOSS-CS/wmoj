@@ -398,8 +398,8 @@ app.get('/selftest/python', async (_req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Judge listening on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Judge listening on http://0.0.0.0:${PORT}`);
 });
 
 
