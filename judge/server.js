@@ -311,35 +311,24 @@ app.post('/generate-tests', async (req, res) => {
     }
 
     // Run (no stdin). The generator prints input JSON to stdout, output JSON to stderr
+    // No artificial timeout; allow generator to complete naturally.
     const runResult = await new Promise((resolve) => {
       const child = spawn(outPath, [], { cwd: workDir });
       let stdout = '';
       let stderr = '';
-      let timedOut = false;
-
-      const timer = setTimeout(() => {
-        timedOut = true;
-        child.kill('SIGKILL');
-      }, 5000);
-
       child.stdout.on('data', (d) => (stdout += d.toString()));
       child.stderr.on('data', (d) => (stderr += d.toString()));
       child.on('error', (err) => {
-        clearTimeout(timer);
-        resolve({ code: null, stdout, stderr, timedOut: false, error: `spawn error: ${String(err && err.message ? err.message : err)}` });
+        resolve({ code: null, stdout, stderr, error: `spawn error: ${String(err && err.message ? err.message : err)}` });
       });
       child.on('close', (code) => {
-        clearTimeout(timer);
-        resolve({ code, stdout, stderr, timedOut });
+        resolve({ code, stdout, stderr });
       });
     });
 
     // Cleanup workdir best-effort after processing
     try { await fs.promises.rm(workDir, { recursive: true, force: true }); } catch (_) { }
 
-    if (runResult.timedOut) {
-      return res.status(400).json({ error: 'Generator timed out', inputJson: runResult.stdout, outputJson: runResult.stderr });
-    }
     if (runResult.code !== 0) {
       return res.status(400).json({ error: `Generator exited with code ${runResult.code}`, inputJson: runResult.stdout, outputJson: runResult.stderr });
     }
@@ -347,7 +336,7 @@ app.post('/generate-tests', async (req, res) => {
     const inputRaw = runResult.stdout ?? '';
     const outputRaw = runResult.stderr ?? '';
 
-    // Validate JSON arrays of strings, same length
+    // Validate JSON arrays (any JSON values), same length
     let inputArr, outputArr;
     try { inputArr = JSON.parse(inputRaw); } catch (e) { return res.status(400).json({ error: `Invalid JSON on stdout: ${String(e && e.message ? e.message : e)}`, inputJson: inputRaw, outputJson: outputRaw }); }
     try { outputArr = JSON.parse(outputRaw); } catch (e) { return res.status(400).json({ error: `Invalid JSON on stderr: ${String(e && e.message ? e.message : e)}`, inputJson: inputRaw, outputJson: outputRaw }); }
@@ -358,12 +347,17 @@ app.post('/generate-tests', async (req, res) => {
     if (inputArr.length !== outputArr.length) {
       return res.status(400).json({ error: 'Input and output arrays must be the same length', inputJson: inputRaw, outputJson: outputRaw });
     }
-    const allStrings = (arr) => arr.every((x) => typeof x === 'string');
-    if (!allStrings(inputArr) || !allStrings(outputArr)) {
-      return res.status(400).json({ error: 'Arrays must contain only strings', inputJson: inputRaw, outputJson: outputRaw });
-    }
 
-    return res.json({ inputJson: inputRaw, outputJson: outputRaw, input: inputArr, output: outputArr });
+    // Coerce all values to strings for downstream compatibility
+    const toStrings = (arr) => arr.map((v) => {
+      if (typeof v === 'string') return v;
+      if (typeof v === 'number') return String(v);
+      try { return JSON.stringify(v); } catch (_) { return String(v ?? ''); }
+    });
+    const inputStr = toStrings(inputArr);
+    const outputStr = toStrings(outputArr);
+
+    return res.json({ inputJson: inputRaw, outputJson: outputRaw, input: inputStr, output: outputStr });
   } catch (err) {
     return res.status(500).json({ error: String(err && err.message ? err.message : err) });
   }
