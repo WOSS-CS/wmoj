@@ -24,6 +24,8 @@ interface EditState {
   name: string;
   content: string;
   is_active: boolean;
+  time_limit: number;
+  memory_limit: number;
 }
 
 // Lazy load Markdown components (avoid SSR issues if any)
@@ -88,7 +90,14 @@ export default function ManageProblemsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load problem');
-      setEditing({ id: p.id, name: data.problem.name, content: data.problem.content || '', is_active: !!(data.problem.is_active ?? p.is_active) });
+      setEditing({
+        id: p.id,
+        name: data.problem.name,
+        content: data.problem.content || '',
+        is_active: !!(data.problem.is_active ?? p.is_active),
+        time_limit: data.problem.time_limit || 5000,
+        memory_limit: data.problem.memory_limit || 256
+      });
     } catch (e: unknown) {
       setActionMessage(e instanceof Error ? e.message : 'Failed to open editor');
     } finally {
@@ -107,7 +116,13 @@ export default function ManageProblemsPage() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ name: editing.name, content: editing.content, is_active: editing.is_active }),
+        body: JSON.stringify({
+          name: editing.name,
+          content: editing.content,
+          is_active: editing.is_active,
+          time_limit: editing.time_limit,
+          memory_limit: editing.memory_limit
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save');
@@ -199,9 +214,9 @@ export default function ManageProblemsPage() {
                     className="flex-1 px-4 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
                   />
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter==='all'?'text-blue-400 border-blue-400/40 bg-blue-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>All</button>
-                    <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter==='active'?'text-blue-400 border-blue-400/40 bg-blue-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>Active</button>
-                    <button onClick={() => setFilter('inactive')} className={`px-3 py-2 rounded-lg border ${filter==='inactive'?'text-blue-400 border-blue-400/40 bg-blue-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>Inactive</button>
+                    <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter === 'all' ? 'text-blue-400 border-blue-400/40 bg-blue-400/10' : 'text-gray-300 border-white/10 hover:bg-white/10'}`}>All</button>
+                    <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter === 'active' ? 'text-blue-400 border-blue-400/40 bg-blue-400/10' : 'text-gray-300 border-white/10 hover:bg-white/10'}`}>Active</button>
+                    <button onClick={() => setFilter('inactive')} className={`px-3 py-2 rounded-lg border ${filter === 'inactive' ? 'text-blue-400 border-blue-400/40 bg-blue-400/10' : 'text-gray-300 border-white/10 hover:bg-white/10'}`}>Inactive</button>
                   </div>
                 </div>
 
@@ -322,6 +337,34 @@ export default function ManageProblemsPage() {
                               >
                                 Save Now
                               </button>
+                            </div>
+                          </div>
+
+                          {/* Time Limit and Memory Limit Row */}
+                          <div className="grid md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <label className="block text-sm font-medium">Time Limit (ms)</label>
+                              <input
+                                type="number"
+                                min="1"
+                                className="w-full px-3 py-2 rounded-md bg-black/40 border border-white/10 focus:outline-none focus:ring focus:ring-green-600/40"
+                                value={editing.time_limit}
+                                placeholder="e.g., 5000"
+                                onChange={e => setEditing(s => s ? { ...s, time_limit: parseInt(e.target.value, 10) || 5000 } : s)}
+                              />
+                              <p className="text-xs text-gray-400">Maximum execution time in milliseconds</p>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="block text-sm font-medium">Memory Limit (MB)</label>
+                              <input
+                                type="number"
+                                min="1"
+                                className="w-full px-3 py-2 rounded-md bg-black/40 border border-white/10 focus:outline-none focus:ring focus:ring-green-600/40"
+                                value={editing.memory_limit}
+                                placeholder="e.g., 256"
+                                onChange={e => setEditing(s => s ? { ...s, memory_limit: parseInt(e.target.value, 10) || 256 } : s)}
+                              />
+                              <p className="text-xs text-gray-400">Maximum memory usage in megabytes</p>
                             </div>
                           </div>
 

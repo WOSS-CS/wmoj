@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { supabase } = auth;
   const { data, error } = await supabase
     .from('problems')
-    .select('id,name,content,contest,is_active,created_at,updated_at')
+    .select('id,name,content,contest,is_active,time_limit,memory_limit,created_at,updated_at')
     .eq('id', id)
     .maybeSingle();
   if (error) {
@@ -47,6 +47,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (body.name !== undefined) updates.name = body.name;
   if (body.content !== undefined) updates.content = body.content;
   if (body.is_active !== undefined) updates.is_active = !!body.is_active;
+  if (body.time_limit !== undefined) {
+    if (typeof body.time_limit !== 'number' || isNaN(body.time_limit) || body.time_limit <= 0) {
+      return NextResponse.json({ error: 'Time limit must be a positive number' }, { status: 400 });
+    }
+    updates.time_limit = body.time_limit;
+  }
+  if (body.memory_limit !== undefined) {
+    if (typeof body.memory_limit !== 'number' || isNaN(body.memory_limit) || body.memory_limit <= 0) {
+      return NextResponse.json({ error: 'Memory limit must be a positive number' }, { status: 400 });
+    }
+    updates.memory_limit = body.memory_limit;
+  }
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
   }
