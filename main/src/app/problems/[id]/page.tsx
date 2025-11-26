@@ -62,7 +62,7 @@ export default function ProblemPage() {
   useEffect(() => {
     (async () => {
       if (!user || !problem) return;
-      
+
       // If problem is part of a contest, check participation
       if (problem.contest) {
         try {
@@ -220,403 +220,416 @@ export default function ProblemPage() {
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
       <RegularOnlyGuard>
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
-        {/* Enhanced Animated Background */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Mouse-following glow */}
-          <div 
-            className="absolute w-96 h-96 bg-green-400/5 rounded-full blur-3xl transition-all duration-500 ease-out"
-            style={{
-              left: mousePosition.x - 200,
-              top: mousePosition.y - 200,
-            }}
-          />
-          
-          {/* Floating particles */}
-          <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '0s' }}></div>
-          <div className="absolute top-40 right-32 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute bottom-32 left-1/3 w-1.5 h-1.5 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute top-1/2 right-20 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '3s' }}></div>
-          
-          {/* Circuit Pattern with animations */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <div className="absolute top-20 left-20 w-32 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse"></div>
-            <div className="absolute top-20 left-52 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-            <div className="absolute top-20 left-52 w-0.5 h-16 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-            <div className="absolute top-36 left-52 w-24 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1s' }}></div>
-            <div className="absolute top-36 left-76 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
-            
-            <div className="absolute top-40 right-20 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-            <div className="absolute top-40 right-20 w-0.5 h-20 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-            <div className="absolute top-60 right-20 w-40 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute top-60 right-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
-            
-            <div className="absolute bottom-32 left-32 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2.5s' }}></div>
-            <div className="absolute bottom-32 left-32 w-0.5 h-24 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2.5s' }}></div>
-            <div className="absolute bottom-8 left-32 w-28 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '3s' }}></div>
-            <div className="absolute bottom-8 left-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '3s' }}></div>
+        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
+          {/* Enhanced Animated Background */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* Mouse-following glow */}
+            <div
+              className="absolute w-96 h-96 bg-green-400/5 rounded-full blur-3xl transition-all duration-500 ease-out"
+              style={{
+                left: mousePosition.x - 200,
+                top: mousePosition.y - 200,
+              }}
+            />
+
+            {/* Floating particles */}
+            <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '0s' }}></div>
+            <div className="absolute top-40 right-32 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
+            <div className="absolute bottom-32 left-1/3 w-1.5 h-1.5 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute top-1/2 right-20 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '3s' }}></div>
+
+            {/* Circuit Pattern with animations */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <div className="absolute top-20 left-20 w-32 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse"></div>
+              <div className="absolute top-20 left-52 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+              <div className="absolute top-20 left-52 w-0.5 h-16 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+              <div className="absolute top-36 left-52 w-24 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute top-36 left-76 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+
+              <div className="absolute top-40 right-20 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+              <div className="absolute top-40 right-20 w-0.5 h-20 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+              <div className="absolute top-60 right-20 w-40 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2s' }}></div>
+              <div className="absolute top-60 right-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+              <div className="absolute bottom-32 left-32 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2.5s' }}></div>
+              <div className="absolute bottom-32 left-32 w-0.5 h-24 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2.5s' }}></div>
+              <div className="absolute bottom-8 left-32 w-28 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '3s' }}></div>
+              <div className="absolute bottom-8 left-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '3s' }}></div>
+            </div>
           </div>
-        </div>
 
-        {/* Enhanced Navigation */}
-        <nav className="relative z-10 flex justify-between items-center p-6 backdrop-blur-sm">
-          <Logo size="md" className="cursor-pointer" />
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() => router.push(problem?.contest ? `/contests/${problem.contest}` : '/problems')}
-              className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-colors duration-300"
-            >
-              Back to Problems
-            </button>
-            <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-colors duration-300">
-              {user?.user_metadata?.username || user?.email}
-            </span>
-            <button
-              onClick={handleSignOut}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
-            >
-              Sign Out
-            </button>
-          </div>
-        </nav>
-
-        {/* Enhanced Main Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
-          {/* Enhanced Loading State */}
-          <LoadingState 
-            isLoading={loading || !accessChecked}
-            skeleton={
-              <div className="grid lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
-                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-                    <SkeletonText lines={3} width="80%" />
-                    <div className="mt-6 space-y-4">
-                      <SkeletonText lines={5} />
-                      <SkeletonText lines={3} width="60%" />
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-6">
-                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                    <SkeletonText lines={2} width="60%" />
-                    <div className="mt-4 space-y-3">
-                      <SkeletonText lines={1} width="40%" />
-                      <SkeletonText lines={1} width="60%" />
-                    </div>
-                  </div>
-                  <CodeEditorLoading lines={8} />
-                </div>
-              </div>
-            }
-          >
-            {(loading || !accessChecked) && (
-              <div className="flex justify-center items-center py-12">
-                <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            )}
-          </LoadingState>
-
-          {/* Enhanced Error State */}
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-8 backdrop-blur-sm">
-              <p className="text-red-400">{error}</p>
+          {/* Enhanced Navigation */}
+          <nav className="relative z-10 flex justify-between items-center p-6 backdrop-blur-sm">
+            <Logo size="md" className="cursor-pointer" />
+            <div className="flex gap-4">
               <button
                 type="button"
-                onClick={() => router.push('/problems')}
-                className="mt-4 inline-block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
+                onClick={() => router.push(problem?.contest ? `/contests/${problem.contest}` : '/problems')}
+                className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-colors duration-300"
               >
                 Back to Problems
               </button>
+              <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-colors duration-300">
+                {user?.user_metadata?.username || user?.email}
+              </span>
+              <button
+                onClick={handleSignOut}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
+              >
+                Sign Out
+              </button>
             </div>
-          )}
+          </nav>
 
-          {/* Enhanced Problem Content */}
-          {!loading && !error && problem && (
-            <div className={`grid lg:grid-cols-3 gap-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              {/* Enhanced Problem Description */}
-              <div className="lg:col-span-2">
-                <div className="p-8 transition-colors duration-300">
+          {/* Enhanced Main Content */}
+          <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
+            {/* Enhanced Loading State */}
+            <LoadingState
+              isLoading={loading || !accessChecked}
+              skeleton={
+                <div className="grid lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+                      <SkeletonText lines={3} width="80%" />
+                      <div className="mt-6 space-y-4">
+                        <SkeletonText lines={5} />
+                        <SkeletonText lines={3} width="60%" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-6">
+                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                      <SkeletonText lines={2} width="60%" />
+                      <div className="mt-4 space-y-3">
+                        <SkeletonText lines={1} width="40%" />
+                        <SkeletonText lines={1} width="60%" />
+                      </div>
+                    </div>
+                    <CodeEditorLoading lines={8} />
+                  </div>
+                </div>
+              }
+            >
+              {(loading || !accessChecked) && (
+                <div className="flex justify-center items-center py-12">
+                  <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+            </LoadingState>
+
+            {/* Enhanced Error State */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-8 backdrop-blur-sm">
+                <p className="text-red-400">{error}</p>
+                <button
+                  type="button"
+                  onClick={() => router.push('/problems')}
+                  className="mt-4 inline-block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
+                >
+                  Back to Problems
+                </button>
+              </div>
+            )}
+
+            {/* Enhanced Problem Content */}
+            {!loading && !error && problem && (
+              <div className={`grid lg:grid-cols-3 gap-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                {/* Enhanced Problem Description */}
+                <div className="lg:col-span-2">
+                  <div className="p-8 transition-colors duration-300">
                     <div className="flex flex-wrap items-center gap-4 mb-6">
                       <div className="relative">
-                      <h1 className="text-3xl font-bold text-white">
-                        {problem.name}
-                      </h1>
-                      <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
-                    </div>
-                    <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm animate-pulse">
-                      {problem.contest ? 'Contest Problem' : 'Standalone'}
-                    </span>
-                  </div>
-                  
-                  {/* Tab Navigation */}
-                  <div className="flex gap-2 mb-6">
-                    {[
-                      { id: 'description', label: 'Description', icon: '📝' },
-                      { id: 'results', label: 'Results', icon: '📊' },
-                      { id: 'stats', label: 'Stats', icon: '📈' }
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as 'description' | 'results' | 'stats')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
-                          activeTab === tab.id
-                            ? 'bg-green-400/20 text-green-400 border border-green-400/50'
-                            : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
-                        }`}
-                      >
-                        <span className="mr-2">{tab.icon}</span>
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  {/* Tab Content */}
-                  <div className="transition-all duration-300">
-                    {activeTab === 'description' && (
-                      <div className="prose prose-invert max-w-none">
-                        <MarkdownRenderer content={problem.content} />
+                        <h1 className="text-3xl font-bold text-white">
+                          {problem.name}
+                        </h1>
+                        <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
                       </div>
-                    )}
-                    
-                    {activeTab === 'results' && (
-                      <div className="space-y-4">
-                        {summary && results ? (
-                          <div>
-                            <div className="mb-4 flex items-center gap-3">
-                              <span className={`px-3 py-1 rounded-full text-sm ${summary.failed === 0 ? 'bg-green-400/20 text-green-400' : 'bg-yellow-400/20 text-yellow-400'}`}>
-                                {summary.failed === 0 ? 'All Passed' : 'Some Failed'}
-                              </span>
-                              <span className="text-gray-300">Score:</span>
-                              <span className="text-white font-semibold">{summary.passed}/{summary.total}</span>
-                            </div>
-                            <div className="space-y-3">
-                              {results.map((r) => (
-                                <div key={r.index} className="p-4 transition-colors duration-300">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <span className={`px-2 py-0.5 rounded text-xs ${r.passed ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
-                                        {r.passed ? 'Passed' : 'Failed'}
-                                      </span>
-                                      <span className="text-white font-medium">Test case {r.index + 1}</span>
+                      <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm animate-pulse">
+                        {problem.contest ? 'Contest Problem' : 'Standalone'}
+                      </span>
+                    </div>
+
+                    {/* Tab Navigation */}
+                    <div className="flex gap-2 mb-6">
+                      {[
+                        { id: 'description', label: 'Description', icon: '📝' },
+                        { id: 'results', label: 'Results', icon: '📊' },
+                        { id: 'stats', label: 'Stats', icon: '📈' }
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id as 'description' | 'results' | 'stats')}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${activeTab === tab.id
+                              ? 'bg-green-400/20 text-green-400 border border-green-400/50'
+                              : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
+                            }`}
+                        >
+                          <span className="mr-2">{tab.icon}</span>
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Tab Content */}
+                    <div className="transition-all duration-300">
+                      {activeTab === 'description' && (
+                        <div className="prose prose-invert max-w-none">
+                          <MarkdownRenderer content={problem.content} />
+                        </div>
+                      )}
+
+                      {activeTab === 'results' && (
+                        <div className="space-y-4">
+                          {summary && results ? (
+                            <div>
+                              <div className="mb-4 flex items-center gap-3">
+                                <span className={`px-3 py-1 rounded-full text-sm ${summary.failed === 0 ? 'bg-green-400/20 text-green-400' : 'bg-yellow-400/20 text-yellow-400'}`}>
+                                  {summary.failed === 0 ? 'All Passed' : 'Some Failed'}
+                                </span>
+                                <span className="text-gray-300">Score:</span>
+                                <span className="text-white font-semibold">{summary.passed}/{summary.total}</span>
+                              </div>
+                              <div className="space-y-3">
+                                {results.map((r) => (
+                                  <div key={r.index} className="p-4 transition-colors duration-300">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                        <span className={`px-2 py-0.5 rounded text-xs ${r.passed ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
+                                          {r.passed ? 'Passed' : 'Failed'}
+                                        </span>
+                                        <span className="text-white font-medium">Test case {r.index + 1}</span>
+                                      </div>
+                                      <div className="text-xs text-gray-400">exit {r.exitCode}{r.timedOut ? ' · timed out' : ''}</div>
                                     </div>
-                                    <div className="text-xs text-gray-400">exit {r.exitCode}{r.timedOut ? ' · timed out' : ''}</div>
+                                    {!r.passed && (
+                                      <div className="mt-3 grid md:grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                          <div className="text-gray-400 mb-1">Expected</div>
+                                          <pre className="p-3 rounded bg-black/40 text-gray-200 whitespace-pre-wrap">{r.expected}</pre>
+                                        </div>
+                                        <div>
+                                          <div className="text-gray-400 mb-1">Received</div>
+                                          <pre className="p-3 rounded bg-black/40 text-gray-200 whitespace-pre-wrap">{r.received}</pre>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
-                                  {!r.passed && (
-                                    <div className="mt-3 grid md:grid-cols-2 gap-3 text-sm">
-                                      <div>
-                                        <div className="text-gray-400 mb-1">Expected</div>
-                                        <pre className="p-3 rounded bg-black/40 text-gray-200 whitespace-pre-wrap">{r.expected}</pre>
-                                      </div>
-                                      <div>
-                                        <div className="text-gray-400 mb-1">Received</div>
-                                        <pre className="p-3 rounded bg-black/40 text-gray-200 whitespace-pre-wrap">{r.received}</pre>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center py-8">
+                              <div className="text-4xl mb-4">📊</div>
+                              <p className="text-gray-400">No submission results yet</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {activeTab === 'stats' && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="p-4">
+                              <div className="text-2xl font-bold text-green-400">{problem.input.length}</div>
+                              <div className="text-sm text-gray-400">Test Cases</div>
+                            </div>
+                            <div className="p-4">
+                              <div className="text-2xl font-bold text-blue-400">{problem.contest ? 'Contest' : 'Practice'}</div>
+                              <div className="text-sm text-gray-400">Type</div>
                             </div>
                           </div>
-                        ) : (
-                          <div className="text-center py-8">
-                            <div className="text-4xl mb-4">📊</div>
-                            <p className="text-gray-400">No submission results yet</p>
+                          {bestSummary && (
+                            <div className="p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-gray-400">Best Score</span>
+                                <span className={`px-2 py-1 rounded text-xs ${bestSummary.failed === 0 ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
+                                  {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
+                                </span>
+                              </div>
+                              <div className="text-2xl font-bold text-white">{bestSummary.passed}/{bestSummary.total}</div>
+                              <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                                <div
+                                  className="bg-gradient-to-r from-green-400 to-emerald-400 h-2 rounded-full transition-all duration-500"
+                                  style={{ width: `${(bestSummary.passed / bestSummary.total) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Enhanced Code Submission Panel */}
+                <div className="lg:col-span-1">
+                  <div className="p-6 sticky top-8 transition-colors duration-300">
+                    <h2 className="text-xl font-semibold text-white mb-6 relative">
+                      Submit Solution
+                      <div className="absolute -bottom-2 left-0 w-20 h-1 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
+                    </h2>
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      {/* Enhanced Language Selection */}
+                      <div>
+                        <label className="block text-gray-300 text-sm font-medium mb-2">
+                          Programming Language
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={selectedLanguage}
+                            onChange={(e) => setSelectedLanguage(e.target.value)}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-green-400 transition-colors duration-300 appearance-none cursor-pointer"
+                          >
+                            {languages.map((lang) => (
+                              <option key={lang.value} value={lang.value} className="bg-gray-800">
+                                {lang.label}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Enhanced File Upload */}
+                      <div>
+                        <label className="block text-gray-300 text-sm font-medium mb-2">
+                          Upload Code File
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            onChange={handleFileChange}
+                            accept=".py,.cpp,.java,.c,.h"
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 focus:outline-none focus:border-green-400 transition-colors duration-300"
+                          />
+                        </div>
+                        {codeFile && (
+                          <div className="mt-2 p-3 bg-green-400/10 border border-green-400/20 rounded-lg">
+                            <p className="text-sm text-green-400 flex items-center gap-2">
+                              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                              Selected: {codeFile.name}
+                            </p>
                           </div>
                         )}
                       </div>
-                    )}
-                    
-                    {activeTab === 'stats' && (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4">
-                            <div className="text-2xl font-bold text-green-400">{problem.input.length}</div>
-                            <div className="text-sm text-gray-400">Test Cases</div>
-                          </div>
-                        <div className="p-4">
-                            <div className="text-2xl font-bold text-blue-400">{problem.contest ? 'Contest' : 'Practice'}</div>
-                            <div className="text-sm text-gray-400">Type</div>
-                          </div>
+
+                      {/* Enhanced Submit Button */}
+                      {submitError && (
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-lg backdrop-blur-sm">
+                          {submitError}
                         </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={!codeFile || submitting}
+                        className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+                      >
+                        <span className="relative z-10 flex items-center justify-center gap-2">
+                          {submitting ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              Submitting...
+                            </>
+                          ) : (
+                            <>
+                              <span>Submit Solution</span>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                              </svg>
+                            </>
+                          )}
+                        </span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </button>
+                    </form>
+
+                    {/* Enhanced Problem Stats */}
+                    <div className="mt-8 pt-6 border-t border-white/20">
+                      <h3 className="text-lg font-semibold text-white mb-4 relative">
+                        Problem Information
+                        <div className="absolute -bottom-2 left-0 w-16 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
+                      </h3>
+                      <div className="space-y-4">
                         {bestSummary && (
-                        <div className="p-4">
+                          <div className="p-4 bg-gradient-to-r from-green-400/10 to-emerald-400/10 rounded-lg border border-green-400/20">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-400">Best Score</span>
-                              <span className={`px-2 py-1 rounded text-xs ${bestSummary.failed === 0 ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
+                              <span className="text-sm text-gray-300">Best Score</span>
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${bestSummary.failed === 0
+                                  ? 'bg-green-400/20 text-green-400'
+                                  : 'bg-yellow-400/20 text-yellow-400'
+                                }`}>
                                 {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
                               </span>
                             </div>
-                            <div className="text-2xl font-bold text-white">{bestSummary.passed}/{bestSummary.total}</div>
-                            <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
-                              <div 
+                            <div className="text-2xl font-bold text-white mb-2">
+                              {bestSummary.passed}/{bestSummary.total}
+                            </div>
+                            <div className="w-full bg-gray-700 rounded-full h-2">
+                              <div
                                 className="bg-gradient-to-r from-green-400 to-emerald-400 h-2 rounded-full transition-all duration-500"
                                 style={{ width: `${(bestSummary.passed / bestSummary.total) * 100}%` }}
                               />
                             </div>
                           </div>
                         )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Enhanced Code Submission Panel */}
-              <div className="lg:col-span-1">
-                <div className="p-6 sticky top-8 transition-colors duration-300">
-                  <h2 className="text-xl font-semibold text-white mb-6 relative">
-                    Submit Solution
-                    <div className="absolute -bottom-2 left-0 w-20 h-1 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
-                  </h2>
-                  
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Enhanced Language Selection */}
-                    <div>
-                      <label className="block text-gray-300 text-sm font-medium mb-2">
-                        Programming Language
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={selectedLanguage}
-                          onChange={(e) => setSelectedLanguage(e.target.value)}
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-green-400 transition-colors duration-300 appearance-none cursor-pointer"
-                        >
-                          {languages.map((lang) => (
-                            <option key={lang.value} value={lang.value} className="bg-gray-800">
-                              {lang.label}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Enhanced File Upload */}
-                    <div>
-                      <label className="block text-gray-300 text-sm font-medium mb-2">
-                        Upload Code File
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="file"
-                          onChange={handleFileChange}
-                          accept=".py,.cpp,.java,.c,.h"
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 focus:outline-none focus:border-green-400 transition-colors duration-300"
-                        />
-                      </div>
-                      {codeFile && (
-                        <div className="mt-2 p-3 bg-green-400/10 border border-green-400/20 rounded-lg">
-                          <p className="text-sm text-green-400 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                            Selected: {codeFile.name}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Enhanced Submit Button */}
-                    {submitError && (
-                      <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-lg backdrop-blur-sm">
-                        {submitError}
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={!codeFile || submitting}
-                      className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
-                    >
-                      <span className="relative z-10 flex items-center justify-center gap-2">
-                        {submitting ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            Submitting...
-                          </>
-                        ) : (
-                          <>
-                            <span>Submit Solution</span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
-                          </>
-                        )}
-                      </span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    </button>
-                  </form>
-
-                  {/* Enhanced Problem Stats */}
-                  <div className="mt-8 pt-6 border-t border-white/20">
-                    <h3 className="text-lg font-semibold text-white mb-4 relative">
-                      Problem Information
-                      <div className="absolute -bottom-2 left-0 w-16 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
-                    </h3>
-                    <div className="space-y-4">
-                      {bestSummary && (
-                        <div className="p-4 bg-gradient-to-r from-green-400/10 to-emerald-400/10 rounded-lg border border-green-400/20">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-gray-300">Best Score</span>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              bestSummary.failed === 0 
-                                ? 'bg-green-400/20 text-green-400' 
-                                : 'bg-yellow-400/20 text-yellow-400'
-                            }`}>
-                              {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
+                        <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-300">Test Cases:</span>
+                            <span className="text-green-400 font-bold text-lg">
+                              {problem.input.length}
                             </span>
                           </div>
-                          <div className="text-2xl font-bold text-white mb-2">
-                            {bestSummary.passed}/{bestSummary.total}
+                        </div>
+                        <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-300">Type:</span>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${problem.contest
+                                ? 'bg-blue-400/20 text-blue-400'
+                                : 'bg-green-400/20 text-green-400'
+                              }`}>
+                              {problem.contest ? 'Contest' : 'Practice'}
+                            </span>
                           </div>
-                          <div className="w-full bg-gray-700 rounded-full h-2">
-                            <div 
-                              className="bg-gradient-to-r from-green-400 to-emerald-400 h-2 rounded-full transition-all duration-500"
-                              style={{ width: `${(bestSummary.passed / bestSummary.total) * 100}%` }}
-                            />
+                        </div>
+                        <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-300">Time Limit:</span>
+                            <span className="text-white font-medium">
+                              {problem.time_limit || 5000}ms
+                            </span>
                           </div>
                         </div>
-                      )}
-                      <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">Test Cases:</span>
-                          <span className="text-green-400 font-bold text-lg">
-                            {problem.input.length}
-                          </span>
+                        <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-300">Memory Limit:</span>
+                            <span className="text-white font-medium">
+                              {problem.memory_limit || 256}MB
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">Type:</span>
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            problem.contest 
-                              ? 'bg-blue-400/20 text-blue-400' 
-                              : 'bg-green-400/20 text-green-400'
-                          }`}>
-                            {problem.contest ? 'Contest' : 'Practice'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-300">Created:</span>
-                          <span className="text-white font-medium">
-                            {new Date(problem.created_at).toLocaleDateString()}
-                          </span>
+                        <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-300">Created:</span>
+                            <span className="text-white font-medium">
+                              {new Date(problem.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
       </RegularOnlyGuard>
     </AuthGuard>
   );
