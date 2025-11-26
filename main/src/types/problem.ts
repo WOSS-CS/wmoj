@@ -8,6 +8,8 @@ export interface Problem {
   created_at: string;
   updated_at: string;
   is_active?: boolean; // optional until ensured in all selects
+  time_limit?: number; // Time limit in milliseconds
+  memory_limit?: number; // Memory limit in MB
 }
 
 export interface Contest {

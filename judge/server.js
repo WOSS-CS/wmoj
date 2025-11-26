@@ -25,9 +25,12 @@ app.use(morgan('dev'));
  */
 
 app.post('/submit', async (req, res) => {
-  const { language, code, input, output } = req.body || {};
+  const { language, code, input, output, timeLimit, memoryLimit } = req.body || {};
   // Basic debug to help diagnose production issues
-  try { console.log(`[judge] submit: lang=${language}, code_len=${code ? String(code).length : 0}, cases=${Array.isArray(input) ? input.length : 0}`); } catch(_) {}
+  try { console.log(`[judge] submit: lang=${language}, code_len=${code ? String(code).length : 0}, cases=${Array.isArray(input) ? input.length : 0}, timeLimit=${timeLimit || 5000}ms, memoryLimit=${memoryLimit || 256}MB`); } catch (_) { }
+
+  // TODO: Memory limit enforcement not yet implemented. Requires proper sandboxing (e.g., cgroups, nsjail).
+  // The memoryLimit parameter is accepted but not enforced in the current implementation.
 
   if (!language || !code || !Array.isArray(input) || !Array.isArray(output)) {
     return res.status(400).json({
@@ -180,11 +183,11 @@ app.post('/submit', async (req, res) => {
         let stderr = '';
         let timedOut = false;
 
-        // Simple 5s timeout per test case
+        // Use provided timeLimit or default to 5s
         const timer = setTimeout(() => {
           timedOut = true;
           child.kill('SIGKILL');
-        }, 5000);
+        }, timeLimit || 5000);
 
         child.on('error', (err) => {
           clearTimeout(timer);
@@ -202,7 +205,7 @@ app.post('/submit', async (req, res) => {
 
         try {
           const payloadInput = normalizeInputCase(testInput);
-          try { console.log(`[judge] case ${i}: input_len=${payloadInput.length} preview="${payloadInput.slice(0,50).replace(/\n/g,'\\n')}"`); } catch(_) {}
+          try { console.log(`[judge] case ${i}: input_len=${payloadInput.length} preview="${payloadInput.slice(0, 50).replace(/\n/g, '\\n')}"`); } catch (_) { }
           child.stdin.write(payloadInput, 'utf8');
           child.stdin.end();
         } catch (_) {
@@ -218,9 +221,9 @@ app.post('/submit', async (req, res) => {
           const expectedNorm = normalizeExpectedCase(expected);
           const outCollapsed = collapseWhitespace(normalizedOut);
           const expCollapsed = collapseWhitespace(expectedNorm);
-          try { console.log(`[judge] case ${i}: exit=${code} out_len=${normalizedOut.length} err_len=${(stderr||'').length}`); } catch(_) {}
+          try { console.log(`[judge] case ${i}: exit=${code} out_len=${normalizedOut.length} err_len=${(stderr || '').length}`); } catch (_) { }
           if ((stderr || '').length) {
-            try { console.log(`[judge] case ${i}: stderr_preview="${stderr.slice(0,200).replace(/\n/g,'\\n')}"`); } catch(_) {}
+            try { console.log(`[judge] case ${i}: stderr_preview="${stderr.slice(0, 200).replace(/\n/g, '\\n')}"`); } catch (_) { }
           }
           resolve({
             index: i,
@@ -246,7 +249,7 @@ app.post('/submit', async (req, res) => {
     };
 
     // Cleanup best-effort
-    try { await fs.promises.rm(workDir, { recursive: true, force: true }); } catch (_) {}
+    try { await fs.promises.rm(workDir, { recursive: true, force: true }); } catch (_) { }
 
     return res.json({ summary, results });
   } catch (err) {
@@ -257,7 +260,7 @@ app.post('/submit', async (req, res) => {
 // Compile and run a C++ generator that emits input JSON on stdout and output JSON on stderr
 app.post('/generate-tests', async (req, res) => {
   const { language, code } = req.body || {};
-  try { console.log(`[judge] generate-tests: lang=${language}, code_len=${code ? String(code).length : 0}`); } catch(_) {}
+  try { console.log(`[judge] generate-tests: lang=${language}, code_len=${code ? String(code).length : 0}`); } catch (_) { }
 
   if (!code || (language && language !== 'cpp')) {
     return res.status(400).json({ error: 'Invalid payload. Required: code (C++). language must be cpp if provided.' });
@@ -303,7 +306,7 @@ app.post('/generate-tests', async (req, res) => {
         });
       });
     } catch (e) {
-      try { await fs.promises.rm(workDir, { recursive: true, force: true }); } catch (_) {}
+      try { await fs.promises.rm(workDir, { recursive: true, force: true }); } catch (_) { }
       return res.status(400).json({ error: String(e && e.message ? e.message : e) });
     }
 
@@ -332,7 +335,7 @@ app.post('/generate-tests', async (req, res) => {
     });
 
     // Cleanup workdir best-effort after processing
-    try { await fs.promises.rm(workDir, { recursive: true, force: true }); } catch (_) {}
+    try { await fs.promises.rm(workDir, { recursive: true, force: true }); } catch (_) { }
 
     if (runResult.timedOut) {
       return res.status(400).json({ error: 'Generator timed out', inputJson: runResult.stdout, outputJson: runResult.stderr });

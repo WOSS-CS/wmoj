@@ -3,7 +3,7 @@ import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseSer
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, content, contest, input, output } = await request.json();
+    const { name, content, contest, input, output, timeLimit, memoryLimit } = await request.json();
 
     if (!name || !content || !input || !output) {
       return NextResponse.json(
@@ -32,6 +32,21 @@ export async function POST(request: NextRequest) {
     if (input.length === 0) {
       return NextResponse.json(
         { error: 'At least one test case is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate time limit and memory limit
+    if (timeLimit !== undefined && (typeof timeLimit !== 'number' || isNaN(timeLimit) || timeLimit <= 0)) {
+      return NextResponse.json(
+        { error: 'Time limit must be a positive number' },
+        { status: 400 }
+      );
+    }
+
+    if (memoryLimit !== undefined && (typeof memoryLimit !== 'number' || isNaN(memoryLimit) || memoryLimit <= 0)) {
+      return NextResponse.json(
+        { error: 'Memory limit must be a positive number' },
         { status: 400 }
       );
     }
@@ -70,7 +85,7 @@ export async function POST(request: NextRequest) {
     if (!adminRow || adminRow.is_active === false) {
       return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 });
     }
-    
+
     const { data, error } = await supabase
       .from('problems')
       .insert([
@@ -79,7 +94,9 @@ export async function POST(request: NextRequest) {
           content,
           contest: contest || null,
           input,
-          output
+          output,
+          time_limit: timeLimit || 5000,
+          memory_limit: memoryLimit || 256
         }
       ])
       .select()
@@ -94,10 +111,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         problem: data,
-        message: 'Problem created successfully' 
+        message: 'Problem created successfully'
       },
       { status: 201 }
     );

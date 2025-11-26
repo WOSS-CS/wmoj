@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Fetch problem and determine contest membership
     const { data: problem, error: probErr } = await supabase
       .from('problems')
-      .select('id, contest, input, output')
+      .select('id, contest, input, output, time_limit, memory_limit')
       .eq('id', id)
       .single();
     if (probErr || !problem) {
@@ -62,7 +62,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const resp = await fetch(`${JUDGE_URL}/submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ language, code, input: problem.input, output: problem.output }),
+      body: JSON.stringify({
+        language,
+        code,
+        input: problem.input,
+        output: problem.output,
+        timeLimit: problem.time_limit || 5000,
+        memoryLimit: problem.memory_limit || 256
+      }),
     });
     const data = await resp.json();
     if (!resp.ok) {
