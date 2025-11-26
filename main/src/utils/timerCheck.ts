@@ -85,11 +85,11 @@ export async function getTimerStatus(
     if (remainingSeconds <= 0) {
       // Timer expired, clean up timer and mark user as having left the contest
       try {
-        await supabase
-          .from('countdown_timers')
-          .delete()
-          .eq('user_id', userId)
-          .eq('contest_id', contestId);
+      await supabase
+        .from('countdown_timers')
+        .delete()
+        .eq('user_id', userId)
+        .eq('contest_id', contestId);
       } catch (e) {
         console.warn('Timer cleanup failed:', e);
       }
