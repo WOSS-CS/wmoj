@@ -1,10 +1,18 @@
-'use client';
+"use client";
 
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from "react";
 
 interface AnimationWrapperProps {
   children: ReactNode;
-  animation?: 'fadeInUp' | 'fadeInDown' | 'fadeInLeft' | 'fadeInRight' | 'scaleIn' | 'slideInTop' | 'slideInBottom' | 'bounceIn';
+  animation?:
+    | "fadeInUp"
+    | "fadeInDown"
+    | "fadeInLeft"
+    | "fadeInRight"
+    | "scaleIn"
+    | "slideInTop"
+    | "slideInBottom"
+    | "bounceIn";
   delay?: number;
   duration?: number;
   trigger?: boolean;
@@ -13,11 +21,11 @@ interface AnimationWrapperProps {
 
 export function AnimationWrapper({
   children,
-  animation = 'fadeInUp',
+  animation = "fadeInUp",
   delay = 0,
   duration = 600,
   trigger = true,
-  className = ''
+  className = "",
 }: AnimationWrapperProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -31,36 +39,36 @@ export function AnimationWrapper({
   }, [trigger, delay]);
 
   const getAnimationClass = () => {
-    if (!isVisible) return 'opacity-0';
-    
+    if (!isVisible) return "opacity-0";
+
     switch (animation) {
-      case 'fadeInUp':
-        return 'animate-fade-in-up';
-      case 'fadeInDown':
-        return 'animate-fade-in-down';
-      case 'fadeInLeft':
-        return 'animate-fade-in-left';
-      case 'fadeInRight':
-        return 'animate-fade-in-right';
-      case 'scaleIn':
-        return 'animate-scale-in';
-      case 'slideInTop':
-        return 'animate-slide-in-top';
-      case 'slideInBottom':
-        return 'animate-slide-in-bottom';
-      case 'bounceIn':
-        return 'animate-bounce-in';
+      case "fadeInUp":
+        return "animate-fade-in-up";
+      case "fadeInDown":
+        return "animate-fade-in-down";
+      case "fadeInLeft":
+        return "animate-fade-in-left";
+      case "fadeInRight":
+        return "animate-fade-in-right";
+      case "scaleIn":
+        return "animate-scale-in";
+      case "slideInTop":
+        return "animate-slide-in-top";
+      case "slideInBottom":
+        return "animate-slide-in-bottom";
+      case "bounceIn":
+        return "animate-bounce-in";
       default:
-        return 'animate-fade-in-up';
+        return "animate-fade-in-up";
     }
   };
 
   return (
-    <div 
+    <div
       className={`transition-all duration-${duration} ${getAnimationClass()} ${className}`}
-      style={{ 
+      style={{
         animationDuration: `${duration}ms`,
-        animationDelay: `${delay}ms`
+        animationDelay: `${delay}ms`,
       }}
     >
       {children}
@@ -70,16 +78,21 @@ export function AnimationWrapper({
 
 interface StaggeredAnimationProps {
   children: ReactNode[];
-  animation?: 'fadeInUp' | 'fadeInDown' | 'fadeInLeft' | 'fadeInRight' | 'scaleIn';
+  animation?:
+    | "fadeInUp"
+    | "fadeInDown"
+    | "fadeInLeft"
+    | "fadeInRight"
+    | "scaleIn";
   staggerDelay?: number;
   className?: string;
 }
 
 export function StaggeredAnimation({
   children,
-  animation = 'fadeInUp',
+  animation = "fadeInUp",
   staggerDelay = 100,
-  className = ''
+  className = "",
 }: StaggeredAnimationProps) {
   return (
     <div className={className}>
@@ -99,14 +112,14 @@ export function StaggeredAnimation({
 
 interface HoverAnimationProps {
   children: ReactNode;
-  effect?: 'lift' | 'scale' | 'glow' | 'rotate' | 'bounce' | 'wiggle';
+  effect?: "lift" | "scale" | "glow" | "rotate" | "bounce" | "wiggle";
   className?: string;
 }
 
 export function HoverAnimation({
   children,
-  effect = 'lift',
-  className = ''
+  effect = "lift",
+  className = "",
 }: HoverAnimationProps) {
   // Neutralized: remove all hover-induced movement effects
   return (
@@ -117,83 +130,85 @@ export function HoverAnimation({
 }
 
 interface LoadingSpinnerProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  color?: 'green' | 'blue' | 'red' | 'yellow' | 'purple';
+  size?: "sm" | "md" | "lg" | "xl";
+  color?: "green" | "blue" | "teal" | "red" | "yellow" | "purple";
   className?: string;
 }
 
 export function LoadingSpinner({
-  size = 'md',
-  color = 'green',
-  className = ''
+  size = "md",
+  color = "green",
+  className = "",
 }: LoadingSpinnerProps) {
   const getSizeClass = () => {
     switch (size) {
-      case 'sm':
-        return 'w-4 h-4';
-      case 'md':
-        return 'w-8 h-8';
-      case 'lg':
-        return 'w-12 h-12';
-      case 'xl':
-        return 'w-16 h-16';
+      case "sm":
+        return "w-4 h-4";
+      case "md":
+        return "w-8 h-8";
+      case "lg":
+        return "w-12 h-12";
+      case "xl":
+        return "w-16 h-16";
       default:
-        return 'w-8 h-8';
+        return "w-8 h-8";
     }
   };
 
   const getColorClass = () => {
     switch (color) {
-      case 'green':
-        return 'border-green-400';
-      case 'blue':
-        return 'border-blue-400';
-      case 'red':
-        return 'border-red-400';
-      case 'yellow':
-        return 'border-yellow-400';
-      case 'purple':
-        return 'border-purple-400';
+      case "green":
+        return "border-green-400";
+      case "blue":
+        return "border-blue-400";
+      case "teal":
+        return "border-teal-400";
+      case "red":
+        return "border-red-400";
+      case "yellow":
+        return "border-yellow-400";
+      case "purple":
+        return "border-purple-400";
       default:
-        return 'border-green-400';
+        return "border-green-400";
     }
   };
 
   return (
     <div className={`${getSizeClass()} ${className}`}>
-      <div className={`${getSizeClass()} border-4 border-t-transparent rounded-full animate-spin ${getColorClass()}`}></div>
+      <div
+        className={`${getSizeClass()} border-4 border-t-transparent rounded-full animate-spin ${getColorClass()}`}
+      ></div>
     </div>
   );
 }
 
 interface PulseEffectProps {
   children: ReactNode;
-  intensity?: 'low' | 'medium' | 'high';
+  intensity?: "low" | "medium" | "high";
   className?: string;
 }
 
 export function PulseEffect({
   children,
-  intensity = 'medium',
-  className = ''
+  intensity = "medium",
+  className = "",
 }: PulseEffectProps) {
   const getIntensityClass = () => {
     switch (intensity) {
-      case 'low':
-        return 'animate-pulse';
-      case 'medium':
-        return 'animate-pulse-glow';
-      case 'high':
-        return 'animate-glow';
+      case "low":
+        return "animate-pulse";
+      case "medium":
+        return "animate-pulse-glow";
+      case "high":
+        return "animate-glow";
       default:
-        return 'animate-pulse';
+        return "animate-pulse";
     }
   };
 
   return (
-    <div className={`${getIntensityClass()} ${className}`}>
-      {children}
-    </div>
+    <div className={`${getIntensityClass()} ${className}`}>{children}</div>
   );
 }
 
@@ -204,11 +219,7 @@ interface ShimmerEffectProps {
 
 export function ShimmerEffect({
   children,
-  className = ''
+  className = "",
 }: ShimmerEffectProps) {
-  return (
-    <div className={`animate-shimmer ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`animate-shimmer ${className}`}>{children}</div>;
 }

@@ -1,53 +1,55 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
+import { ReactNode } from "react";
 
 interface SkeletonProps {
   className?: string;
   children?: ReactNode;
   animate?: boolean;
-  variant?: 'text' | 'rectangular' | 'circular' | 'rounded';
+  variant?: "text" | "rectangular" | "circular" | "rounded";
   width?: string | number;
   height?: string | number;
 }
 
-export function Skeleton({ 
-  className = '', 
-  children, 
-  animate = true, 
-  variant = 'rectangular',
+export function Skeleton({
+  className = "",
+  children,
+  animate = true,
+  variant = "rectangular",
   width,
-  height 
+  height,
 }: SkeletonProps) {
   const getVariantClass = () => {
     switch (variant) {
-      case 'text':
-        return 'h-4 rounded';
-      case 'rectangular':
-        return 'rounded-lg';
-      case 'circular':
-        return 'rounded-full';
-      case 'rounded':
-        return 'rounded-xl';
+      case "text":
+        return "h-4 rounded";
+      case "rectangular":
+        return "rounded-lg";
+      case "circular":
+        return "rounded-full";
+      case "rounded":
+        return "rounded-xl";
       default:
-        return 'rounded-lg';
+        return "rounded-lg";
     }
   };
 
-  const baseClasses = `bg-gray-300 dark:bg-gray-700 ${getVariantClass()} ${
-    animate ? 'animate-shimmer' : ''
-  }`;
+  const baseClasses = `bg-gradient-to-r from-gray-800/80 via-gray-700/60 to-gray-800/80 ${getVariantClass()} ${
+    animate ? "animate-shimmer-green" : ""
+  } relative overflow-hidden`;
 
   const style = {
-    ...(width && { width: typeof width === 'number' ? `${width}px` : width }),
-    ...(height && { height: typeof height === 'number' ? `${height}px` : height }),
+    ...(width && { width: typeof width === "number" ? `${width}px` : width }),
+    ...(height && {
+      height: typeof height === "number" ? `${height}px` : height,
+    }),
   };
 
   return (
-    <div 
-      className={`${baseClasses} ${className}`}
-      style={style}
-    >
+    <div className={`${baseClasses} ${className}`} style={style}>
+      {animate && (
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skeleton-shine" />
+      )}
       {children}
     </div>
   );
@@ -62,32 +64,30 @@ interface SkeletonCardProps {
   lines?: number;
 }
 
-export function SkeletonCard({ 
-  className = '',
+export function SkeletonCard({
+  className = "",
   showAvatar = true,
   showTitle = true,
   showDescription = true,
   showButton = true,
-  lines = 3
+  lines = 3,
 }: SkeletonCardProps) {
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 ${className}`}>
+    <div
+      className={`bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 ${className}`}
+    >
       <div className="flex items-start space-x-4">
-        {showAvatar && (
-          <Skeleton variant="circular" width={48} height={48} />
-        )}
+        {showAvatar && <Skeleton variant="circular" width={48} height={48} />}
         <div className="flex-1 space-y-3">
-          {showTitle && (
-            <Skeleton variant="text" width="60%" height={20} />
-          )}
+          {showTitle && <Skeleton variant="text" width="60%" height={20} />}
           {showDescription && (
             <div className="space-y-2">
               {Array.from({ length: lines }).map((_, index) => (
-                <Skeleton 
-                  key={index} 
-                  variant="text" 
-                  width={index === lines - 1 ? '40%' : '100%'} 
-                  height={16} 
+                <Skeleton
+                  key={index}
+                  variant="text"
+                  width={index === lines - 1 ? "40%" : "100%"}
+                  height={16}
                 />
               ))}
             </div>
@@ -110,16 +110,18 @@ interface SkeletonTableProps {
   showHeader?: boolean;
 }
 
-export function SkeletonTable({ 
-  rows = 5, 
-  columns = 4, 
-  className = '',
-  showHeader = true 
+export function SkeletonTable({
+  rows = 5,
+  columns = 4,
+  className = "",
+  showHeader = true,
 }: SkeletonTableProps) {
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 ${className}`}>
+    <div
+      className={`bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 ${className}`}
+    >
       {showHeader && (
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-6 py-4 border-b border-white/10">
           <div className="flex space-x-4">
             {Array.from({ length: columns }).map((_, index) => (
               <Skeleton key={index} variant="text" width="20%" height={16} />
@@ -127,16 +129,16 @@ export function SkeletonTable({
           </div>
         </div>
       )}
-      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="divide-y divide-white/5">
         {Array.from({ length: rows }).map((_, rowIndex) => (
           <div key={rowIndex} className="px-6 py-4">
             <div className="flex space-x-4">
               {Array.from({ length: columns }).map((_, colIndex) => (
-                <Skeleton 
-                  key={colIndex} 
-                  variant="text" 
-                  width={colIndex === 0 ? '30%' : '20%'} 
-                  height={16} 
+                <Skeleton
+                  key={colIndex}
+                  variant="text"
+                  width={colIndex === 0 ? "30%" : "20%"}
+                  height={16}
                 />
               ))}
             </div>
@@ -154,19 +156,17 @@ interface SkeletonListProps {
   showSubtitle?: boolean;
 }
 
-export function SkeletonList({ 
-  items = 5, 
-  className = '',
+export function SkeletonList({
+  items = 5,
+  className = "",
   showAvatar = true,
-  showSubtitle = true 
+  showSubtitle = true,
 }: SkeletonListProps) {
   return (
     <div className={`space-y-4 ${className}`}>
       {Array.from({ length: items }).map((_, index) => (
         <div key={index} className="flex items-center space-x-4 p-4">
-          {showAvatar && (
-            <Skeleton variant="circular" width={40} height={40} />
-          )}
+          {showAvatar && <Skeleton variant="circular" width={40} height={40} />}
           <div className="flex-1 space-y-2">
             <Skeleton variant="text" width="70%" height={18} />
             {showSubtitle && (
@@ -185,22 +185,26 @@ interface SkeletonGridProps {
   columns?: number;
 }
 
-export function SkeletonGrid({ 
-  items = 6, 
-  className = '',
-  columns = 3 
+export function SkeletonGrid({
+  items = 6,
+  className = "",
+  columns = 3,
 }: SkeletonGridProps) {
   const gridCols = {
-    1: 'grid-cols-1',
-    2: 'grid-cols-2',
-    3: 'grid-cols-3',
-    4: 'grid-cols-4',
-    5: 'grid-cols-5',
-    6: 'grid-cols-6',
+    1: "grid-cols-1",
+    2: "grid-cols-2",
+    3: "grid-cols-3",
+    4: "grid-cols-4",
+    5: "grid-cols-5",
+    6: "grid-cols-6",
   };
 
   return (
-    <div className={`grid ${gridCols[columns as keyof typeof gridCols] || 'grid-cols-3'} gap-6 ${className}`}>
+    <div
+      className={`grid ${
+        gridCols[columns as keyof typeof gridCols] || "grid-cols-3"
+      } gap-6 ${className}`}
+    >
       {Array.from({ length: items }).map((_, index) => (
         <SkeletonCard key={index} />
       ))}
@@ -214,10 +218,10 @@ interface SkeletonFormProps {
   showSubmit?: boolean;
 }
 
-export function SkeletonForm({ 
-  fields = 4, 
-  className = '',
-  showSubmit = true 
+export function SkeletonForm({
+  fields = 4,
+  className = "",
+  showSubmit = true,
 }: SkeletonFormProps) {
   return (
     <div className={`space-y-6 ${className}`}>
@@ -242,10 +246,10 @@ interface SkeletonProfileProps {
   showBio?: boolean;
 }
 
-export function SkeletonProfile({ 
-  className = '',
+export function SkeletonProfile({
+  className = "",
   showStats = true,
-  showBio = true 
+  showBio = true,
 }: SkeletonProfileProps) {
   return (
     <div className={`space-y-6 ${className}`}>
@@ -256,7 +260,7 @@ export function SkeletonProfile({
           <Skeleton variant="text" width="60%" height={16} />
         </div>
       </div>
-      
+
       {showBio && (
         <div className="space-y-2">
           <Skeleton variant="text" width="100%" height={16} />
@@ -264,7 +268,7 @@ export function SkeletonProfile({
           <Skeleton variant="text" width="60%" height={16} />
         </div>
       )}
-      
+
       {showStats && (
         <div className="grid grid-cols-3 gap-4">
           {Array.from({ length: 3 }).map((_, index) => (
@@ -286,27 +290,26 @@ interface SkeletonLeaderboardProps {
   showScore?: boolean;
 }
 
-export function SkeletonLeaderboard({ 
-  items = 10, 
-  className = '',
+export function SkeletonLeaderboard({
+  items = 10,
+  className = "",
   showRank = true,
-  showScore = true 
+  showScore = true,
 }: SkeletonLeaderboardProps) {
   return (
     <div className={`space-y-3 ${className}`}>
       {Array.from({ length: items }).map((_, index) => (
-        <div key={index} className="flex items-center space-x-4 p-4 bg-white dark:bg-gray-800 rounded-lg">
-          {showRank && (
-            <Skeleton variant="circular" width={32} height={32} />
-          )}
+        <div
+          key={index}
+          className="flex items-center space-x-4 p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10"
+        >
+          {showRank && <Skeleton variant="circular" width={32} height={32} />}
           <Skeleton variant="circular" width={40} height={40} />
           <div className="flex-1 space-y-2">
             <Skeleton variant="text" width="60%" height={18} />
             <Skeleton variant="text" width="40%" height={14} />
           </div>
-          {showScore && (
-            <Skeleton variant="text" width="20%" height={18} />
-          )}
+          {showScore && <Skeleton variant="text" width="20%" height={18} />}
         </div>
       ))}
     </div>
@@ -318,21 +321,22 @@ interface SkeletonCodeEditorProps {
   lines?: number;
 }
 
-export function SkeletonCodeEditor({ 
-  className = '',
-  lines = 10 
+export function SkeletonCodeEditor({
+  className = "",
+  lines = 10,
 }: SkeletonCodeEditorProps) {
   return (
-    <div className={`bg-gray-900 rounded-lg p-4 ${className}`}>
+    <div
+      className={`bg-black/40 backdrop-blur-sm rounded-lg p-4 border border-white/10 ${className}`}
+    >
       <div className="space-y-2">
         {Array.from({ length: lines }).map((_, index) => (
           <div key={index} className="flex items-center space-x-2">
-            <Skeleton variant="text" width={24} height={16} className="bg-gray-700" />
-            <Skeleton 
-              variant="text" 
-              width={index % 3 === 0 ? '80%' : index % 3 === 1 ? '60%' : '40%'} 
-              height={16} 
-              className="bg-gray-700" 
+            <Skeleton variant="text" width={24} height={16} />
+            <Skeleton
+              variant="text"
+              width={index % 3 === 0 ? "80%" : index % 3 === 1 ? "60%" : "40%"}
+              height={16}
             />
           </div>
         ))}
