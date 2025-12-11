@@ -45,53 +45,53 @@ export async function GET(
       console.log('Submissions fetch error:', submissionsErr);
       return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 });
     }
-    
+
     console.log('Submissions query result:', { submissions, submissionsErr, problemIds });
 
     const totalProblems = problemIds.length;
 
     // Calculate scores per user
-    const userScores = new Map<string, { 
-      totalScore: number; 
-      solvedProblems: Set<string>; 
+    const userScores = new Map<string, {
+      totalScore: number;
+      solvedProblems: number;
+      problemScores: Map<string, number>; // problemId -> max score (0-1)
       userId: string;
     }>();
 
     submissions?.forEach(submission => {
       if (!problemIds.includes(submission.problem_id)) return;
-      
+
       const userId = submission.user_id;
       if (!userScores.has(userId)) {
         userScores.set(userId, {
           totalScore: 0,
-          solvedProblems: new Set(),
+          solvedProblems: 0,
+          problemScores: new Map(),
           userId
         });
       }
 
       const userData = userScores.get(userId)!;
-      
-      // Calculate if submission passed based on results
-      let passed = false;
-      if (submission.summary && submission.summary.passed > 0) {
-        // If summary shows passed test cases, consider it a pass
-        passed = submission.summary.passed === submission.summary.total;
-      } else if (submission.results && Array.isArray(submission.results)) {
-        // Check if all test cases passed
-        passed = submission.results.every((result: { passed: boolean }) => result.passed === true);
+
+      // Calculate score for this submission
+      let score = 0;
+      if (submission.summary && typeof submission.summary.passed === 'number' && typeof submission.summary.total === 'number' && submission.summary.total > 0) {
+        score = submission.summary.passed / submission.summary.total;
+      } else if (submission.results && Array.isArray(submission.results) && submission.results.length > 0) {
+        const passedCount = submission.results.filter((r: { passed: boolean }) => r.passed).length;
+        score = passedCount / submission.results.length;
       }
-      
-      if (passed && !userData.solvedProblems.has(submission.problem_id)) {
-        userData.solvedProblems.add(submission.problem_id);
-        userData.totalScore += 1;
+
+      // Update max score for this problem
+      const currentMax = userData.problemScores.get(submission.problem_id) || 0;
+      if (score > currentMax) {
+        userData.problemScores.set(submission.problem_id, score);
       }
     });
 
     // Get user details for all participants
     const userIds = Array.from(userScores.keys());
-    console.log('User IDs from submissions:', userIds);
-    console.log('User scores map:', userScores);
-    
+
     const { data: users, error: usersErr } = await supabase
       .from('users')
       .select('id, username, email')
@@ -102,28 +102,33 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch user details' }, { status: 500 });
     }
 
-    console.log('Fetched users:', users?.length, 'for user IDs:', userIds);
-    console.log('Users data:', users);
-
-    // Create leaderboard entries
+    // Aggregate scores from problemScores map
     const leaderboard = Array.from(userScores.values())
       .map(userData => {
+        let aggScore = 0;
+        let solvedCount = 0;
+
+        userData.problemScores.forEach((score) => {
+          aggScore += score;
+          if (Math.abs(score - 1) < 0.0001) { // Floating point tolerance for "perfect" score
+            solvedCount++;
+          }
+        });
+
         const user = users?.find(u => u.id === userData.userId);
-        console.log('User data for', userData.userId, ':', user);
-        console.log('Available users:', users?.map(u => ({ id: u.id, username: u.username, email: u.email })));
         return {
           user_id: userData.userId,
           username: user?.username || user?.email?.split('@')[0] || 'Unknown',
           email: user?.email || '',
-          total_score: userData.totalScore,
-          solved_problems: userData.solvedProblems.size,
+          total_score: aggScore,
+          solved_problems: solvedCount,
           total_problems: totalProblems,
           rank: 0 // Will be set after sorting
         };
       })
       .sort((a, b) => {
         // Sort by total score (descending), then by solved problems (descending)
-        if (b.total_score !== a.total_score) {
+        if (Math.abs(b.total_score - a.total_score) > 0.0001) {
           return b.total_score - a.total_score;
         }
         return b.solved_problems - a.solved_problems;
