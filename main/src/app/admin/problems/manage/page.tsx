@@ -19,9 +19,15 @@ interface ProblemRow {
   updated_at: string;
 }
 
+interface Contest {
+  id: string;
+  name: string;
+}
+
 interface EditState {
   id: string;
   name: string;
+  contest: string | null;
   content: string;
   is_active: boolean;
   time_limit: number;
@@ -34,6 +40,7 @@ const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(
 export default function ManageProblemsPage() {
   const { session, user, signOut } = useAuth();
   const [problems, setProblems] = useState<ProblemRow[]>([]);
+  const [contests, setContests] = useState<Contest[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditState | null>(null);
@@ -61,12 +68,28 @@ export default function ManageProblemsPage() {
     }
   }, [token]);
 
+  const fetchContests = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/admin/contests/list', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setContests(data.contests || []);
+      }
+    } catch (e) {
+      console.error('Error fetching contests:', e);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (token) {
       setError(null);
       fetchProblems();
+      fetchContests();
     }
-  }, [token, fetchProblems]);
+  }, [token, fetchProblems, fetchContests]);
 
   const filteredProblems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -93,6 +116,7 @@ export default function ManageProblemsPage() {
       setEditing({
         id: p.id,
         name: data.problem.name,
+        contest: data.problem.contest || '',
         content: data.problem.content || '',
         is_active: !!(data.problem.is_active ?? p.is_active),
         time_limit: data.problem.time_limit || 5000,
@@ -119,6 +143,7 @@ export default function ManageProblemsPage() {
         body: JSON.stringify({
           name: editing.name,
           content: editing.content,
+          contest: editing.contest || null,
           is_active: editing.is_active,
           time_limit: editing.time_limit,
           memory_limit: editing.memory_limit
@@ -128,7 +153,7 @@ export default function ManageProblemsPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to save');
       setActionMessage('Problem updated');
       // Optimistic update
-      setProblems(prev => prev.map(p => p.id === editing.id ? { ...p, name: editing.name, is_active: editing.is_active, updated_at: new Date().toISOString() } : p));
+      setProblems(prev => prev.map(p => p.id === editing.id ? { ...p, name: editing.name, is_active: editing.is_active, contest: editing.contest, contest_name: contests.find(c => c.id === editing.contest)?.name, updated_at: new Date().toISOString() } : p));
       closeEdit();
     } catch (e: unknown) {
       setActionMessage(e instanceof Error ? e.message : 'Failed to save edit');
@@ -319,6 +344,21 @@ export default function ManageProblemsPage() {
                                 placeholder="Enter problem title"
                                 onChange={e => setEditing(s => s ? { ...s, name: e.target.value } : s)}
                               />
+                            </div>
+                            <div className="md:col-span-2 space-y-2">
+                              <label className="block text-sm font-medium">Contest (Optional)</label>
+                              <select
+                                className="w-full px-3 py-2 rounded-md bg-black/40 border border-white/10 focus:outline-none focus:ring focus:ring-green-600/40"
+                                value={editing.contest || ''}
+                                onChange={e => setEditing(s => s ? { ...s, contest: e.target.value } : s)}
+                              >
+                                <option value="">Standalone Problem</option>
+                                {contests.map((contest) => (
+                                  <option key={contest.id} value={contest.id}>
+                                    {contest.name}
+                                  </option>
+                                ))}
+                              </select>
                             </div>
                             <div className="flex md:flex-col gap-4 md:gap-2 pt-6 md:pt-0">
                               <label className="inline-flex items-center gap-2 text-sm select-none">

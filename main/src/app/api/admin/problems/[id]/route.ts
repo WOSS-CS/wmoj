@@ -46,6 +46,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const updates: Record<string, unknown> = {};
   if (body.name !== undefined) updates.name = body.name;
   if (body.content !== undefined) updates.content = body.content;
+  if (body.contest !== undefined) updates.contest = body.contest;
   if (body.is_active !== undefined) updates.is_active = !!body.is_active;
   if (body.time_limit !== undefined) {
     if (typeof body.time_limit !== 'number' || isNaN(body.time_limit) || body.time_limit <= 0) {
