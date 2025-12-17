@@ -12,7 +12,7 @@ import { Logo } from '@/components/Logo';
 interface LeaderEntry {
   user_id: string;
   username: string;
-  email: string;
+
   total_score: number;
   solved_problems: number;
   total_problems: number;
@@ -113,7 +113,6 @@ export default function ContestLeaderboardOnlyPage() {
                               </div>
                               <div>
                                 <div className="text-white font-semibold">{entry.username}</div>
-                                <div className="text-gray-400 text-xs">{entry.email}</div>
                               </div>
                             </div>
                             <div className="text-right">

@@ -145,8 +145,11 @@ export async function GET(
       })
       .map((entry, index) => ({
         ...entry,
-        rank: index + 1
-      }));
+        rank: index + 1,
+        // Ensure email is definitely not leaked even if it was in the object before this map
+        email: undefined
+      }))
+      .map(({ email, ...rest }) => rest);
 
     return NextResponse.json({ leaderboard });
   } catch (e) {
