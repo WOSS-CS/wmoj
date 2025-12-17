@@ -147,7 +147,7 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
                                             {
                                                 key: 'user',
                                                 header: 'User',
-                                                className: 'w-[20%]',
+                                                className: 'w-2/12',
                                                 sortable: true,
                                                 sortAccessor: (r) => (r.username || r.email).toLowerCase(),
                                                 render: (r) => (
@@ -160,7 +160,7 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
                                             {
                                                 key: 'status',
                                                 header: 'Status',
-                                                className: 'w-[15%]',
+                                                className: 'w-2/12',
                                                 render: (r) => {
                                                     const passed = r.summary?.passed === r.summary?.total && r.summary?.total > 0;
                                                     return (
@@ -173,7 +173,7 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
                                             {
                                                 key: 'score',
                                                 header: 'Score',
-                                                className: 'w-[15%]',
+                                                className: 'w-2/12',
                                                 render: (r) => (
                                                     <span className="text-gray-300">
                                                         {r.summary?.passed ?? 0} / {r.summary?.total ?? 0}
@@ -183,7 +183,7 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
                                             {
                                                 key: 'language',
                                                 header: 'Language',
-                                                className: 'w-[10%]',
+                                                className: 'w-2/12',
                                                 sortable: true,
                                                 sortAccessor: (r) => r.language,
                                                 render: (r) => <span className="uppercase text-xs font-mono bg-white/10 px-2 py-1 rounded">{r.language}</span>
@@ -191,7 +191,7 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
                                             {
                                                 key: 'created_at',
                                                 header: 'Date',
-                                                className: 'w-[20%]',
+                                                className: 'w-2/12',
                                                 sortable: true,
                                                 sortAccessor: (r) => new Date(r.created_at).getTime(),
                                                 render: (r) => <span className="text-gray-400 text-sm">{new Date(r.created_at).toLocaleString()}</span>,
@@ -199,7 +199,7 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
                                             {
                                                 key: 'actions',
                                                 header: 'Actions',
-                                                className: 'w-[20%]',
+                                                className: 'w-2/12',
                                                 render: (r) => (
                                                     <div className="flex gap-2">
                                                         <button onClick={() => setSelectedSubmission(r)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-blue-600 hover:bg-blue-700 text-white text-sm">View Code</button>
