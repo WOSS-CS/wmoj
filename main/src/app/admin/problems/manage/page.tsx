@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -271,6 +272,7 @@ export default function ManageProblemsPage() {
                           className: 'w-[20%]',
                           render: (r) => (
                             <div className="flex gap-2">
+                              <Link href={`/admin/problems/${r.id}/submissions`} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-purple-600 hover:bg-purple-700 text-white text-sm">Submissions</Link>
                               <button onClick={() => openEdit(r)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-blue-600 hover:bg-blue-700 text-white text-sm">Edit</button>
                               <button onClick={() => toggleActive(r)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-yellow-600 hover:bg-yellow-700 text-white text-sm">{r.is_active ? 'Deactivate' : 'Activate'}</button>
                               <button onClick={() => deleteProblem(r)} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-red-600 hover:bg-red-700 text-white text-sm">Delete</button>
