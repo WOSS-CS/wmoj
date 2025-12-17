@@ -233,7 +233,7 @@ export default function ManageProblemsPage() {
                         {
                           key: 'name',
                           header: 'Name',
-                          className: 'w-[30%]',
+                          className: 'w-3/12',
                           sortable: true,
                           sortAccessor: (r) => r.name.toLowerCase(),
                           render: (r) => <span className="text-white font-medium" title={r.name}>{r.name}</span>,
@@ -241,7 +241,7 @@ export default function ManageProblemsPage() {
                         {
                           key: 'contest',
                           header: 'Contest',
-                          className: 'w-[20%]',
+                          className: 'w-2/12',
                           sortable: true,
                           sortAccessor: (r) => (r.contest_name || r.contest || '').toLowerCase(),
                           render: (r) => <span className="text-gray-300">{r.contest_name || r.contest || '-'}</span>,
@@ -249,7 +249,7 @@ export default function ManageProblemsPage() {
                         {
                           key: 'status',
                           header: 'Status',
-                          className: 'w-[15%]',
+                          className: 'w-2/12',
                           sortable: true,
                           sortAccessor: (r) => (r.is_active ? 1 : 0),
                           render: (r) => (
@@ -261,7 +261,7 @@ export default function ManageProblemsPage() {
                         {
                           key: 'updated',
                           header: 'Updated',
-                          className: 'w-[15%]',
+                          className: 'w-2/12',
                           sortable: true,
                           sortAccessor: (r) => new Date(r.updated_at).getTime(),
                           render: (r) => <span className="text-gray-400" title={r.updated_at}>{new Date(r.updated_at).toLocaleDateString()}</span>,
@@ -269,7 +269,7 @@ export default function ManageProblemsPage() {
                         {
                           key: 'actions',
                           header: 'Actions',
-                          className: 'w-[20%]',
+                          className: 'w-2/12',
                           render: (r) => (
                             <div className="flex gap-2">
                               <Link href={`/admin/problems/${r.id}/submissions`} className="px-3 py-2 rounded-lg transition-colors duration-300 bg-purple-600 hover:bg-purple-700 text-white text-sm">Submissions</Link>
