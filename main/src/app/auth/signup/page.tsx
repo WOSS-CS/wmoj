@@ -47,7 +47,12 @@ export default function SignUpPage() {
       const { error } = await signUp(formData.email, formData.password, formData.username);
 
       if (error) {
-        setError(error.message);
+        if (error.message.includes('For security purposes, you can only request this after')) {
+          const seconds = error.message.match(/after (\d+) seconds/)?.[1] || 'some';
+          setError(`Please check your email for the verification link that was already sent. You will be able to resend a new verification link in ${seconds} seconds. Make sure to click on the NEWEST link that was sent if you choose to resend the verification email!`);
+        } else {
+          setError(error.message);
+        }
       } else {
         setSuccess('Account created successfully! Please check your email to verify your account. It may take a minute or two to arrive.');
         // No automatic redirect to allow user to read the message
