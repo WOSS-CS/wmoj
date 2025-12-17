@@ -49,7 +49,7 @@ export default function SignUpPage() {
       if (error) {
         setError(error.message);
       } else {
-        setSuccess('Account created successfully! Please check your email to verify your account.');
+        setSuccess('Account created successfully! Please check your email to verify your account. It may take a minute or two to arrive.');
         // No automatic redirect to allow user to read the message
       }
     } catch (err) {
@@ -181,8 +181,8 @@ export default function SignUpPage() {
                     onBlur={() => setFocusedField(null)}
                     required
                     className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${focusedField === 'username'
-                        ? 'border-green-400 shadow-lg shadow-green-400/25 bg-white/15'
-                        : 'border-white/20 hover:border-green-400/50'
+                      ? 'border-green-400 shadow-lg shadow-green-400/25 bg-white/15'
+                      : 'border-white/20 hover:border-green-400/50'
                       }`}
                     placeholder="Choose a username"
                   />
@@ -209,8 +209,8 @@ export default function SignUpPage() {
                     onBlur={() => setFocusedField(null)}
                     required
                     className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${focusedField === 'email'
-                        ? 'border-green-400 shadow-lg shadow-green-400/25 bg-white/15'
-                        : 'border-white/20 hover:border-green-400/50'
+                      ? 'border-green-400 shadow-lg shadow-green-400/25 bg-white/15'
+                      : 'border-white/20 hover:border-green-400/50'
                       }`}
                     placeholder="Enter your email"
                   />
@@ -237,8 +237,8 @@ export default function SignUpPage() {
                     onBlur={() => setFocusedField(null)}
                     required
                     className={`w-full px-4 py-3 pr-12 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${focusedField === 'password'
-                        ? 'border-green-400 shadow-lg shadow-green-400/25 bg-white/15'
-                        : 'border-white/20 hover:border-green-400/50'
+                      ? 'border-green-400 shadow-lg shadow-green-400/25 bg-white/15'
+                      : 'border-white/20 hover:border-green-400/50'
                       }`}
                     placeholder="Create a password"
                   />
@@ -281,8 +281,8 @@ export default function SignUpPage() {
                     onBlur={() => setFocusedField(null)}
                     required
                     className={`w-full px-4 py-3 pr-12 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${focusedField === 'confirmPassword'
-                        ? 'border-green-400 shadow-lg shadow-green-400/25 bg-white/15'
-                        : 'border-white/20 hover:border-green-400/50'
+                      ? 'border-green-400 shadow-lg shadow-green-400/25 bg-white/15'
+                      : 'border-white/20 hover:border-green-400/50'
                       }`}
                     placeholder="Confirm your password"
                   />
