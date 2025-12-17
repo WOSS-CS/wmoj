@@ -1,4 +1,4 @@
-export type HeaderVariant = 'green' | 'blue' | 'red' | 'emerald' | 'gray';
+export type HeaderVariant = 'green' | 'blue' | 'red' | 'emerald' | 'gray' | 'purple';
 
 type TableTheme = {
   headerRow: string;
@@ -38,6 +38,11 @@ export const tableThemeByVariant: Record<HeaderVariant, TableTheme> = {
   gray: {
     headerRow: 'bg-gray-900/60',
     headerCell: 'text-gray-300',
+    ...base,
+  },
+  purple: {
+    headerRow: 'bg-purple-950/40',
+    headerCell: 'text-purple-300',
     ...base,
   },
 };
