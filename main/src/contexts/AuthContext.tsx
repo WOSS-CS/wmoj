@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { getUserRole, getUserDashboardPath } from '@/utils/userRole';
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, username: string) => {
     console.log('Starting signup process for:', email);
-    
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -41,32 +41,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       },
     });
-    
+
     if (error) {
       console.error('Signup error:', error);
     } else {
       console.log('Signup successful, user:', data.user?.email);
       console.log('User metadata:', data.user?.user_metadata);
     }
-    
+
     return { error };
   };
 
   const signIn = async (email: string, password: string) => {
     console.log('Starting signin process for:', email);
-    
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    
+
     if (error) {
       console.error('Signin error:', error);
     } else {
       console.log('Signin successful, user:', data.user?.email);
       console.log('User metadata:', data.user?.user_metadata);
     }
-    
+
     return { error };
   };
 
@@ -91,10 +91,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const role = await getUserRole(userId);
       const dashboardPath = await getUserDashboardPath(userId);
-      
+
       setUserRole(role);
       setUserDashboardPath(dashboardPath);
-      
+
       console.log(`User role determined: ${role}, dashboard path: ${dashboardPath}`);
     } catch (error) {
       console.error('Error updating user role and path:', error);
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Profile creation already in progress, skipping...');
       return;
     }
-    
+
     profileCreationInProgressRef.current = true;
     try {
       console.log('Starting profile creation for:', user.email);
@@ -122,10 +122,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!adminError && adminUser) {
         // User is an admin, update their last login
         console.log('Updating last login for admin user:', user.email);
-        
+
         const { error: updateError } = await supabase
           .from('admins')
-          .update({ 
+          .update({
             last_login: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (updateError) {
           console.error('Error updating admin profile:', updateError);
         }
-        
+
         // Update user role and dashboard path
         await updateUserRoleAndPath(user.id);
         return;
@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // If user doesn't exist (selectError indicates no rows found)
       if (selectError && selectError.code === 'PGRST116') {
         console.log('Creating new user profile for:', user.email);
-        
+
         const { error: insertError } = await supabase
           .from('users')
           .insert({
@@ -169,10 +169,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (existingUser) {
         // Update last login for existing users
         console.log('Updating last login for existing user:', user.email);
-        
+
         const { error: updateError } = await supabase
           .from('users')
-          .update({ 
+          .update({
             last_login: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
@@ -215,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('AuthContext: Creating user profile...');
           void createUserProfile(currentUser);
         }
-        
+
         // Ensure loading is set to false after a maximum delay
         setTimeout(() => {
           if (isMounted) {
@@ -258,7 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [createUserProfile]);
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     session,
     loading,
@@ -267,7 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signIn,
     signOut,
-  };
+  }), [user, session, loading, userRole, userDashboardPath, updateUserRoleAndPath]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

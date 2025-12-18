@@ -47,7 +47,7 @@ export default function ProblemPage() {
 
   useEffect(() => {
     // Wait for a session to exist so we can forward Authorization for contest problems
-    if (problemId && session) {
+    if (problemId && session?.access_token) {
       fetchProblem(problemId);
     }
     setIsLoaded(true);
@@ -56,7 +56,7 @@ export default function ProblemPage() {
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [problemId, session, /* eslint-disable-line react-hooks/exhaustive-deps */]);
+  }, [problemId, session?.access_token, fetchProblem]);
 
   // Check access permission for contest problems
   useEffect(() => {
@@ -98,10 +98,10 @@ export default function ProblemPage() {
   }, [isActive, contestId, problem?.contest, router]);
 
   useEffect(() => {
-    if (user && problem) {
+    if (user?.id && problem?.id) {
       fetchBestSubmission(user.id, problem.id);
     }
-  }, [user, problem]);
+  }, [user?.id, problem?.id, fetchBestSubmission]);
 
   const fetchProblem = useCallback(async (id: string) => {
     try {
@@ -170,7 +170,7 @@ export default function ProblemPage() {
     }
   };
 
-  const fetchBestSubmission = async (userId: string, problemId: string) => {
+  const fetchBestSubmission = useCallback(async (userId: string, problemId: string) => {
     try {
       const { data, error } = await supabase
         .from('submissions')
@@ -209,7 +209,7 @@ export default function ProblemPage() {
     } finally {
       // no-op
     }
-  };
+  }, []);
 
   const languages = [
     { value: 'python', label: 'Python' },
@@ -361,8 +361,8 @@ export default function ProblemPage() {
                           key={tab.id}
                           onClick={() => setActiveTab(tab.id as 'description' | 'results' | 'stats')}
                           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${activeTab === tab.id
-                              ? 'bg-green-400/20 text-green-400 border border-green-400/50'
-                              : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
+                            ? 'bg-green-400/20 text-green-400 border border-green-400/50'
+                            : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
                             }`}
                         >
                           <span className="mr-2">{tab.icon}</span>
@@ -562,8 +562,8 @@ export default function ProblemPage() {
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-sm text-gray-300">Best Score</span>
                               <span className={`px-2 py-1 rounded text-xs font-medium ${bestSummary.failed === 0
-                                  ? 'bg-green-400/20 text-green-400'
-                                  : 'bg-yellow-400/20 text-yellow-400'
+                                ? 'bg-green-400/20 text-green-400'
+                                : 'bg-yellow-400/20 text-yellow-400'
                                 }`}>
                                 {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
                               </span>
@@ -591,8 +591,8 @@ export default function ProblemPage() {
                           <div className="flex justify-between items-center">
                             <span className="text-gray-300">Type:</span>
                             <span className={`px-2 py-1 rounded text-xs font-medium ${problem.contest
-                                ? 'bg-blue-400/20 text-blue-400'
-                                : 'bg-green-400/20 text-green-400'
+                              ? 'bg-blue-400/20 text-blue-400'
+                              : 'bg-green-400/20 text-green-400'
                               }`}>
                               {problem.contest ? 'Contest' : 'Practice'}
                             </span>
