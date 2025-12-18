@@ -43,6 +43,29 @@ export default function ProblemPage() {
   const [summary, setSummary] = useState<{ total: number; passed: number; failed: number } | null>(null);
   const [bestSummary, setBestSummary] = useState<{ total: number; passed: number; failed: number } | null>(null);
 
+  const fetchProblem = useCallback(async (id: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/problems/${id}`, {
+        headers: {
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch problem');
+      }
+
+      setProblem(data.problem);
+    } catch (err) {
+      console.error('Error fetching problem:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch problem');
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.access_token]);
+
   // Submissions now go through a secure API route which enforces participation
 
   useEffect(() => {
@@ -103,28 +126,7 @@ export default function ProblemPage() {
     }
   }, [user?.id, problem?.id, fetchBestSubmission]);
 
-  const fetchProblem = useCallback(async (id: string) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/problems/${id}`, {
-        headers: {
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-      });
-      const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch problem');
-      }
-
-      setProblem(data.problem);
-    } catch (err) {
-      console.error('Error fetching problem:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch problem');
-    } finally {
-      setLoading(false);
-    }
-  }, [session?.access_token]);
 
   const handleSignOut = async () => {
     await signOut();
