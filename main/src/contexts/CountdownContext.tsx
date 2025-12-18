@@ -54,23 +54,23 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
   // Sync with server to get authoritative timer status
   const syncWithServer = useCallback(async () => {
     if (!user?.id || !contestId) return;
-    
+
     try {
       const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
-      
+
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.access_token) return;
-      
+
       const response = await fetch(`/api/contests/${contestId}/timer`, {
         headers: {
           'Authorization': `Bearer ${session.session.access_token}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.isActive && data.remainingSeconds > 0) {
@@ -83,24 +83,22 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
           // Timer expired or not active
           setIsActive(false);
           setTimeRemaining(null);
-          setContestId(null);
-          setContestName(null);
-          setTotalDuration(null);
-          setProgressPercentage(0);
+          // Only clear critical state if we are sure the timer is done/invalid
+          // But here, if sync fails validation, we should probably reset/stop
+          // setContestId(null); // Be careful clearing contestId here if it causes loops
+          // Instead of clearing contestId immediately which might cause thrashing, 
+          // we just update the timer status. activeContestId is authoritative from DB.
+          // If the timer is effectively done, we can clear.
+          if (isActive) { // Only if it WAS active
+            setIsActive(false);
+            setTimeRemaining(null);
+          }
         }
-      } else {
-        // Timer not found or error
-        setIsActive(false);
-        setTimeRemaining(null);
-        setContestId(null);
-        setContestName(null);
-        setTotalDuration(null);
-        setProgressPercentage(0);
       }
     } catch (error) {
       console.error('Error syncing with server:', error);
     }
-  }, [user?.id, contestId]);
+  }, [user?.id, contestId, isActive]);
 
   const startCountdown = useCallback(async (id: string, name: string, durationMinutes: number) => {
     setContestId(id);
@@ -110,7 +108,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     setTotalDuration(durationSeconds);
     setIsActive(true);
     setIsPaused(false);
-    
+
     // Timer creation is now handled by the join API endpoint
     // Just sync with server to get the authoritative state
     setTimeout(() => syncWithServer(), 1000);
@@ -124,7 +122,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     setIsPaused(false);
     setTotalDuration(null);
     setProgressPercentage(0);
-    
+
     // Timer cleanup is now handled by the leave API endpoint
   }, []);
 
@@ -138,7 +136,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
 
   const checkExpiration = useCallback(async () => {
     if (!contestId || !user?.id) return;
-    
+
     try {
       // Acquire a fresh access token
       const { createClient } = await import('@supabase/supabase-js');
@@ -156,7 +154,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         }
       });
-      
+
       if (res.ok) {
         stopCountdown();
         // Redirect to contests page
@@ -169,44 +167,72 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
 
   // Load countdown from server on mount
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       if (!user?.id) {
-        // Clear countdown if user is not authenticated
         setContestId(null);
         setContestName(null);
         setTimeRemaining(null);
         setIsActive(false);
         return;
       }
-      
-      // Find active contest for user
+
       try {
         const { createClient } = await import('@supabase/supabase-js');
         const supabase = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         );
-        
+
+        // Find active contest for user
         const { data: participant, error } = await supabase
           .from('contest_participants')
           .select('contest_id')
           .eq('user_id', user.id)
           .limit(1);
-        
+
+        if (!isMounted) return;
+
         if (error || !participant || participant.length === 0) {
           return;
         }
-        
+
         const activeContestId = participant[0].contest_id;
-        setContestId(activeContestId);
-        
-        // Sync with server to get timer status
-        await syncWithServer();
+
+        // Only update if different to avoid potential re-renders
+        setContestId(prev => (prev !== activeContestId ? activeContestId : prev));
+
+        // Perform sync logic directly here to avoid dependency on syncWithServer
+        // and to use the *just obtained* activeContestId
+        const { data: session } = await supabase.auth.getSession();
+        if (session?.session?.access_token) {
+          const response = await fetch(`/api/contests/${activeContestId}/timer`, {
+            headers: {
+              'Authorization': `Bearer ${session.session.access_token}`
+            }
+          });
+
+          if (isMounted && response.ok) {
+            const data = await response.json();
+            if (data.isActive && data.remainingSeconds > 0) {
+              setTimeRemaining(data.remainingSeconds);
+              setIsActive(true);
+              if (data.contestName) {
+                setContestName(data.contestName);
+              }
+            }
+          }
+        }
+
       } catch (error) {
         console.error('Error loading active contest:', error);
       }
     })();
-  }, [user?.id, syncWithServer]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]); // Removed syncWithServer dependency
 
   // Update countdown every second (display only)
   useEffect(() => {
