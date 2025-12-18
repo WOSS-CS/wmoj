@@ -68,6 +68,47 @@ export default function ProblemPage() {
 
   // Submissions now go through a secure API route which enforces participation
 
+  const fetchBestSubmission = useCallback(async (userId: string, problemId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('submissions')
+        .select('summary')
+        .eq('user_id', userId)
+        .eq('problem_id', problemId);
+
+      if (error) {
+        console.error('Error loading best submission:', error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        setBestSummary(null);
+        return;
+      }
+
+      let best: { total: number; passed: number; failed: number } | null = null;
+      for (const row of data) {
+        const s = row.summary as { total?: number; passed?: number; failed?: number } | null;
+        if (!s) continue;
+        const current = {
+          total: Number(s.total ?? 0),
+          passed: Number(s.passed ?? 0),
+          failed: Number(s.failed ?? 0),
+        };
+        if (
+          !best ||
+          current.passed > best.passed ||
+          (current.passed === best.passed && current.total > best.total)
+        ) {
+          best = current;
+        }
+      }
+      setBestSummary(best);
+    } finally {
+      // no-op
+    }
+  }, []);
+
   useEffect(() => {
     // Wait for a session to exist so we can forward Authorization for contest problems
     if (problemId && session?.access_token) {
@@ -172,46 +213,7 @@ export default function ProblemPage() {
     }
   };
 
-  const fetchBestSubmission = useCallback(async (userId: string, problemId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('submissions')
-        .select('summary')
-        .eq('user_id', userId)
-        .eq('problem_id', problemId);
 
-      if (error) {
-        console.error('Error loading best submission:', error);
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        setBestSummary(null);
-        return;
-      }
-
-      let best: { total: number; passed: number; failed: number } | null = null;
-      for (const row of data) {
-        const s = row.summary as { total?: number; passed?: number; failed?: number } | null;
-        if (!s) continue;
-        const current = {
-          total: Number(s.total ?? 0),
-          passed: Number(s.passed ?? 0),
-          failed: Number(s.failed ?? 0),
-        };
-        if (
-          !best ||
-          current.passed > best.passed ||
-          (current.passed === best.passed && current.total > best.total)
-        ) {
-          best = current;
-        }
-      }
-      setBestSummary(best);
-    } finally {
-      // no-op
-    }
-  }, []);
 
   const languages = [
     { value: 'python', label: 'Python' },
