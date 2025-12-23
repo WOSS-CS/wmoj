@@ -47,13 +47,23 @@ export async function POST(
       return NextResponse.json({ error: 'Contest is not active' }, { status: 403 });
     }
 
-    // Check if user has left this contest before
-    const { data: historyData, error: historyErr } = await supabase
-      .from('join_history')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('contest_id', id)
-      .limit(1);
+    // Parallelize multiple checks for better performance
+    const [historyResult, existingResult] = await Promise.all([
+      supabase
+        .from('join_history')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('contest_id', id)
+        .limit(1),
+      supabase
+        .from('contest_participants')
+        .select('contest_id')
+        .eq('user_id', userId)
+        .limit(1)
+    ]);
+
+    const { data: historyData, error: historyErr } = historyResult;
+    const { data: existing, error: existErr } = existingResult;
 
     if (historyErr) {
       console.log('Join history check error:', historyErr);
@@ -63,13 +73,6 @@ export async function POST(
     if (historyData && historyData.length > 0) {
       return NextResponse.json({ error: 'You have already left this contest and cannot rejoin' }, { status: 403 });
     }
-
-    // Check if user is already in any contest
-    const { data: existing, error: existErr } = await supabase
-      .from('contest_participants')
-      .select('contest_id')
-      .eq('user_id', userId)
-      .limit(1);
 
     if (existErr) {
       console.log('Participation check error:', existErr);
