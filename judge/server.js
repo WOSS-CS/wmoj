@@ -171,13 +171,15 @@ app.post('/submit', async (req, res) => {
 
     const results = [];
 
-    // Run each test case sequentially to simplify resource usage
-    for (let i = 0; i < input.length; i += 1) {
+    // Enhanced parallel execution with controlled concurrency for better performance
+    // This allows multiple test cases to run simultaneously while limiting resource usage
+    const MAX_CONCURRENT_TESTS = 3; // Adjust based on server capacity
+    const runTestCase = async (i) => {
       const testInput = input[i] ?? '';
       const expected = output[i] ?? '';
       const { cmd, args, env: extraEnv } = runCmdBuilder();
 
-      const result = await new Promise((resolve) => {
+      return new Promise((resolve) => {
         const child = spawn(cmd, args, { cwd: workDir, env: { ...process.env, ...(extraEnv || {}) } });
         let stdout = '';
         let stderr = '';
@@ -237,9 +239,20 @@ app.post('/submit', async (req, res) => {
           });
         });
       });
+    };
 
-      results.push(result);
+    // Run tests with controlled concurrency
+    for (let i = 0; i < input.length; i += MAX_CONCURRENT_TESTS) {
+      const batch = [];
+      for (let j = i; j < Math.min(i + MAX_CONCURRENT_TESTS, input.length); j++) {
+        batch.push(runTestCase(j));
+      }
+      const batchResults = await Promise.all(batch);
+      results.push(...batchResults);
     }
+
+    // Sort results by index to maintain original order
+    results.sort((a, b) => a.index - b.index);
 
     // Summarize
     const summary = {
