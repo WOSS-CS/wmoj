@@ -50,7 +50,8 @@ export async function GET(
 
     const totalProblems = problemIds.length;
 
-    // Calculate scores per user
+    // Calculate scores per user - optimized single pass
+    const problemIdSet = new Set(problemIds);
     const userScores = new Map<string, {
       totalScore: number;
       problemScores: Map<string, number>;
@@ -58,7 +59,8 @@ export async function GET(
     }>();
 
     submissions?.forEach(submission => {
-      if (!problemIds.includes(submission.problem_id)) return;
+      // Use Set for O(1) lookup instead of Array.includes O(n)
+      if (!problemIdSet.has(submission.problem_id)) return;
 
       const userId = submission.user_id;
       if (!userScores.has(userId)) {
@@ -83,17 +85,11 @@ export async function GET(
       // Update best score for this problem
       const currentProblemScore = userData.problemScores.get(submission.problem_id) || 0;
       if (score > currentProblemScore) {
+        const scoreDiff = score - currentProblemScore;
         userData.problemScores.set(submission.problem_id, score);
+        // Update total score incrementally instead of recalculating
+        userData.totalScore += scoreDiff;
       }
-    });
-
-    // Calculate total scores from problem scores
-    userScores.forEach(userData => {
-      let total = 0;
-      userData.problemScores.forEach(score => {
-        total += score;
-      });
-      userData.totalScore = total;
     });
 
     // Get user details for all participants
@@ -110,31 +106,27 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch user details' }, { status: 500 });
     }
 
-    // Create leaderboard entries
+    // Create user lookup map for O(1) access instead of O(n) find
+    const userById = new Map(users?.map(u => [u.id, u]) || []);
+
+    // Create leaderboard entries - optimized single pass with combined operations
     const leaderboard = Array.from(userScores.values())
       .map(userData => {
-        const user = users?.find(u => u.id === userData.userId);
-        return {
-          user_id: userData.userId,
-          username: user?.username || user?.email?.split('@')[0] || 'Unknown',
-          email: user?.email || '',
-          total_score: userData.totalScore,
-          solved_problems: userData.problemScores.size, // This is technically "Attempted with >0 score" now, or we can count perfect scores. 
-          // Request didn't specify, but "solved" usually means full score. 
-          // Let's keep it as is (count of problems with any score > 0 effectively) or strict solved.
-          // Actually, usually "Solved" means 100%. Let's calculate strict solved count.
-          total_problems: totalProblems,
-          rank: 0
-        };
-      })
-      // Update solved_problems to count only full scores (1.0)
-      .map(entry => {
-        const userData = userScores.get(entry.user_id)!;
+        const user = userById.get(userData.userId);
+        // Calculate solved count (full scores) directly during mapping
         let solvedCount = 0;
         userData.problemScores.forEach(score => {
           if (score >= 0.999) solvedCount++; // Floating point tolerance
         });
-        return { ...entry, solved_problems: solvedCount };
+        
+        return {
+          user_id: userData.userId,
+          username: user?.username || user?.email?.split('@')[0] || 'Unknown',
+          total_score: userData.totalScore,
+          solved_problems: solvedCount,
+          total_problems: totalProblems,
+          rank: 0
+        };
       })
       .sort((a, b) => {
         // Sort by total score (descending), then by solved problems (descending)
@@ -145,11 +137,8 @@ export async function GET(
       })
       .map((entry, index) => ({
         ...entry,
-        rank: index + 1,
-        // Ensure email is definitely not leaked even if it was in the object before this map
-        email: undefined
-      }))
-      .map(({ email, ...rest }) => rest);
+        rank: index + 1
+      }));
 
     return NextResponse.json({ leaderboard });
   } catch (e) {

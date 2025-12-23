@@ -17,16 +17,30 @@ export async function GET(request: Request) {
     }
     const userId = authData.user.id;
 
-    // Fetch recent submissions with problem details (and contest id)
-    const { data: submissions, error: submissionsErr } = await supabase
-      .from('submissions')
-      .select('id, problem_id, created_at, summary, problems(id, name, contest)')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(100);
+    // Parallelize fetching submissions and contest joins for better performance
+    const [submissionsResult, contestJoinsResult] = await Promise.all([
+      supabase
+        .from('submissions')
+        .select('id, problem_id, created_at, summary, problems(id, name, contest)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(100),
+      supabase
+        .from('join_history')
+        .select('id, contest_id, joined_at, contests(id, name)')
+        .eq('user_id', userId)
+        .order('joined_at', { ascending: false })
+        .limit(100)
+    ]);
+
+    const { data: submissions, error: submissionsErr } = submissionsResult;
+    const { data: contestJoins, error: joinsErr } = contestJoinsResult;
 
     if (submissionsErr) {
       console.error('Error fetching submissions:', submissionsErr);
+    }
+    if (joinsErr) {
+      console.error('Error fetching contest joins:', joinsErr);
     }
 
     // Collect contest ids from problems to look up names
@@ -36,6 +50,7 @@ export async function GET(request: Request) {
       const c = problem?.contest;
       if (c) contestIdSet.add(c as string);
     }
+    
     let contestNameById: Record<string, string> = {};
     if (contestIdSet.size > 0) {
       const { data: contestsData, error: contestsErr } = await supabase
@@ -45,23 +60,12 @@ export async function GET(request: Request) {
       if (contestsErr) {
         console.error('Error fetching contests for submissions:', contestsErr);
       } else {
+        // Use reduce for efficient map creation
         contestNameById = (contestsData || []).reduce<Record<string, string>>((acc, c: { id: string; name: string }) => {
           acc[c.id] = c.name;
           return acc;
         }, {});
       }
-    }
-
-    // Fetch recent contest joins with contest details
-    const { data: contestJoins, error: joinsErr } = await supabase
-      .from('join_history')
-      .select('id, contest_id, joined_at, contests(id, name)')
-      .eq('user_id', userId)
-      .order('joined_at', { ascending: false })
-      .limit(100);
-
-    if (joinsErr) {
-      console.error('Error fetching contest joins:', joinsErr);
     }
 
     // Combine and sort activities
