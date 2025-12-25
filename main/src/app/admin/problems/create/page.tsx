@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
 import { LoadingState, SkeletonText } from '@/components/LoadingStates';
-import { MarkdownEditor } from '@/components/MarkdownEditor';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { AdminSidebar } from '@/components/AdminSidebar';
@@ -16,6 +16,8 @@ interface Contest {
   id: string;
   name: string;
 }
+
+const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(m => m.MarkdownEditor), { ssr: false });
 
 export default function CreateProblemPage() {
   const { user, signOut, session } = useAuth();
