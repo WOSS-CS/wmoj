@@ -1,5 +1,18 @@
 # WMOJ – Documentation
 
+## 🤝 Contributing & Onboarding
+
+**Interested in joining the WMOJ team?**
+To become a contributor, you **must** contact either `moizman` or `adhamabouaita` on Discord. They are the project leaders and will guide you through the onboarding process.
+
+### **Important: Development Workflow**
+1.  **Database Access**: You do **not** need to set up your own Supabase project. This is unrealistic due to complex RLS policies and table structures.
+    *   The team will add you to the official WMOJ Supabase project.
+    *   You will create your own **Development Branch** within that project to work on features safely.
+2.  **Git Branching**: Always create a new git branch for your features or fixes. Do not commit directly to `main`.
+3.  **Roadmap & Planning**: We have a solidified plan for the future of WMOJ with specific roles delegated to team members. Once you join, we will brief you on the roadmap and your specific responsibilities.
+
+---
 
 ## 📑 Table of Contents
 
@@ -225,13 +238,14 @@ To become a WMOJ developer, follow these steps precisely.
 -   Python 3 (for judge)
 -   GCC/G++ (for judge)
 -   Java JDK (for judge)
--   Supabase Project (Cloud or Local)
+-   **Supabase Access**: You will need to be invited to the team project (see [Onboarding](#contributing--onboarding)).
 
 ### **Step 1: Configure Environment (`main`)**
-Create `main/.env.local`:
+Create `main/.env.local`. You will obtain the `SUPABASE_URL` and `SUPABASE_ANON_KEY` from the team project dashboard (or your specific dev branch).
+
 ```env
-NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+NEXT_PUBLIC_SUPABASE_URL="your-team-project-url"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-team-anon-key"
 NEXT_PUBLIC_JUDGE_URL="http://localhost:4001"
 ```
 
