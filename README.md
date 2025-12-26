@@ -25,7 +25,7 @@
 
 ## 1. Project Overview
 
-**WMOJ** (White Oaks Secondary School Online Judge) is a modern, full-stack competitive programming platform. It is designed to host coding contests, practice problems, and real-time leaderboards with a focus on **User Experience (UX)** and **Performance**.
+**WMOJ** (WOSS Modern Online Judge) is a modern, full-stack competitive programming platform. It is designed to host coding contests, practice problems, and real-time leaderboards with a focus on **User Experience (UX)** and **Performance**.
 
 Unlike legacy judges, WMOJ prioritizes:
 - **Visual Fidelity**: A premium, "dark mode" glassmorphism aesthetic using Tailwind CSS 4.
