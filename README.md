@@ -1,9 +1,5 @@
-# WMOJ – The Ultimate Developer Bible
+# WMOJ – Documentation
 
-> **Welcome to WMOJ.**  
-> This document is not just a guide; it is the **definitive source of truth** for the WMOJ platform. If you read this document from start to finish, you will possess the knowledge required to architect, debug, and extend WMOJ as if you built it yourself.
-
----
 
 ## 📑 Table of Contents
 
