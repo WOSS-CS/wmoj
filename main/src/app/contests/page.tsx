@@ -83,12 +83,7 @@ export default function ContestsPage() {
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
       <RegularOnlyGuard>
-        <div className="relative overflow-hidden">
-          {/* Legacy nav and sidebar removed. Background animations kept but container simplified. */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-20 left-20 w-2 h-2 bg-brand-primary/50 rounded-full animate-ping"></div>
-          </div>
-
+        <div className="space-y-6">
           <LoadingState
             isLoading={!isLoaded}
             skeleton={

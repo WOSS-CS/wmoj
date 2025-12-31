@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
 import { Logo } from '@/components/Logo';
 import { useEffect, useState } from 'react';
-import CodeRainBackground from '@/components/landing/CodeRainBackground';
 import HeroSection from '@/components/landing/HeroSection';
 import FeatureVerdict from '@/components/landing/FeatureVerdict';
 import FeatureArchive from '@/components/landing/FeatureArchive';
@@ -27,11 +26,7 @@ export default function Home() {
 
   return (
     <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo={userDashboardPath || "/dashboard"}>
-      <div className={`min-h-screen bg-[#0F1115] relative overflow-hidden font-sans text-gray-100 selection:bg-green-500/30 transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-
-        {/* 1. The "Living" Background */}
-        <div className="bg-noise" /> {/* Noise Overlay */}
-        <CodeRainBackground /> {/* Code Rain Abstract Texture */}
+      <div className={`min-h-screen relative overflow-hidden font-sans text-gray-100 selection:bg-green-500/30 transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
 
         {/* Navbar - Kept lighter and cleaner */}
         <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center p-6 max-w-7xl mx-auto mix-blend-difference">

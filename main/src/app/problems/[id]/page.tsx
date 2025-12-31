@@ -10,7 +10,6 @@ import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { Problem } from '@/types/problem';
 import { supabase } from '@/lib/supabase';
 import { checkContestParticipation } from '@/utils/participationCheck';
-import { Logo } from '@/components/Logo';
 import { useCountdown } from '@/contexts/CountdownContext';
 
 export default function ProblemPage() {
@@ -219,71 +218,27 @@ export default function ProblemPage() {
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
       <RegularOnlyGuard>
-        <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
-          {/* Enhanced Animated Background */}
-          <div className="absolute inset-0 pointer-events-none">
-            {/* Solid shapes instead of glow */}
-            {/* Mouse following div removed */}
-
-            {/* Floating particles */}
-            <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '0s' }}></div>
-            <div className="absolute top-40 right-32 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
-            <div className="absolute bottom-32 left-1/3 w-1.5 h-1.5 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute top-1/2 right-20 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '3s' }}></div>
-
-            {/* Circuit Pattern with animations */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <div className="absolute top-20 left-20 w-32 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse"></div>
-              <div className="absolute top-20 left-52 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-              <div className="absolute top-20 left-52 w-0.5 h-16 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-              <div className="absolute top-36 left-52 w-24 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1s' }}></div>
-              <div className="absolute top-36 left-76 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
-
-              <div className="absolute top-40 right-20 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-              <div className="absolute top-40 right-20 w-0.5 h-20 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-              <div className="absolute top-60 right-20 w-40 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2s' }}></div>
-              <div className="absolute top-60 right-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
-
-              <div className="absolute bottom-32 left-32 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2.5s' }}></div>
-              <div className="absolute bottom-32 left-32 w-0.5 h-24 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2.5s' }}></div>
-              <div className="absolute bottom-8 left-32 w-28 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '3s' }}></div>
-              <div className="absolute bottom-8 left-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '3s' }}></div>
-            </div>
-          </div>
-
-          {/* Enhanced Navigation */}
-          <nav className="relative z-10 flex justify-between items-center p-6 bg-[#0a0a0a]">
-            <Logo size="md" className="cursor-pointer" />
-            <div className="flex gap-4">
+        <div className="relative overflow-hidden w-full h-full">
+          {/* Main Content */}
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            {/* Header / Config Area */}
+            <div className="flex justify-between items-center mb-6">
               <button
                 type="button"
                 onClick={() => router.push(problem?.contest ? `/contests/${problem.contest}` : '/problems')}
-                className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-colors duration-300"
+                className="px-4 py-2 text-sm text-gray-300 hover:text-white flex items-center gap-2 hover:translate-x-[-2px] transition-transform"
               >
-                Back to Problems
-              </button>
-              <span className="px-6 py-2 text-green-400 border border-green-900 rounded-lg bg-[#064e3b] hover:bg-[#065f46] transition-colors duration-300">
-                {user?.user_metadata?.username || user?.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
-              >
-                Sign Out
+                ← Back to {problem?.contest ? 'Contest' : 'Problems'}
               </button>
             </div>
-          </nav>
 
-          {/* Enhanced Main Content */}
-          <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
             {/* Enhanced Loading State */}
             <LoadingState
               isLoading={loading || !accessChecked}
               skeleton={
                 <div className="grid lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-[#171717] rounded-2xl p-8 border border-[#333333]">
+                    <div className="bg-surface-1 rounded-2xl p-8 border border-white/5">
                       <SkeletonText lines={3} width="80%" />
                       <div className="mt-6 space-y-4">
                         <SkeletonText lines={5} />
@@ -292,7 +247,7 @@ export default function ProblemPage() {
                     </div>
                   </div>
                   <div className="space-y-6">
-                    <div className="bg-[#171717] rounded-2xl p-6 border border-[#333333]">
+                    <div className="bg-surface-1 rounded-2xl p-6 border border-white/5">
                       <SkeletonText lines={2} width="60%" />
                       <div className="mt-4 space-y-3">
                         <SkeletonText lines={1} width="40%" />
@@ -306,14 +261,14 @@ export default function ProblemPage() {
             >
               {(loading || !accessChecked) && (
                 <div className="flex justify-center items-center py-12">
-                  <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-16 h-16 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
               )}
             </LoadingState>
 
             {/* Enhanced Error State */}
             {error && (
-              <div className="bg-[#450a0a] border border-red-500/20 rounded-lg p-6 mb-8">
+              <div className="bg-red-950/20 border border-red-500/20 rounded-lg p-6 mb-8">
                 <p className="text-red-400">{error}</p>
                 <button
                   type="button"
@@ -330,21 +285,20 @@ export default function ProblemPage() {
               <div className={`grid lg:grid-cols-3 gap-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                 {/* Enhanced Problem Description */}
                 <div className="lg:col-span-2">
-                  <div className="p-8 transition-colors duration-300">
+                  <div className="glass-panel p-8 transition-colors duration-300">
                     <div className="flex flex-wrap items-center gap-4 mb-6">
                       <div className="relative">
-                        <h1 className="text-3xl font-bold text-white">
+                        <h1 className="text-3xl font-bold text-white font-heading">
                           {problem.name}
                         </h1>
-                        <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
                       </div>
-                      <span className="px-3 py-1 bg-[#064e3b] text-green-400 rounded-full text-sm animate-pulse">
+                      <span className="px-3 py-1 bg-surface-2 text-brand-primary rounded-full text-xs font-mono uppercase tracking-wider">
                         {problem.contest ? 'Contest Problem' : 'Standalone'}
                       </span>
                     </div>
 
                     {/* Tab Navigation */}
-                    <div className="flex gap-2 mb-6">
+                    <div className="flex gap-2 mb-6 border-b border-white/10 pb-4">
                       {[
                         { id: 'description', label: 'Description', icon: '📝' },
                         { id: 'results', label: 'Results', icon: '📊' },
@@ -353,9 +307,9 @@ export default function ProblemPage() {
                         <button
                           key={tab.id}
                           onClick={() => setActiveTab(tab.id as 'description' | 'results' | 'stats')}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${activeTab === tab.id
-                            ? 'bg-[#064e3b] text-green-400 border border-green-900'
-                            : 'bg-[#1a1a1a] text-gray-300 hover:bg-[#262626] hover:text-white'
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 flex items-center ${activeTab === tab.id
+                            ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20'
+                            : 'text-gray-400 hover:text-white hover:bg-surface-2'
                             }`}
                         >
                           <span className="mr-2">{tab.icon}</span>
@@ -365,9 +319,9 @@ export default function ProblemPage() {
                     </div>
 
                     {/* Tab Content */}
-                    <div className="transition-all duration-300">
+                    <div className="min-h-[400px]">
                       {activeTab === 'description' && (
-                        <div className="prose prose-invert max-w-none">
+                        <div className="prose prose-invert max-w-none prose-pre:bg-[#0a0a0a] prose-pre:border prose-pre:border-white/10">
                           <MarkdownRenderer content={problem.content} />
                         </div>
                       )}
@@ -377,33 +331,31 @@ export default function ProblemPage() {
                           {summary && results ? (
                             <div>
                               <div className="mb-4 flex items-center gap-3">
-                                <span className={`px-3 py-1 rounded-full text-sm ${summary.failed === 0 ? 'bg-[#064e3b] text-green-400' : 'bg-[#422006] text-yellow-400'}`}>
-                                  {summary.failed === 0 ? 'All Passed' : 'Some Failed'}
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${summary.failed === 0 ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                  {summary.failed === 0 ? 'ALL PASSED' : 'SOME FAILED'}
                                 </span>
-                                <span className="text-gray-300">Score:</span>
-                                <span className="text-white font-semibold">{summary.passed}/{summary.total}</span>
+                                <span className="text-gray-400 text-sm">Score:</span>
+                                <span className="text-white font-mono font-bold">{summary.passed}/{summary.total}</span>
                               </div>
                               <div className="space-y-3">
                                 {results.map((r) => (
-                                  <div key={r.index} className="p-4 transition-colors duration-300">
+                                  <div key={r.index} className="p-4 rounded-lg bg-surface-2 border border-white/5">
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-3">
-                                        <span className={`px-2 py-0.5 rounded text-xs ${r.passed ? 'bg-[#064e3b] text-green-400' : 'bg-[#450a0a] text-red-400'}`}>
-                                          {r.passed ? 'Passed' : 'Failed'}
-                                        </span>
-                                        <span className="text-white font-medium">Test case {r.index + 1}</span>
+                                        <span className={`w-2 h-2 rounded-full ${r.passed ? 'bg-green-500' : 'bg-red-500'}`} />
+                                        <span className="text-white font-mono text-sm">Test case {r.index + 1}</span>
                                       </div>
-                                      <div className="text-xs text-gray-400">exit {r.exitCode}{r.timedOut ? ' · timed out' : ''}</div>
+                                      <div className="text-xs text-gray-500 font-mono">exit {r.exitCode}{r.timedOut ? ' · timed out' : ''}</div>
                                     </div>
                                     {!r.passed && (
-                                      <div className="mt-3 grid md:grid-cols-2 gap-3 text-sm">
+                                      <div className="mt-3 grid md:grid-cols-2 gap-3 text-xs font-mono">
                                         <div>
-                                          <div className="text-gray-400 mb-1">Expected</div>
-                                          <pre className="p-3 rounded bg-black/40 text-gray-200 whitespace-pre-wrap">{r.expected}</pre>
+                                          <div className="text-gray-500 mb-1">Expected</div>
+                                          <pre className="p-2 rounded bg-black/50 text-gray-300 overflow-x-auto">{r.expected}</pre>
                                         </div>
                                         <div>
-                                          <div className="text-gray-400 mb-1">Received</div>
-                                          <pre className="p-3 rounded bg-black/40 text-gray-200 whitespace-pre-wrap">{r.received}</pre>
+                                          <div className="text-gray-500 mb-1">Received</div>
+                                          <pre className="p-2 rounded bg-black/50 text-red-300 overflow-x-auto">{r.received}</pre>
                                         </div>
                                       </div>
                                     )}
@@ -412,9 +364,9 @@ export default function ProblemPage() {
                               </div>
                             </div>
                           ) : (
-                            <div className="text-center py-8">
-                              <div className="text-4xl mb-4">📊</div>
-                              <p className="text-gray-400">No submission results yet</p>
+                            <div className="text-center py-12 border-2 border-dashed border-white/5 rounded-xl">
+                              <div className="text-4xl mb-4 opacity-50">📊</div>
+                              <p className="text-gray-500">No submission results yet</p>
                             </div>
                           )}
                         </div>
@@ -423,27 +375,27 @@ export default function ProblemPage() {
                       {activeTab === 'stats' && (
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4">
-                              <div className="text-2xl font-bold text-green-400">{problem.input.length}</div>
-                              <div className="text-sm text-gray-400">Test Cases</div>
+                            <div className="p-4 bg-surface-2 rounded-lg border border-white/5">
+                              <div className="text-2xl font-bold text-white font-mono">{problem.input.length}</div>
+                              <div className="text-xs text-gray-500 uppercase tracking-wide">Test Cases</div>
                             </div>
-                            <div className="p-4">
-                              <div className="text-2xl font-bold text-blue-400">{problem.contest ? 'Contest' : 'Practice'}</div>
-                              <div className="text-sm text-gray-400">Type</div>
+                            <div className="p-4 bg-surface-2 rounded-lg border border-white/5">
+                              <div className="text-2xl font-bold text-brand-primary">{problem.contest ? 'Contest' : 'Practice'}</div>
+                              <div className="text-xs text-gray-500 uppercase tracking-wide">Type</div>
                             </div>
                           </div>
                           {bestSummary && (
-                            <div className="p-4">
-                              <div className="flex items-center justify-between mb-2">
+                            <div className="p-6 bg-surface-2 rounded-lg border border-white/5">
+                              <div className="flex items-center justify-between mb-4">
                                 <span className="text-sm text-gray-400">Best Score</span>
-                                <span className={`px-2 py-1 rounded text-xs ${bestSummary.failed === 0 ? 'bg-[#064e3b] text-green-400' : 'bg-[#450a0a] text-red-400'}`}>
+                                <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${bestSummary.failed === 0 ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                                   {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
                                 </span>
                               </div>
-                              <div className="text-2xl font-bold text-white">{bestSummary.passed}/{bestSummary.total}</div>
-                              <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                              <div className="text-4xl font-bold text-white font-mono mb-4">{bestSummary.passed}/{bestSummary.total}</div>
+                              <div className="w-full bg-black/50 rounded-full h-1.5 overflow-hidden">
                                 <div
-                                  className="bg-gradient-to-r from-green-400 to-emerald-400 h-2 rounded-full transition-all duration-500"
+                                  className="bg-brand-primary h-full transition-all duration-500"
                                   style={{ width: `${(bestSummary.passed / bestSummary.total) * 100}%` }}
                                 />
                               </div>
@@ -457,64 +409,58 @@ export default function ProblemPage() {
 
                 {/* Enhanced Code Submission Panel */}
                 <div className="lg:col-span-1">
-                  <div className="p-6 sticky top-8 transition-colors duration-300">
-                    <h2 className="text-xl font-semibold text-white mb-6 relative">
+                  <div className="glass-panel p-6 sticky top-8">
+                    <h2 className="text-lg font-bold text-white mb-6 font-heading flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
                       Submit Solution
-                      <div className="absolute -bottom-2 left-0 w-20 h-1 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
                     </h2>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                       {/* Enhanced Language Selection */}
                       <div>
-                        <label className="block text-gray-300 text-sm font-medium mb-2">
-                          Programming Language
+                        <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">
+                          Language
                         </label>
                         <div className="relative">
                           <select
                             value={selectedLanguage}
                             onChange={(e) => setSelectedLanguage(e.target.value)}
-                            className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white focus:outline-none focus:border-green-400 transition-colors duration-300 appearance-none cursor-pointer"
+                            className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white focus:outline-none focus:border-brand-primary transition-colors appearance-none cursor-pointer hover:bg-black/40"
                           >
                             {languages.map((lang) => (
-                              <option key={lang.value} value={lang.value} className="bg-gray-800">
+                              <option key={lang.value} value={lang.value} className="bg-[#1a1a1a]">
                                 {lang.label}
                               </option>
                             ))}
                           </select>
-                          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
                         </div>
                       </div>
 
                       {/* Enhanced File Upload */}
                       <div>
-                        <label className="block text-gray-300 text-sm font-medium mb-2">
-                          Upload Code File
+                        <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">
+                          Source Code
                         </label>
-                        <div className="relative">
+                        <div className="relative group">
                           <input
                             type="file"
                             onChange={handleFileChange}
                             accept=".py,.cpp,.java,.c,.h"
-                            className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 focus:outline-none focus:border-green-400 transition-colors duration-300"
+                            className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:uppercase file:bg-surface-2 file:text-brand-primary hover:file:bg-brand-primary hover:file:text-black cursor-pointer transition-all"
                           />
                         </div>
                         {codeFile && (
-                          <div className="mt-2 p-3 bg-[#064e3b] border border-green-900 rounded-lg">
-                            <p className="text-sm text-green-400 flex items-center gap-2">
-                              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                              Selected: {codeFile.name}
-                            </p>
+                          <div className="mt-2 p-3 bg-brand-primary/10 border border-brand-primary/20 rounded-lg flex items-center gap-2">
+                            <span className="text-xs text-brand-primary font-mono truncate">
+                              {codeFile.name}
+                            </span>
                           </div>
                         )}
                       </div>
 
                       {/* Enhanced Submit Button */}
                       {submitError && (
-                        <div className="bg-[#450a0a] border border-red-500/20 text-red-400 text-sm p-3 rounded-lg">
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-lg">
                           {submitError}
                         </div>
                       )}
@@ -522,99 +468,31 @@ export default function ProblemPage() {
                       <button
                         type="submit"
                         disabled={!codeFile || submitting}
-                        className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+                        className="w-full py-3 bg-brand-primary text-black rounded-lg font-bold hover:bg-brand-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:lift"
                       >
-                        <span className="relative z-10 flex items-center justify-center gap-2">
-                          {submitting ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              Submitting...
-                            </>
-                          ) : (
-                            <>
-                              <span>Submit Solution</span>
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                              </svg>
-                            </>
-                          )}
-                        </span>
-                        <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        {submitting ? 'Submitting...' : 'Submit Solution'}
                       </button>
                     </form>
 
                     {/* Enhanced Problem Stats */}
-                    <div className="mt-8 pt-6 border-t border-white/20">
-                      <h3 className="text-lg font-semibold text-white mb-4 relative">
-                        Problem Information
-                        <div className="absolute -bottom-2 left-0 w-16 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
-                      </h3>
-                      <div className="space-y-4">
-                        {bestSummary && (
-                          <div className="p-4 bg-gradient-to-r from-[#064e3b] to-[#065f46] rounded-lg border border-green-900">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Best Score</span>
-                              <span className={`px-2 py-1 rounded text-xs font-medium ${bestSummary.failed === 0
-                                ? 'bg-[#052e16] text-green-400'
-                                : 'bg-[#422006] text-yellow-400'
-                                }`}>
-                                {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
-                              </span>
-                            </div>
-                            <div className="text-2xl font-bold text-white mb-2">
-                              {bestSummary.passed}/{bestSummary.total}
-                            </div>
-                            <div className="w-full bg-gray-700 rounded-full h-2">
-                              <div
-                                className="bg-gradient-to-r from-green-400 to-emerald-400 h-2 rounded-full transition-all duration-500"
-                                style={{ width: `${(bestSummary.passed / bestSummary.total) * 100}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                        <div className="p-3 bg-[#111111] rounded-lg border border-[#262626] hover:bg-[#1a1a1a] transition-colors duration-300">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-300">Test Cases:</span>
-                            <span className="text-green-400 font-bold text-lg">
-                              {problem.input.length}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-[#111111] rounded-lg border border-[#262626] hover:bg-[#1a1a1a] transition-colors duration-300">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-300">Type:</span>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${problem.contest
-                              ? 'bg-[#1e3a8a] text-blue-400'
-                              : 'bg-[#064e3b] text-green-400'
-                              }`}>
-                              {problem.contest ? 'Contest' : 'Practice'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-[#111111] rounded-lg border border-[#262626] hover:bg-[#1a1a1a] transition-colors duration-300">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-300">Time Limit:</span>
-                            <span className="text-white font-medium">
-                              {problem.time_limit || 5000}ms
-                            </span>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-[#111111] rounded-lg border border-[#262626] hover:bg-[#1a1a1a] transition-colors duration-300">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-300">Memory Limit:</span>
-                            <span className="text-white font-medium">
-                              {problem.memory_limit || 256}MB
-                            </span>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-[#111111] rounded-lg border border-[#262626] hover:bg-[#1a1a1a] transition-colors duration-300">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-300">Created:</span>
-                            <span className="text-white font-medium">
-                              {new Date(problem.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
+                    <div className="mt-8 pt-6 border-t border-white/10 space-y-3">
+                      <h3 className="text-white font-heading text-sm mb-4">Problem Details</h3>
+
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500">Test Cases</span>
+                        <span className="text-white font-mono">{problem.input.length}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500">Time Limit</span>
+                        <span className="text-white font-mono">{problem.time_limit || 5000}ms</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500">Memory Limit</span>
+                        <span className="text-white font-mono">{problem.memory_limit || 256}MB</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500">Added</span>
+                        <span className="text-white font-mono">{new Date(problem.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>

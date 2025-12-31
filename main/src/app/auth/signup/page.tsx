@@ -79,52 +79,33 @@ export default function SignUpPage() {
 
   return (
     <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo={userDashboardPath || "/dashboard"}>
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 relative overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Floating particles (static/animated without mouse dependency) */}
-          <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '0s' }}></div>
-          <div className="absolute top-40 right-32 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute bottom-32 left-1/3 w-1.5 h-1.5 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute top-1/2 right-20 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '3s' }}></div>
+      <div className="min-h-full flex items-center justify-center p-6 relative z-10">
 
-          {/* Circuit Pattern */}
-          <div className="absolute inset-0 opacity-10">
-            {/* Same circuit pattern elements */}
-            <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            {/* ... keeping other static animations ... */}
-          </div>
-        </div>
-
-        <div className="relative z-10 max-w-md w-full">
+        <div className="max-w-md w-full">
           {/* Back to Home */}
-          <div className={`mb-6 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className="mb-8">
             <Link
               href="/"
-              className="text-green-400 hover:text-green-300 flex items-center gap-2 transition-colors duration-300"
+              className="text-gray-400 hover:text-white flex items-center gap-2 transition-colors duration-300 group"
             >
               <svg className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Back to Home
+              <span>Back to Home</span>
             </Link>
           </div>
 
-          <div className={`text-center mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.2s' }}>
-            <span className="inline-flex items-center justify-center px-4 py-1 rounded-full border border-[#262626] bg-[#171717] text-green-300 text-xs font-semibold tracking-[0.3em] uppercase">Join the Community</span>
-            <p className="mt-4 text-gray-400 text-lg">Join the competitive programming community</p>
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white font-heading mb-2">Create Account</h1>
+            <p className="text-gray-400 text-sm">Join the competitive programming community</p>
           </div>
 
-          {/* Enhanced Sign Up Form Container - Added glass-panel */}
-          <div className={`glass-panel p-8 transition-all duration-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.4s' }}>
-            <h1 className="text-2xl font-bold text-white text-center mb-6 relative">
-              Create Account
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-20 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
-            </h1>
+          {/* Enhanced Sign Up Form Container */}
+          <div className="glass-panel p-8">
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-[#450a0a] border border-red-500/20 rounded-lg p-4 animate-pulse">
+                <div className="bg-red-950/20 border border-red-500/20 rounded-lg p-4 animate-pulse">
                   <div className="flex items-center gap-2">
                     <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -135,21 +116,18 @@ export default function SignUpPage() {
               )}
 
               {success && (
-                <div className="bg-[#022c22] border border-green-500/20 rounded-lg p-4 animate-pulse">
+                <div className="bg-green-950/20 border border-green-500/20 rounded-lg p-4 animate-pulse">
                   <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p className="text-green-400 text-sm">{success}</p>
+                    <p className="text-brand-primary text-sm">{success}</p>
                   </div>
                 </div>
               )}
 
               <div className="space-y-2">
-                <label className="block text-gray-300 text-sm font-medium mb-2 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                <label className="block text-gray-300 text-xs font-bold uppercase tracking-wider mb-2">
                   Username
                 </label>
                 <div className="relative">
@@ -161,23 +139,17 @@ export default function SignUpPage() {
                     onFocus={() => setFocusedField('username')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 bg-[#171717] border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${focusedField === 'username'
-                      ? 'border-green-400 shadow-lg shadow-green-900 bg-[#262626]'
-                      : 'border-[#333333] hover:border-green-400/50'
+                    className={`w-full px-4 py-3 bg-surface-2 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${focusedField === 'username'
+                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-3'
+                      : 'border-white/10 hover:border-brand-primary/50'
                       }`}
                     placeholder="Choose a username"
                   />
-                  {focusedField === 'username' && (
-                    <div className="absolute inset-0 border border-green-400 rounded-lg animate-pulse pointer-events-none" />
-                  )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-gray-300 text-sm font-medium mb-2 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                  </svg>
+                <label className="block text-gray-300 text-xs font-bold uppercase tracking-wider mb-2">
                   Email
                 </label>
                 <div className="relative">
@@ -189,23 +161,17 @@ export default function SignUpPage() {
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 bg-[#171717] border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${focusedField === 'email'
-                      ? 'border-green-400 shadow-lg shadow-green-900 bg-[#262626]'
-                      : 'border-[#333333] hover:border-green-400/50'
+                    className={`w-full px-4 py-3 bg-surface-2 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${focusedField === 'email'
+                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-3'
+                      : 'border-white/10 hover:border-brand-primary/50'
                       }`}
                     placeholder="Enter your email"
                   />
-                  {focusedField === 'email' && (
-                    <div className="absolute inset-0 border border-green-400 rounded-lg animate-pulse pointer-events-none" />
-                  )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-gray-300 text-sm font-medium mb-2 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
+                <label className="block text-gray-300 text-xs font-bold uppercase tracking-wider mb-2">
                   Password
                 </label>
                 <div className="relative">
@@ -217,16 +183,16 @@ export default function SignUpPage() {
                     onFocus={() => setFocusedField('password')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 pr-12 bg-[#171717] border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${focusedField === 'password'
-                      ? 'border-green-400 shadow-lg shadow-green-900 bg-[#262626]'
-                      : 'border-[#333333] hover:border-green-400/50'
+                    className={`w-full px-4 py-3 pr-12 bg-surface-2 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${focusedField === 'password'
+                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-3'
+                      : 'border-white/10 hover:border-brand-primary/50'
                       }`}
                     placeholder="Create a password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-green-400 transition-colors duration-300"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-brand-primary transition-colors duration-300"
                   >
                     {showPassword ? (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,17 +205,11 @@ export default function SignUpPage() {
                       </svg>
                     )}
                   </button>
-                  {focusedField === 'password' && (
-                    <div className="absolute inset-0 border border-green-400 rounded-lg animate-pulse pointer-events-none" />
-                  )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-gray-300 text-sm font-medium mb-2 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                <label className="block text-gray-300 text-xs font-bold uppercase tracking-wider mb-2">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -261,16 +221,16 @@ export default function SignUpPage() {
                     onFocus={() => setFocusedField('confirmPassword')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 pr-12 bg-[#171717] border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${focusedField === 'confirmPassword'
-                      ? 'border-green-400 shadow-lg shadow-green-900 bg-[#262626]'
-                      : 'border-[#333333] hover:border-green-400/50'
+                    className={`w-full px-4 py-3 pr-12 bg-surface-2 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${focusedField === 'confirmPassword'
+                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-3'
+                      : 'border-white/10 hover:border-brand-primary/50'
                       }`}
                     placeholder="Confirm your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-green-400 transition-colors duration-300"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-brand-primary transition-colors duration-300"
                   >
                     {showConfirmPassword ? (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,9 +243,6 @@ export default function SignUpPage() {
                       </svg>
                     )}
                   </button>
-                  {focusedField === 'confirmPassword' && (
-                    <div className="absolute inset-0 border border-green-400 rounded-lg animate-pulse pointer-events-none" />
-                  )}
                 </div>
               </div>
 
@@ -294,15 +251,15 @@ export default function SignUpPage() {
                   type="checkbox"
                   id="terms"
                   required
-                  className="mr-3 rounded border-[#333333] bg-[#171717] text-green-600 focus:ring-green-500 focus:ring-2 transition-colors duration-300"
+                  className="mr-3 rounded border-white/10 bg-surface-2 text-brand-primary focus:ring-brand-primary focus:ring-2 transition-colors duration-300"
                 />
-                <label htmlFor="terms" className="text-gray-300 text-sm cursor-pointer">
+                <label htmlFor="terms" className="text-gray-400 text-sm cursor-pointer">
                   I agree to the{' '}
-                  <a href="#" className="text-green-400 hover:text-green-300 transition-colors duration-300">
+                  <a href="#" className="text-brand-primary hover:text-brand-secondary transition-colors duration-300">
                     Terms of Service
                   </a>{' '}
                   and{' '}
-                  <a href="#" className="text-green-400 hover:text-green-300 transition-colors duration-300">
+                  <a href="#" className="text-brand-primary hover:text-brand-secondary transition-colors duration-300">
                     Privacy Policy
                   </a>
                 </label>
@@ -311,33 +268,18 @@ export default function SignUpPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group/btn"
+                className="w-full py-3 bg-brand-primary text-black rounded-lg font-bold hover:bg-brand-secondary transition-all hover:lift disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-primary/20"
               >
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  {loading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Creating Account...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                      </svg>
-                      Create Account
-                    </>
-                  )}
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
+                {loading ? 'Creating Account...' : 'Create Account'}
               </button>
             </form>
 
-            <div className="mt-8 text-center">
+            <div className="mt-8 text-center pt-6 border-t border-white/10">
               <p className="text-gray-400 text-sm">
                 Already have an account?{' '}
                 <Link
                   href="/auth/login"
-                  className="text-green-400 hover:text-green-300 font-medium transition-colors duration-300 px-2 py-1 rounded"
+                  className="text-brand-primary hover:text-brand-secondary font-bold transition-colors duration-300"
                 >
                   Log in
                 </Link>
