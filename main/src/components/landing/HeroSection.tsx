@@ -7,16 +7,38 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const HeroSection = () => {
     const { user } = useAuth();
-    const [textIndex, setTextIndex] = useState(0);
+    const [text, setText] = useState("");
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [loopNum, setLoopNum] = useState(0);
+    const [typingSpeed, setTypingSpeed] = useState(150);
+
+    // Using useMemo for phrases to avoid re-triggering useEffect unnecessarily, 
+    // or just move it inside/outside component. Inside is fine with dependency.
     const phrases = ["Fix", "Optimize", "Submit"];
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setTextIndex((prev) => (prev + 1) % phrases.length);
-        }, 3000); // Cycle every 3 seconds
+        const handleTyping = () => {
+            const i = loopNum % phrases.length;
+            const fullText = phrases[i];
 
-        return () => clearInterval(interval);
-    }, []);
+            setText(isDeleting
+                ? fullText.substring(0, text.length - 1)
+                : fullText.substring(0, text.length + 1)
+            );
+
+            setTypingSpeed(isDeleting ? 50 : 150);
+
+            if (!isDeleting && text === fullText) {
+                setTimeout(() => setIsDeleting(true), 2000); // Wait before deleting
+            } else if (isDeleting && text === "") {
+                setIsDeleting(false);
+                setLoopNum(loopNum + 1);
+            }
+        };
+
+        const timer = setTimeout(handleTyping, typingSpeed);
+        return () => clearTimeout(timer);
+    }, [text, isDeleting, loopNum, typingSpeed]); // Removing phrases from dependency array since it's constant ref in this render scope effectively
 
     return (
         <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 pt-20 pb-32 overflow-hidden">
