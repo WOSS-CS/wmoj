@@ -55,7 +55,7 @@ const HeroSection = () => {
                     {/* Headline */}
                     <h1 className="font-heading font-extrabold text-5xl md:text-7xl lg:text-8xl tracking-tight text-white mb-6">
                         Build. Break. <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500 inline-block min-w-[1.5em] text-left">
-                            {phrases[textIndex]}
+                            {text}
                             <span className="text-green-400 animate-pulse">_</span>
                         </span>
                     </h1>
