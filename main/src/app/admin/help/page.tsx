@@ -10,7 +10,7 @@ import { AdminSidebar } from '@/components/AdminSidebar';
 
 export default function AdminHelpPage() {
   const { user, signOut } = useAuth();
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  // Mouse position state removed
   const [isLoaded, setIsLoaded] = useState(false);
   const generatorExample = String.raw`// generator.cpp for a problem where you add two integers together.
 
@@ -77,9 +77,6 @@ int main() {
 
   useEffect(() => {
     setIsLoaded(true);
-    const handleMouseMove = (e: MouseEvent) => setMousePosition({ x: e.clientX, y: e.clientY });
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   return (
@@ -87,10 +84,7 @@ int main() {
       <AdminGuard>
         <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none">
-            <div
-              className="absolute w-96 h-96 bg-[#1a1a1a] rounded-full transition-all duration-500 ease-out"
-              style={{ left: mousePosition.x - 200, top: mousePosition.y - 200 }}
-            />
+            {/* Mouse following div removed */}
           </div>
 
           <nav className="relative z-10 flex justify-between items-center p-4 bg-[#0a0a0a] border-b border-[#262626]">

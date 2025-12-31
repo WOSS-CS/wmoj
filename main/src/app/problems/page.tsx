@@ -16,7 +16,7 @@ export default function ProblemsPage() {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  // Mouse position state removed
   const [isLoaded, setIsLoaded] = useState(false);
   const [search, setSearch] = useState('');
   const [statusByProblem, setStatusByProblem] = useState<Record<string, 'solved' | 'attempted' | 'not_attempted'>>({});
@@ -24,11 +24,7 @@ export default function ProblemsPage() {
   useEffect(() => {
     fetchStandaloneProblems();
     setIsLoaded(true);
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    // Mouse listener removed
   }, []);
 
   const fetchStandaloneProblems = async () => {
