@@ -9,7 +9,6 @@ import { useCountdown } from '@/contexts/CountdownContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import { LoadingState, SkeletonText } from '@/components/LoadingStates';
-import { Logo } from '@/components/Logo';
 
 const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
 
@@ -82,63 +81,80 @@ export default function ContestViewPage() {
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
       <RegularOnlyGuard>
-        <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
-          {/* Background */}
-          <div className="absolute inset-0 pointer-events-none">
-            {/* Mouse following div removed */}
-          </div>
-
-          {/* Top Navigation Bar */}
-          <nav className="relative z-10 flex justify-between items-center p-4 bg-[#0a0a0a] border-b border-[#262626]">
-            <Logo size="md" className="cursor-pointer" />
-            <div className="flex items-center gap-4">
-              <Link href="/contests" className="px-4 py-2 text-white border border-[#333333] rounded-lg hover:bg-[#262626] transition-all duration-300">
-                Back
-              </Link>
-              <span className="px-4 py-2 text-green-400 border border-green-900 rounded-lg bg-[#064e3b]">
-                {user?.user_metadata?.username || user?.email}
-              </span>
-              <button onClick={handleSignOut} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300">
-                Sign Out
-              </button>
-            </div>
-          </nav>
-
-          <main className="relative z-10 max-w-5xl mx-auto p-6">
+        <div className="relative overflow-hidden min-h-full">
+          {/* Main Content */}
+          <main className="max-w-5xl mx-auto p-6 py-12">
             <LoadingState
               isLoading={loading}
               skeleton={
                 <div className="space-y-6">
+                  <div className="h-8 bg-surface-2 rounded-lg w-1/4 mb-8"></div>
                   <SkeletonText lines={2} width="60%" />
                   <SkeletonText lines={4} />
                 </div>
               }
             >
               {error ? (
-                <div className="bg-[#450a0a] border border-red-500/20 rounded-lg p-6 mb-8">
+                <div className="bg-red-950/20 border border-red-500/20 rounded-lg p-6 mb-8">
                   <p className="text-red-400">{error}</p>
+                  <Link href="/contests" className="text-sm text-red-300 hover:underline mt-2 inline-block">← Back to Contests</Link>
                 </div>
               ) : contest ? (
                 <div className={`transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                  <h1 className="text-4xl font-bold text-white mb-4 relative">
-                    {contest.name}
-                    <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
-                  </h1>
-                  <div className="text-gray-300 mb-6">Length: <span className="text-white font-semibold">{contest.length} min</span></div>
-                  <div className="bg-[#171717] rounded-2xl p-6 border border-[#262626]">
-                    <MarkdownRenderer content={contest.description || '*No description provided*'} />
-                  </div>
-                  <div className="mt-6 flex gap-3">
-                    <button
-                      onClick={handleJoin}
-                      disabled={joining}
-                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {joining ? 'Joining...' : 'Join'}
-                    </button>
-                    <Link href="/contests" className="px-6 py-3 bg-[#171717] text-white rounded-lg hover:bg-[#262626] transition-colors duration-300">
-                      Cancel
+
+                  <div className="mb-8">
+                    <Link href="/contests" className="inline-flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-4">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                      Back to Contests
                     </Link>
+                    <h1 className="text-5xl font-bold text-white font-heading relative inline-block">
+                      {contest.name}
+                      <div className="absolute -bottom-2 left-0 w-1/2 h-1 bg-gradient-to-r from-brand-primary to-emerald-400 rounded-full" />
+                    </h1>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-8">
+                    <div className="md:col-span-2 space-y-8">
+                      {/* Description Panel */}
+                      <div className="glass-panel p-8">
+                        <h2 className="text-xl font-heading text-white mb-6 flex items-center gap-2">
+                          <span className="text-brand-primary">#</span> About this Contest
+                        </h2>
+                        <div className="prose prose-invert max-w-none">
+                          <MarkdownRenderer content={contest.description || '*No description provided*'} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      {/* Action Panel */}
+                      <div className="glass-panel p-6 border-t-4 border-t-brand-primary">
+                        <div className="mb-6">
+                          <div className="text-sm text-gray-400 uppercase tracking-wider font-bold mb-2">Duration</div>
+                          <div className="text-3xl font-mono text-white flex items-baseline gap-2">
+                            {contest.length} <span className="text-sm text-gray-500 font-sans">minutes</span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={handleJoin}
+                          disabled={joining}
+                          className="w-full py-4 bg-brand-primary text-black font-bold rounded-lg hover:bg-brand-secondary transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-primary/20"
+                        >
+                          {joining ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                              Joining...
+                            </span>
+                          ) : (
+                            'Join Contest Now'
+                          )}
+                        </button>
+                        <p className="text-xs text-gray-500 mt-4 text-center">
+                          By joining, you agree to the contest rules.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : null}
