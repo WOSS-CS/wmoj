@@ -14,7 +14,7 @@ const FeatureArchive = () => {
     ];
 
     // Duplicate for infinite scroll
-    const scrollProblems = [...problems, ...problems, ...problems];
+    const scrollProblems = problems;
 
     return (
         <section className="relative py-32 px-6 overflow-hidden">
@@ -27,7 +27,7 @@ const FeatureArchive = () => {
 
                     {/* Scrolling Container */}
                     <div className="relative w-full h-full overflow-hidden flex justify-center transform rotate-y-12 rotate-x-6 scale-90">
-                        <div className="absolute w-full max-w-md space-y-4 animate-infinite-scroll flex flex-col">
+                        <div className="absolute w-full max-w-md space-y-4 flex flex-col">
                             {scrollProblems.map((prob, idx) => (
                                 <div key={idx} className="bg-[#161b22] border border-[#30363d] p-5 rounded-xl shadow-lg flex items-center justify-between hover:bg-[#21262d] transition-colors group">
                                     <div>
