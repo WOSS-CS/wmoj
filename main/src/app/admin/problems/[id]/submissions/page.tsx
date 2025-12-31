@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
 import { Logo } from '@/components/Logo';
-import { AdminSidebar } from '@/components/AdminSidebar';
+import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
