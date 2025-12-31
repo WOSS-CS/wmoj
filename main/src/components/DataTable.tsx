@@ -90,23 +90,23 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
   };
 
   return (
-    <div className={`overflow-x-auto rounded-xl border ${theme.border} ${className}`}>
-      <table className="min-w-full text-left">
-        <thead className={`${stickyHeader ? 'sticky top-0 z-10' : ''} ${theme.headerRow} backdrop-blur`}>
+    <div className={`overflow-x-auto ${className}`}>
+      <table className="min-w-full text-left border-collapse">
+        <thead className={`${stickyHeader ? 'sticky top-0 z-10' : ''} ${theme.headerRow}`}>
           <tr>
             {columns.map((col) => {
               const isSorted = sort.key === col.key;
               return (
                 <th
                   key={col.key}
-                  className={`px-4 py-3 text-sm font-semibold ${theme.headerCell} ${col.className || ''} ${col.sortable ? 'cursor-pointer select-none' : ''}`}
+                  className={`px-6 py-4 ${theme.headerCell} ${col.className || ''} ${col.sortable ? 'cursor-pointer select-none group' : ''}`}
                   onClick={() => onSort(col)}
                 >
                   <div className="flex items-center gap-2">
                     <span>{col.header}</span>
                     {col.sortable && (
-                      <span className="text-xs opacity-70">
-                        {isSorted ? (sort.direction === 'asc' ? '▲' : '▼') : '↕'}
+                      <span className={`transition-opacity ${isSorted ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
+                        {isSorted ? (sort.direction === 'asc' ? '↑' : '↓') : '↕'}
                       </span>
                     )}
                   </div>
@@ -115,11 +115,15 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
             })}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-gray-800">
           {sortedRows.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-6 text-center text-gray-400">
-                {emptyState || 'No data to display.'}
+              <td colSpan={columns.length} className="px-6 py-12 text-center text-gray-500">
+                {emptyState || (
+                  <div className="flex flex-col items-center justify-center">
+                    <p>No data found.</p>
+                  </div>
+                )}
               </td>
             </tr>
           ) : (
@@ -127,14 +131,14 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
               const key = rowKey
                 ? rowKey(row, index)
                 : (() => {
-                    const rec = row as unknown as Record<string, unknown>;
-                    const val = rec.id;
-                    return val != null ? String(val) : String(index);
-                  })();
+                  const rec = row as unknown as Record<string, unknown>;
+                  const val = rec.id;
+                  return val != null ? String(val) : String(index);
+                })();
               return (
-                <tr key={key} className={`${theme.zebra} ${theme.rowHover}`}>
+                <tr key={key} className={`${theme.rowHover} group`}>
                   {columns.map((col) => (
-                    <td key={col.key} className={`px-4 py-3 align-middle ${col.className || ''}`}>
+                    <td key={col.key} className={`px-6 py-4 align-middle text-sm text-gray-300 ${col.className || ''}`}>
                       {col.render
                         ? col.render(row)
                         : ((row as unknown as Record<string, unknown>)[col.key] as ReactNode)}

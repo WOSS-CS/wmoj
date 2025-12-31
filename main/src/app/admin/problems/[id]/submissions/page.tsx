@@ -100,12 +100,12 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
     return (
         <AuthGuard requireAuth allowAuthenticated>
             <AdminGuard>
-                <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white relative overflow-hidden">
+                <div className="min-h-screen bg-[#0a0a0a] text-white relative overflow-hidden">
                     {/* Navbar */}
-                    <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
+                    <nav className="relative z-10 flex justify-between items-center p-4 bg-[#0a0a0a] border-b border-[#262626]">
                         <Logo size="md" className="cursor-pointer" />
                         <div className="flex items-center gap-4">
-                            <span className="px-4 py-2 text-red-400 border border-red-400 rounded-lg bg-red-400/10 backdrop-blur-sm">
+                            <span className="px-4 py-2 text-red-400 border border-red-900 rounded-lg bg-[#450a0a]">
                                 Admin: {user?.user_metadata?.username || user?.email}
                             </span>
                             <button
@@ -164,7 +164,7 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
                                                 render: (r) => {
                                                     const passed = r.summary?.passed === r.summary?.total && r.summary?.total > 0;
                                                     return (
-                                                        <span className={`px-2 py-1 rounded text-xs border ${passed ? 'bg-green-400/10 text-green-400 border-green-400/30' : 'bg-red-400/10 text-red-400 border-red-400/30'}`}>
+                                                        <span className={`px-2 py-1 rounded text-xs border ${passed ? 'bg-[#064e3b] text-green-400 border-green-900' : 'bg-[#450a0a] text-red-400 border-red-900'}`}>
                                                             {passed ? 'Accepted' : 'Rejected'}
                                                         </span>
                                                     );
@@ -186,7 +186,7 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
                                                 className: 'w-2/12',
                                                 sortable: true,
                                                 sortAccessor: (r) => r.language,
-                                                render: (r) => <span className="uppercase text-xs font-mono bg-white/10 px-2 py-1 rounded">{r.language}</span>
+                                                render: (r) => <span className="uppercase text-xs font-mono bg-[#171717] px-2 py-1 rounded">{r.language}</span>
                                             },
                                             {
                                                 key: 'created_at',
@@ -224,10 +224,10 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
 
                     {/* View Code Modal */}
                     {selectedSubmission && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                            <div className="w-full max-w-5xl bg-gray-900 border border-white/10 rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
+                            <div className="w-full max-w-5xl bg-[#111111] border border-[#333333] rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
                                 {/* Header */}
-                                <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-gradient-to-r from-gray-900 to-gray-800 rounded-t-xl">
+                                <div className="flex items-center justify-between px-6 py-4 border-b border-[#333333] bg-[#1a1a1a] rounded-t-xl">
                                     <div>
                                         <h2 className="text-xl font-bold tracking-wide">Submission Details</h2>
                                         <p className="text-xs text-gray-400 mt-0.5">
@@ -242,19 +242,19 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
 
                                     {/* Results Summary */}
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div className="bg-black/30 p-4 rounded-lg border border-white/5">
+                                        <div className="bg-[#1a1a1a] p-4 rounded-lg border border-[#333333]">
                                             <div className="text-gray-400 text-xs uppercase tracking-wider">Status</div>
                                             <div className={`text-xl font-bold ${selectedSubmission.summary.passed === selectedSubmission.summary.total ? 'text-green-400' : 'text-red-400'}`}>
                                                 {selectedSubmission.summary.passed === selectedSubmission.summary.total ? 'Accepted' : 'Rejected'}
                                             </div>
                                         </div>
-                                        <div className="bg-black/30 p-4 rounded-lg border border-white/5">
+                                        <div className="bg-[#1a1a1a] p-4 rounded-lg border border-[#333333]">
                                             <div className="text-gray-400 text-xs uppercase tracking-wider">Score</div>
                                             <div className="text-xl font-bold text-white">
                                                 {selectedSubmission.summary.passed} / {selectedSubmission.summary.total}
                                             </div>
                                         </div>
-                                        <div className="bg-black/30 p-4 rounded-lg border border-white/5">
+                                        <div className="bg-[#1a1a1a] p-4 rounded-lg border border-[#333333]">
                                             <div className="text-gray-400 text-xs uppercase tracking-wider">Language</div>
                                             <div className="text-xl font-bold text-white uppercase">{selectedSubmission.language}</div>
                                         </div>
@@ -263,7 +263,7 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
                                     {/* Source Code */}
                                     <div>
                                         <h3 className="text-lg font-semibold text-white mb-2">Source Code</h3>
-                                        <div className="rounded-lg overflow-hidden border border-white/10 text-sm">
+                                        <div className="rounded-lg overflow-hidden border border-[#333333] text-sm">
                                             <SyntaxHighlighter
                                                 language={selectedSubmission.language}
                                                 style={atomDark}
@@ -280,7 +280,7 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
                                         <h3 className="text-lg font-semibold text-white mb-2">Test Case Results</h3>
                                         <div className="space-y-2">
                                             {selectedSubmission.results && selectedSubmission.results.map((r, i) => (
-                                                <div key={i} className={`p-3 rounded border ${r.passed ? 'bg-green-900/10 border-green-500/20' : 'bg-red-900/10 border-red-500/20'}`}>
+                                                <div key={i} className={`p-3 rounded border ${r.passed ? 'bg-[#064e3b] border-green-900' : 'bg-[#450a0a] border-red-900'}`}>
                                                     <div className="flex items-center justify-between mb-1">
                                                         <span className={`font-medium ${r.passed ? 'text-green-400' : 'text-red-400'}`}>
                                                             Case #{i + 1}: {r.passed ? 'Passed' : 'Failed'}
@@ -293,16 +293,16 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
                                                         <div className="grid grid-cols-2 gap-2 mt-2 text-xs font-mono">
                                                             <div>
                                                                 <div className="text-gray-500 mb-1">Expected:</div>
-                                                                <pre className="bg-black/50 p-2 rounded overflow-x-auto text-gray-300">{r.expected}</pre>
+                                                                <pre className="bg-[#0a0a0a] p-2 rounded overflow-x-auto text-gray-300 border border-[#333333]">{r.expected}</pre>
                                                             </div>
                                                             <div>
                                                                 <div className="text-gray-500 mb-1">Received:</div>
-                                                                <pre className="bg-black/50 p-2 rounded overflow-x-auto text-red-300">{r.received}</pre>
+                                                                <pre className="bg-[#0a0a0a] p-2 rounded overflow-x-auto text-red-300 border border-[#333333]">{r.received}</pre>
                                                             </div>
                                                             {r.stderr && (
                                                                 <div className="col-span-2">
                                                                     <div className="text-gray-500 mb-1">Stderr:</div>
-                                                                    <pre className="bg-black/50 p-2 rounded overflow-x-auto text-yellow-300">{r.stderr}</pre>
+                                                                    <pre className="bg-[#0a0a0a] p-2 rounded overflow-x-auto text-yellow-300 border border-[#333333]">{r.stderr}</pre>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -314,8 +314,8 @@ export default function ProblemSubmissionsPage({ params }: { params: Promise<{ i
 
                                 </div>
 
-                                <div className="px-6 py-4 border-t border-white/10 flex justify-end bg-gray-900/80 rounded-b-xl">
-                                    <button onClick={closeModal} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20 transition text-sm font-medium">Close</button>
+                                <div className="px-6 py-4 border-t border-[#333333] flex justify-end bg-[#1a1a1a] rounded-b-xl">
+                                    <button onClick={closeModal} className="px-4 py-2 rounded-md bg-[#262626] hover:bg-[#333333] transition text-sm font-medium">Close</button>
                                 </div>
 
                             </div>

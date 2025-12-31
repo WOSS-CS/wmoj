@@ -9,40 +9,49 @@ type TableTheme = {
 };
 
 const base: Omit<TableTheme, 'headerRow' | 'headerCell'> = {
-  rowHover: 'hover:bg-white/10',
-  zebra: 'odd:bg-white/5',
-  border: 'border-white/10',
+  rowHover: 'hover:bg-surface-2 transition-colors duration-200',
+  zebra: '', // Removed zebra striping for cleaner look, or keep subtle? Spec says "Modern tables use spacing, not borders". 
+  border: 'border-b border-gray-800',
 };
+
+// Spec: Header: Uppercase, smaller font size, text color #6B7280 (Gray 500).
+// We will enforce this via DataTable component classes, but the theme provides the bg?
+// Spec says "Header: Uppercase... text color...".
+// I will override the headerCell color in all variants to be GRAY-500, or keep variants for optional coloring?
+// Spec implies uniformity: "Remove Grid Lines... Header... text color #6B7280".
+// I'll make the header background transparent or subtle.
+
+const sharedHeader = "uppercase text-xs font-medium tracking-wider text-gray-500";
 
 export const tableThemeByVariant: Record<HeaderVariant, TableTheme> = {
   green: {
-    headerRow: 'bg-green-950/40',
-    headerCell: 'text-green-300',
+    headerRow: 'bg-surface-1',
+    headerCell: sharedHeader,
     ...base,
   },
   emerald: {
-    headerRow: 'bg-emerald-950/40',
-    headerCell: 'text-emerald-300',
+    headerRow: 'bg-surface-1',
+    headerCell: sharedHeader,
     ...base,
   },
   blue: {
-    headerRow: 'bg-blue-950/40',
-    headerCell: 'text-blue-300',
+    headerRow: 'bg-surface-1',
+    headerCell: sharedHeader,
     ...base,
   },
   red: {
-    headerRow: 'bg-red-950/40',
-    headerCell: 'text-red-300',
+    headerRow: 'bg-surface-1',
+    headerCell: sharedHeader,
     ...base,
   },
   gray: {
-    headerRow: 'bg-gray-900/60',
-    headerCell: 'text-gray-300',
+    headerRow: 'bg-surface-1',
+    headerCell: sharedHeader,
     ...base,
   },
   purple: {
-    headerRow: 'bg-purple-950/40',
-    headerCell: 'text-purple-300',
+    headerRow: 'bg-surface-1',
+    headerCell: sharedHeader,
     ...base,
   },
 };

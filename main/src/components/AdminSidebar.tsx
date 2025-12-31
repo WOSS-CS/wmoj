@@ -91,8 +91,8 @@ export function AdminSidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-white/5 backdrop-blur-lg border-r border-white/10 min-h-screen flex flex-col">
-      <div className="h-16 border-b border-white/10" />
+    <aside className="w-64 bg-[#171717] border-r border-[#262626] min-h-screen flex flex-col">
+      <div className="h-16 border-b border-[#262626]" />
       <nav className="p-4 space-y-2 flex-1">
         {items.map(item => {
           const active = item.match(pathname || '');
@@ -100,7 +100,7 @@ export function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`${baseClasses} ${active ? 'text-green-400 bg-green-400/10 border-green-400/20' : 'text-gray-300 hover:text-white hover:bg-white/10 border-transparent'}`}
+              className={`${baseClasses} ${active ? 'text-green-400 bg-green-900 border-green-800' : 'text-gray-300 hover:text-white hover:bg-[#262626] border-transparent'}`}
             >
               {item.icon}
               {item.label}
@@ -108,7 +108,7 @@ export function AdminSidebar() {
           );
         })}
       </nav>
-      <div className="px-4 py-4 border-t border-white/10 text-[10px] text-gray-500 tracking-wide uppercase">Admin Navigation</div>
+      <div className="px-4 py-4 border-t border-[#262626] text-[10px] text-gray-500 tracking-wide uppercase">Admin Navigation</div>
     </aside>
   );
 }

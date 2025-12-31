@@ -98,12 +98,12 @@ export default function AdminUserManagementPage() {
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
       <AdminGuard>
-        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
+        <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
           {/* Top Navigation Bar */}
-          <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
+          <nav className="relative z-10 flex justify-between items-center p-4 bg-[#0a0a0a] border-b border-[#262626]">
             <Logo size="md" className="cursor-pointer" />
             <div className="flex items-center gap-4">
-              <span className="px-4 py-2 text-red-400 border border-red-400 rounded-lg bg-red-400/10 backdrop-blur-sm">
+              <span className="px-4 py-2 text-red-400 border border-red-900 rounded-lg bg-[#450a0a]">
                 Admin: {user?.user_metadata?.username || user?.email}
               </span>
               <button
@@ -119,7 +119,7 @@ export default function AdminUserManagementPage() {
             <AdminSidebar />
 
             <main className="flex-1 p-8">
-              <LoadingState 
+              <LoadingState
                 isLoading={!isLoaded}
                 skeleton={
                   <div className="mb-8 space-y-4">
@@ -143,12 +143,12 @@ export default function AdminUserManagementPage() {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Search by username or email..."
-                    className="flex-1 px-4 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-red-400"
+                    className="flex-1 px-4 py-2 rounded-lg bg-[#111111] border border-[#262626] text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-red-400"
                   />
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter==='all'?'text-red-400 border-red-400/40 bg-red-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>All</button>
-                    <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter==='active'?'text-red-400 border-red-400/40 bg-red-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>Active</button>
-                    <button onClick={() => setFilter('disabled')} className={`px-3 py-2 rounded-lg border ${filter==='disabled'?'text-red-400 border-red-400/40 bg-red-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>Disabled</button>
+                    <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter === 'all' ? 'text-red-400 border-red-900 bg-[#450a0a]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>All</button>
+                    <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter === 'active' ? 'text-red-400 border-red-900 bg-[#450a0a]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>Active</button>
+                    <button onClick={() => setFilter('disabled')} className={`px-3 py-2 rounded-lg border ${filter === 'disabled' ? 'text-red-400 border-red-900 bg-[#450a0a]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>Disabled</button>
                   </div>
                 </div>
 
@@ -183,7 +183,7 @@ export default function AdminUserManagementPage() {
                             sortable: true,
                             sortAccessor: (r) => (r.is_active ? 1 : 0),
                             render: (r) => (
-                              <span className={`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-green-400/10 text-green-400 border-green-400/30' : 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30'}`}>
+                              <span className={`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-[#064e3b] text-green-400 border-green-900' : 'bg-[#422006] text-yellow-400 border-yellow-900'}`}>
                                 {r.is_active ? 'Active' : 'Disabled'}
                               </span>
                             ),

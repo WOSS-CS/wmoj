@@ -224,12 +224,12 @@ export default function ProblemPage() {
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
       <RegularOnlyGuard>
-        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
+        <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
           {/* Enhanced Animated Background */}
           <div className="absolute inset-0 pointer-events-none">
-            {/* Mouse-following glow */}
+            {/* Solid shapes instead of glow */}
             <div
-              className="absolute w-96 h-96 bg-green-400/5 rounded-full blur-3xl transition-all duration-500 ease-out"
+              className="absolute w-96 h-96 bg-[#1a1a1a] rounded-full transition-all duration-500 ease-out"
               style={{
                 left: mousePosition.x - 200,
                 top: mousePosition.y - 200,
@@ -264,7 +264,7 @@ export default function ProblemPage() {
           </div>
 
           {/* Enhanced Navigation */}
-          <nav className="relative z-10 flex justify-between items-center p-6 backdrop-blur-sm">
+          <nav className="relative z-10 flex justify-between items-center p-6 bg-[#0a0a0a]">
             <Logo size="md" className="cursor-pointer" />
             <div className="flex gap-4">
               <button
@@ -274,7 +274,7 @@ export default function ProblemPage() {
               >
                 Back to Problems
               </button>
-              <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-colors duration-300">
+              <span className="px-6 py-2 text-green-400 border border-green-900 rounded-lg bg-[#064e3b] hover:bg-[#065f46] transition-colors duration-300">
                 {user?.user_metadata?.username || user?.email}
               </span>
               <button
@@ -294,7 +294,7 @@ export default function ProblemPage() {
               skeleton={
                 <div className="grid lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+                    <div className="bg-[#171717] rounded-2xl p-8 border border-[#333333]">
                       <SkeletonText lines={3} width="80%" />
                       <div className="mt-6 space-y-4">
                         <SkeletonText lines={5} />
@@ -303,7 +303,7 @@ export default function ProblemPage() {
                     </div>
                   </div>
                   <div className="space-y-6">
-                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                    <div className="bg-[#171717] rounded-2xl p-6 border border-[#333333]">
                       <SkeletonText lines={2} width="60%" />
                       <div className="mt-4 space-y-3">
                         <SkeletonText lines={1} width="40%" />
@@ -324,7 +324,7 @@ export default function ProblemPage() {
 
             {/* Enhanced Error State */}
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-8 backdrop-blur-sm">
+              <div className="bg-[#450a0a] border border-red-500/20 rounded-lg p-6 mb-8">
                 <p className="text-red-400">{error}</p>
                 <button
                   type="button"
@@ -349,7 +349,7 @@ export default function ProblemPage() {
                         </h1>
                         <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse" />
                       </div>
-                      <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-sm animate-pulse">
+                      <span className="px-3 py-1 bg-[#064e3b] text-green-400 rounded-full text-sm animate-pulse">
                         {problem.contest ? 'Contest Problem' : 'Standalone'}
                       </span>
                     </div>
@@ -365,8 +365,8 @@ export default function ProblemPage() {
                           key={tab.id}
                           onClick={() => setActiveTab(tab.id as 'description' | 'results' | 'stats')}
                           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${activeTab === tab.id
-                            ? 'bg-green-400/20 text-green-400 border border-green-400/50'
-                            : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[#064e3b] text-green-400 border border-green-900'
+                            : 'bg-[#1a1a1a] text-gray-300 hover:bg-[#262626] hover:text-white'
                             }`}
                         >
                           <span className="mr-2">{tab.icon}</span>
@@ -388,7 +388,7 @@ export default function ProblemPage() {
                           {summary && results ? (
                             <div>
                               <div className="mb-4 flex items-center gap-3">
-                                <span className={`px-3 py-1 rounded-full text-sm ${summary.failed === 0 ? 'bg-green-400/20 text-green-400' : 'bg-yellow-400/20 text-yellow-400'}`}>
+                                <span className={`px-3 py-1 rounded-full text-sm ${summary.failed === 0 ? 'bg-[#064e3b] text-green-400' : 'bg-[#422006] text-yellow-400'}`}>
                                   {summary.failed === 0 ? 'All Passed' : 'Some Failed'}
                                 </span>
                                 <span className="text-gray-300">Score:</span>
@@ -399,7 +399,7 @@ export default function ProblemPage() {
                                   <div key={r.index} className="p-4 transition-colors duration-300">
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-3">
-                                        <span className={`px-2 py-0.5 rounded text-xs ${r.passed ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
+                                        <span className={`px-2 py-0.5 rounded text-xs ${r.passed ? 'bg-[#064e3b] text-green-400' : 'bg-[#450a0a] text-red-400'}`}>
                                           {r.passed ? 'Passed' : 'Failed'}
                                         </span>
                                         <span className="text-white font-medium">Test case {r.index + 1}</span>
@@ -447,7 +447,7 @@ export default function ProblemPage() {
                             <div className="p-4">
                               <div className="flex items-center justify-between mb-2">
                                 <span className="text-sm text-gray-400">Best Score</span>
-                                <span className={`px-2 py-1 rounded text-xs ${bestSummary.failed === 0 ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
+                                <span className={`px-2 py-1 rounded text-xs ${bestSummary.failed === 0 ? 'bg-[#064e3b] text-green-400' : 'bg-[#450a0a] text-red-400'}`}>
                                   {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
                                 </span>
                               </div>
@@ -484,7 +484,7 @@ export default function ProblemPage() {
                           <select
                             value={selectedLanguage}
                             onChange={(e) => setSelectedLanguage(e.target.value)}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-green-400 transition-colors duration-300 appearance-none cursor-pointer"
+                            className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white focus:outline-none focus:border-green-400 transition-colors duration-300 appearance-none cursor-pointer"
                           >
                             {languages.map((lang) => (
                               <option key={lang.value} value={lang.value} className="bg-gray-800">
@@ -510,11 +510,11 @@ export default function ProblemPage() {
                             type="file"
                             onChange={handleFileChange}
                             accept=".py,.cpp,.java,.c,.h"
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 focus:outline-none focus:border-green-400 transition-colors duration-300"
+                            className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 focus:outline-none focus:border-green-400 transition-colors duration-300"
                           />
                         </div>
                         {codeFile && (
-                          <div className="mt-2 p-3 bg-green-400/10 border border-green-400/20 rounded-lg">
+                          <div className="mt-2 p-3 bg-[#064e3b] border border-green-900 rounded-lg">
                             <p className="text-sm text-green-400 flex items-center gap-2">
                               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                               Selected: {codeFile.name}
@@ -525,7 +525,7 @@ export default function ProblemPage() {
 
                       {/* Enhanced Submit Button */}
                       {submitError && (
-                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-lg backdrop-blur-sm">
+                        <div className="bg-[#450a0a] border border-red-500/20 text-red-400 text-sm p-3 rounded-lg">
                           {submitError}
                         </div>
                       )}
@@ -562,12 +562,12 @@ export default function ProblemPage() {
                       </h3>
                       <div className="space-y-4">
                         {bestSummary && (
-                          <div className="p-4 bg-gradient-to-r from-green-400/10 to-emerald-400/10 rounded-lg border border-green-400/20">
+                          <div className="p-4 bg-gradient-to-r from-[#064e3b] to-[#065f46] rounded-lg border border-green-900">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-sm text-gray-300">Best Score</span>
                               <span className={`px-2 py-1 rounded text-xs font-medium ${bestSummary.failed === 0
-                                ? 'bg-green-400/20 text-green-400'
-                                : 'bg-yellow-400/20 text-yellow-400'
+                                ? 'bg-[#052e16] text-green-400'
+                                : 'bg-[#422006] text-yellow-400'
                                 }`}>
                                 {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
                               </span>
@@ -583,7 +583,7 @@ export default function ProblemPage() {
                             </div>
                           </div>
                         )}
-                        <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
+                        <div className="p-3 bg-[#111111] rounded-lg border border-[#262626] hover:bg-[#1a1a1a] transition-colors duration-300">
                           <div className="flex justify-between items-center">
                             <span className="text-gray-300">Test Cases:</span>
                             <span className="text-green-400 font-bold text-lg">
@@ -591,18 +591,18 @@ export default function ProblemPage() {
                             </span>
                           </div>
                         </div>
-                        <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
+                        <div className="p-3 bg-[#111111] rounded-lg border border-[#262626] hover:bg-[#1a1a1a] transition-colors duration-300">
                           <div className="flex justify-between items-center">
                             <span className="text-gray-300">Type:</span>
                             <span className={`px-2 py-1 rounded text-xs font-medium ${problem.contest
-                              ? 'bg-blue-400/20 text-blue-400'
-                              : 'bg-green-400/20 text-green-400'
+                              ? 'bg-[#1e3a8a] text-blue-400'
+                              : 'bg-[#064e3b] text-green-400'
                               }`}>
                               {problem.contest ? 'Contest' : 'Practice'}
                             </span>
                           </div>
                         </div>
-                        <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
+                        <div className="p-3 bg-[#111111] rounded-lg border border-[#262626] hover:bg-[#1a1a1a] transition-colors duration-300">
                           <div className="flex justify-between items-center">
                             <span className="text-gray-300">Time Limit:</span>
                             <span className="text-white font-medium">
@@ -610,7 +610,7 @@ export default function ProblemPage() {
                             </span>
                           </div>
                         </div>
-                        <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
+                        <div className="p-3 bg-[#111111] rounded-lg border border-[#262626] hover:bg-[#1a1a1a] transition-colors duration-300">
                           <div className="flex justify-between items-center">
                             <span className="text-gray-300">Memory Limit:</span>
                             <span className="text-white font-medium">
@@ -618,7 +618,7 @@ export default function ProblemPage() {
                             </span>
                           </div>
                         </div>
-                        <div className="p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors duration-300">
+                        <div className="p-3 bg-[#111111] rounded-lg border border-[#262626] hover:bg-[#1a1a1a] transition-colors duration-300">
                           <div className="flex justify-between items-center">
                             <span className="text-gray-300">Created:</span>
                             <span className="text-white font-medium">

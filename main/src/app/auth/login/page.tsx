@@ -25,7 +25,7 @@ export default function LoginPage() {
 
     try {
       const { error } = await signIn(formData.email, formData.password);
-      
+
       if (error) {
         setError(error.message);
       } else {
@@ -56,24 +56,24 @@ export default function LoginPage() {
   }, []);
   return (
     <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo={userDashboardPath || "/dashboard"}>
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 relative overflow-hidden">
         {/* Enhanced Animated Background */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* Mouse-following glow */}
-          <div 
-            className="absolute w-96 h-96 bg-green-400/5 rounded-full blur-3xl transition-all duration-500 ease-out"
+          {/* Mouse-following bg */}
+          <div
+            className="absolute w-96 h-96 bg-[#1a1a1a] rounded-full transition-all duration-500 ease-out"
             style={{
               left: mousePosition.x - 200,
               top: mousePosition.y - 200,
             }}
           />
-          
+
           {/* Floating particles */}
           <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '0s' }}></div>
           <div className="absolute top-40 right-32 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
           <div className="absolute bottom-32 left-1/3 w-1.5 h-1.5 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
           <div className="absolute top-1/2 right-20 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '3s' }}></div>
-          
+
           {/* Circuit Pattern with animations */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -82,12 +82,12 @@ export default function LoginPage() {
             <div className="absolute top-20 left-52 w-0.5 h-16 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '0.5s' }}></div>
             <div className="absolute top-36 left-52 w-24 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1s' }}></div>
             <div className="absolute top-36 left-76 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
-            
+
             <div className="absolute top-40 right-20 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1.5s' }}></div>
             <div className="absolute top-40 right-20 w-0.5 h-20 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1.5s' }}></div>
             <div className="absolute top-60 right-20 w-40 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2s' }}></div>
             <div className="absolute top-60 right-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
-            
+
             <div className="absolute bottom-32 left-32 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2.5s' }}></div>
             <div className="absolute bottom-32 left-32 w-0.5 h-24 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2.5s' }}></div>
             <div className="absolute bottom-8 left-32 w-28 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '3s' }}></div>
@@ -97,8 +97,8 @@ export default function LoginPage() {
         <div className="relative z-10 max-w-md w-full">
           {/* Enhanced Back to Home */}
           <div className={`mb-6 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="text-green-400 hover:text-green-300 flex items-center gap-2 transition-colors duration-300"
             >
               <svg className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,7 +109,7 @@ export default function LoginPage() {
           </div>
 
           <div className={`text-center mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.2s' }}>
-            <span className="inline-flex items-center justify-center px-4 py-1 rounded-full border border-green-400/40 bg-white/5 text-green-300 text-xs font-semibold tracking-[0.3em] uppercase">Welcome Back</span>
+            <span className="inline-flex items-center justify-center px-4 py-1 rounded-full border border-[#262626] bg-[#171717] text-green-300 text-xs font-semibold tracking-[0.3em] uppercase">Welcome Back</span>
             <p className="mt-4 text-gray-400 text-lg">Welcome back, competitive programmer</p>
           </div>
 
@@ -119,10 +119,10 @@ export default function LoginPage() {
               Sign In
               <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
             </h1>
-            
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 backdrop-blur-sm animate-pulse">
+                <div className="bg-[#450a0a] border border-red-500/20 rounded-lg p-4 animate-pulse">
                   <div className="flex items-center gap-2">
                     <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -148,11 +148,10 @@ export default function LoginPage() {
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${
-                      focusedField === 'email' 
-                        ? 'border-green-400 shadow-lg shadow-green-400/25 bg-white/15' 
-                        : 'border-white/20 hover:border-green-400/50'
-                    }`}
+                    className={`w-full px-4 py-3 bg-[#171717] border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${focusedField === 'email'
+                        ? 'border-green-400 shadow-lg shadow-green-900 bg-[#262626]'
+                        : 'border-[#333333] hover:border-green-400/50'
+                      }`}
                     placeholder="Enter your email"
                   />
                   {focusedField === 'email' && (
@@ -177,11 +176,10 @@ export default function LoginPage() {
                     onFocus={() => setFocusedField('password')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 pr-12 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${
-                      focusedField === 'password' 
-                        ? 'border-green-400 shadow-lg shadow-green-400/25 bg-white/15' 
-                        : 'border-white/20 hover:border-green-400/50'
-                    }`}
+                    className={`w-full px-4 py-3 pr-12 bg-[#171717] border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300 ${focusedField === 'password'
+                        ? 'border-green-400 shadow-lg shadow-green-900 bg-[#262626]'
+                        : 'border-[#333333] hover:border-green-400/50'
+                      }`}
                     placeholder="Enter your password"
                   />
                   <button
@@ -208,14 +206,14 @@ export default function LoginPage() {
 
               <div className="flex items-center justify-between">
                 <label className="flex items-center cursor-pointer group">
-                  <input 
-                    type="checkbox" 
-                    className="mr-3 rounded border-white/20 bg-white/10 text-green-600 focus:ring-green-500 focus:ring-2 transition-colors duration-300"
+                  <input
+                    type="checkbox"
+                    className="mr-3 rounded border-[#333333] bg-[#171717] text-green-600 focus:ring-green-500 focus:ring-2 transition-colors duration-300"
                   />
                   <span className="text-gray-300 text-sm group-hover:text-white transition-colors duration-300">Remember me</span>
                 </label>
-                <Link 
-                  href="#" 
+                <Link
+                  href="#"
                   className="text-green-400 text-sm hover:text-green-300 transition-colors duration-300 px-2 py-1 rounded"
                 >
                   Forgot password?
@@ -249,8 +247,8 @@ export default function LoginPage() {
             <div className="mt-8 text-center">
               <p className="text-gray-400 text-sm">
                 Don&apos;t have an account?{' '}
-                <Link 
-                  href="/auth/signup" 
+                <Link
+                  href="/auth/signup"
                   className="text-green-400 hover:text-green-300 font-medium transition-colors duration-300 px-2 py-1 rounded"
                 >
                   Sign up
@@ -259,7 +257,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-      </div>
+        </div>
       </div>
     </AuthGuard>
   );

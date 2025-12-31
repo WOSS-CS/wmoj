@@ -57,12 +57,12 @@ export function PageLoading({
   message = 'Loading...' 
 }: PageLoadingProps) {
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center ${className}`}>
+    <div className={`min-h-screen bg-black flex items-center justify-center ${className}`}>
       <div className="text-center space-y-6">
         <div className="relative">
-          <div className="w-20 h-20 border-4 border-green-400/30 border-t-green-400 rounded-full animate-spin mx-auto"></div>
-          <div className="absolute inset-0 w-20 h-20 border-4 border-transparent border-r-green-400/50 rounded-full animate-spin mx-auto" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-          <div className="absolute inset-2 w-16 h-16 border-2 border-green-400/20 border-b-green-400 rounded-full animate-spin mx-auto" style={{ animationDuration: '2s' }}></div>
+          <div className="w-20 h-20 border-4 border-green-900 border-t-green-400 rounded-full animate-spin mx-auto"></div>
+          <div className="absolute inset-0 w-20 h-20 border-4 border-transparent border-r-green-800 rounded-full animate-spin mx-auto" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+          <div className="absolute inset-2 w-16 h-16 border-2 border-green-900 border-b-green-400 rounded-full animate-spin mx-auto" style={{ animationDuration: '2s' }}></div>
         </div>
         <div className="space-y-2">
           <p className="text-gray-300 text-lg font-medium animate-pulse">{message}</p>
@@ -308,7 +308,7 @@ export function OverlayLoading({
     <div className={`relative ${className}`}>
       {children}
       {isLoading && (
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="absolute inset-0 bg-black flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl">
             <div className="flex items-center space-x-3">
               <LoadingSpinner size="md" color="green" />

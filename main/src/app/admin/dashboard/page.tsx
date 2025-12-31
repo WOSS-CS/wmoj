@@ -85,159 +85,133 @@ export default function AdminDashboardPage() {
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
       <AdminGuard>
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
-        {/* Enhanced Animated Background */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Mouse-following glow */}
-          <div 
-            className="absolute w-96 h-96 bg-green-400/5 rounded-full blur-3xl transition-all duration-500 ease-out"
-            style={{
-              left: mousePosition.x - 200,
-              top: mousePosition.y - 200,
-            }}
-          />
-          
-          {/* Floating particles */}
-          <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '0s' }}></div>
-          <div className="absolute top-40 right-32 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute bottom-32 left-1/3 w-1.5 h-1.5 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute top-1/2 right-20 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '3s' }}></div>
-          
-          {/* Circuit Pattern with animations */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <div className="absolute top-20 left-20 w-32 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse"></div>
-            <div className="absolute top-20 left-52 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-            <div className="absolute top-20 left-52 w-0.5 h-16 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-            <div className="absolute top-36 left-52 w-24 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1s' }}></div>
-            <div className="absolute top-36 left-76 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
-            
-            <div className="absolute top-40 right-20 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-            <div className="absolute top-40 right-20 w-0.5 h-20 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-            <div className="absolute top-60 right-20 w-40 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute top-60 right-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
-            
-            <div className="absolute bottom-32 left-32 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2.5s' }}></div>
-            <div className="absolute bottom-32 left-32 w-0.5 h-24 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2.5s' }}></div>
-            <div className="absolute bottom-8 left-32 w-28 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '3s' }}></div>
-            <div className="absolute bottom-8 left-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '3s' }}></div>
-          </div>
-        </div>
+        <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
+          {/* Animated Background Removed/Simplified for Opacity */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* Solid shapes instead of glow */}
+            <div
+              className="absolute w-96 h-96 bg-[#1a1a1a] rounded-full transition-all duration-500 ease-out"
+              style={{
+                left: mousePosition.x - 200,
+                top: mousePosition.y - 200,
+              }}
+            />
 
-        {/* Top Navigation Bar */}
-        <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
-          <Logo size="md" className="cursor-pointer" />
-          <div className="flex items-center gap-4">
-            <span className="px-4 py-2 text-red-400 border border-red-400 rounded-lg bg-red-400/10 backdrop-blur-sm">
-              Admin: {user?.user_metadata?.username || user?.email}
-            </span>
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
-            >
-              Sign Out
-            </button>
-          </div>
-        </nav>
-
-        <div className="flex">
-          <AdminSidebar />
-
-          {/* Main Content */}
-          <main className="flex-1 p-8">
-            <LoadingState 
-              isLoading={!isLoaded}
-              skeleton={
-                <div className="mb-8 space-y-4">
-                  <SkeletonText lines={2} width="60%" />
-                  <SkeletonText lines={1} width="40%" />
-                </div>
-              }
-            >
-              <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                <h1 className="text-4xl font-bold text-white mb-4 relative">
-                  Admin Dashboard
-                  <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-red-400 to-red-600 rounded-full animate-pulse" />
-                </h1>
-                <p className="text-gray-300 text-lg">
-                  Manage contests and problems for the competitive programming platform
-                </p>
+            {/* Top Navigation Bar */}
+            <nav className="relative z-10 flex justify-between items-center p-4 bg-[#0a0a0a] border-b border-[#262626]">
+              <Logo size="md" className="cursor-pointer" />
+              <div className="flex items-center gap-4">
+                <span className="px-4 py-2 text-red-400 border border-red-900 rounded-lg bg-[#450a0a]">
+                  Admin: {user?.user_metadata?.username || user?.email}
+                </span>
+                <button
+                  onClick={handleSignOut}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
+                >
+                  Sign Out
+                </button>
               </div>
-            </LoadingState>
+            </nav>
 
-            {/* Recent Activity (last 24 hours submissions) */}
-            <div className={`p-0 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.2s' }}>
-              <h2 className="text-2xl font-bold text-white mb-6 relative">
-                Recent Activity
-                <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-red-400 to-red-600 animate-pulse" />
-              </h2>
-              {activitiesLoading ? (
-                <div className="space-y-3">
-                  <SkeletonText lines={3} />
+            <div className="flex">
+              <AdminSidebar />
+
+              {/* Main Content */}
+              <main className="flex-1 p-8">
+                <LoadingState
+                  isLoading={!isLoaded}
+                  skeleton={
+                    <div className="mb-8 space-y-4">
+                      <SkeletonText lines={2} width="60%" />
+                      <SkeletonText lines={1} width="40%" />
+                    </div>
+                  }
+                >
+                  <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                    <h1 className="text-4xl font-bold text-white mb-4 relative">
+                      Admin Dashboard
+                      <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-red-400 to-red-600 rounded-full animate-pulse" />
+                    </h1>
+                    <p className="text-gray-300 text-lg">
+                      Manage contests and problems for the competitive programming platform
+                    </p>
+                  </div>
+                </LoadingState>
+
+                {/* Recent Activity (last 24 hours submissions) */}
+                <div className={`p-0 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.2s' }}>
+                  <h2 className="text-2xl font-bold text-white mb-6 relative">
+                    Recent Activity
+                    <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-red-400 to-red-600 animate-pulse" />
+                  </h2>
+                  {activitiesLoading ? (
+                    <div className="space-y-3">
+                      <SkeletonText lines={3} />
+                    </div>
+                  ) : submissions.length > 0 ? (
+                    <>
+                      {(() => {
+                        type Row = { id: string; user: string; problem: string; passed: boolean; timestamp: string };
+                        const columns: Array<DataTableColumn<Row>> = [
+                          {
+                            key: 'user',
+                            header: 'User',
+                            className: 'w-[25%]',
+                            sortable: true,
+                            sortAccessor: (r) => r.user.toLowerCase(),
+                            render: (r) => <span className="text-white font-medium">{r.user}</span>,
+                          },
+                          {
+                            key: 'problem',
+                            header: 'Problem',
+                            className: 'w-[35%]',
+                            sortable: true,
+                            sortAccessor: (r) => r.problem.toLowerCase(),
+                            render: (r) => <span className="text-gray-200">{r.problem}</span>,
+                          },
+                          {
+                            key: 'result',
+                            header: 'Result',
+                            className: 'w-[15%]',
+                            sortable: true,
+                            sortAccessor: (r) => (r.passed ? 1 : 0),
+                            render: (r) => (
+                              <span className={`px-2 py-0.5 text-xs rounded-full border ${r.passed ? 'text-green-400 bg-green-900 border-green-900' : 'text-yellow-400 bg-yellow-900 border-yellow-900'}`}>
+                                {r.passed ? 'Solved' : 'Attempted'}
+                              </span>
+                            ),
+                          },
+                          {
+                            key: 'when',
+                            header: 'When',
+                            className: 'w-[25%]',
+                            sortable: true,
+                            sortAccessor: (r) => new Date(r.timestamp).getTime(),
+                            render: (r) => (
+                              <span className="text-gray-400 text-sm">{formatTimeAgo(r.timestamp)}</span>
+                            ),
+                          },
+                        ];
+                        return (
+                          <DataTable<Row>
+                            columns={columns}
+                            rows={submissions}
+                            rowKey={(r) => r.id}
+                            headerVariant="red"
+                          />
+                        );
+                      })()}
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400">No submissions in the last 24 hours.</p>
+                    </div>
+                  )}
                 </div>
-              ) : submissions.length > 0 ? (
-                <>
-                  {(() => {
-                    type Row = { id: string; user: string; problem: string; passed: boolean; timestamp: string };
-                    const columns: Array<DataTableColumn<Row>> = [
-                      {
-                        key: 'user',
-                        header: 'User',
-                        className: 'w-[25%]',
-                        sortable: true,
-                        sortAccessor: (r) => r.user.toLowerCase(),
-                        render: (r) => <span className="text-white font-medium">{r.user}</span>,
-                      },
-                      {
-                        key: 'problem',
-                        header: 'Problem',
-                        className: 'w-[35%]',
-                        sortable: true,
-                        sortAccessor: (r) => r.problem.toLowerCase(),
-                        render: (r) => <span className="text-gray-200">{r.problem}</span>,
-                      },
-                      {
-                        key: 'result',
-                        header: 'Result',
-                        className: 'w-[15%]',
-                        sortable: true,
-                        sortAccessor: (r) => (r.passed ? 1 : 0),
-                        render: (r) => (
-                          <span className={`px-2 py-0.5 text-xs rounded-full border ${r.passed ? 'text-green-400 bg-green-400/20 border-green-400/20' : 'text-yellow-400 bg-yellow-400/20 border-yellow-400/20'}`}>
-                            {r.passed ? 'Solved' : 'Attempted'}
-                          </span>
-                        ),
-                      },
-                      {
-                        key: 'when',
-                        header: 'When',
-                        className: 'w-[25%]',
-                        sortable: true,
-                        sortAccessor: (r) => new Date(r.timestamp).getTime(),
-                        render: (r) => (
-                          <span className="text-gray-400 text-sm">{formatTimeAgo(r.timestamp)}</span>
-                        ),
-                      },
-                    ];
-                    return (
-                      <DataTable<Row>
-                        columns={columns}
-                        rows={submissions}
-                        rowKey={(r) => r.id}
-                        headerVariant="red"
-                      />
-                    );
-                  })()}
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-400">No submissions in the last 24 hours.</p>
-                </div>
-              )}
+              </main>
             </div>
-          </main>
+          </div>
         </div>
-      </div>
       </AdminGuard>
     </AuthGuard>
   );

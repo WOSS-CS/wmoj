@@ -33,12 +33,12 @@ export default function Home() {
 
   return (
     <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo={userDashboardPath || "/dashboard"}>
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
-        {/* Enhanced Animated Background */}
+      <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
+        {/* Animated Background Removed/Simplified for Opacity */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* Mouse-following glow */}
+          {/* Solid shapes instead of glow */}
           <div
-            className="absolute w-96 h-96 bg-green-400/10 rounded-full blur-3xl transition-all duration-500 ease-out"
+            className="absolute w-96 h-96 bg-[#1a1a1a] rounded-full transition-all duration-500 ease-out"
             style={{
               left: mousePosition.x - 200,
               top: mousePosition.y - 200,
@@ -72,12 +72,12 @@ export default function Home() {
           </div>
         </div>
         {/* Enhanced Navigation */}
-        <nav className="relative z-10 flex justify-between items-center p-6 backdrop-blur-sm">
+        <nav className="relative z-10 flex justify-between items-center p-6 bg-[#0a0a0a]">
           <Logo size="md" className="cursor-pointer" priority />
           <div className="flex gap-4">
             {user ? (
               <>
-                <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-colors duration-300">
+                <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-[#064e3b] hover:bg-[#065f46] transition-colors duration-300">
                   Welcome, {user.user_metadata?.username || user.email}
                 </span>
                 <button
@@ -110,13 +110,13 @@ export default function Home() {
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-[80vh] px-6">
           <div className={`lg:w-1/2 text-center lg:text-left mb-12 lg:mb-0 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <div className="mb-8 flex justify-center lg:justify-start">
-              <span className="px-4 py-1 rounded-full border border-green-400/40 bg-white/5 text-green-300 text-xs font-semibold tracking-[0.3em] uppercase">Competitive Programming</span>
+              <span className="px-4 py-1 rounded-full border border-green-900 bg-[#171717] text-green-300 text-xs font-semibold tracking-[0.3em] uppercase">Competitive Programming</span>
             </div>
             <h1 className="text-6xl lg:text-7xl font-bold text-white mb-6 relative">
               Master
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400 relative">
                 Competitive
-                <div className="absolute -inset-1 bg-green-400/20 rounded-lg blur-sm animate-pulse" />
+                <div className="absolute -inset-1 bg-[#064e3b] rounded-lg -z-10" />
               </span>
               <span className="block text-white relative">
                 Programming
@@ -134,7 +134,7 @@ export default function Home() {
 
           {/* Enhanced Auth Form / User Dashboard */}
           <div className={`lg:w-1/2 max-w-md w-full transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.2s' }}>
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 hover:bg-white/15 transition-colors duration-300">
+            <div className="bg-[#171717] rounded-2xl p-8 border border-[#262626] hover:bg-[#262626] transition-colors duration-300">
               {user ? (
                 <div className="space-y-6">
                   <div className="text-center">
@@ -211,7 +211,7 @@ export default function Home() {
 
 
         {/* Enhanced Footer */}
-        <footer className="relative z-10 py-8 px-6 border-t border-white/10 backdrop-blur-sm">
+        <footer className="relative z-10 py-8 px-6 border-t border-[#262626] bg-[#0a0a0a]">
           <div className="max-w-6xl mx-auto text-center space-y-4">
             <span className="text-sm font-semibold tracking-[0.3em] uppercase text-green-300">WMOJ</span>
             <p className="text-gray-400">
