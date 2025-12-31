@@ -30,14 +30,11 @@ export default function ContestViewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [joining, setJoining] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  // Mouse position state removed
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     setIsLoaded(true);
-    const handleMouseMove = (e: MouseEvent) => setMousePosition({ x: e.clientX, y: e.clientY });
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   useEffect(() => {
@@ -88,10 +85,7 @@ export default function ContestViewPage() {
         <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
           {/* Background */}
           <div className="absolute inset-0 pointer-events-none">
-            <div
-              className="absolute w-96 h-96 bg-[#1a1a1a] rounded-full transition-all duration-500 ease-out"
-              style={{ left: mousePosition.x - 200, top: mousePosition.y - 200 }}
-            />
+            {/* Mouse following div removed */}
           </div>
 
           {/* Top Navigation Bar */}

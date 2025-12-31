@@ -18,7 +18,7 @@ const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').t
 export default function CreateContestPage() {
   const { user, signOut, session } = useAuth();
   const router = useRouter();
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  // Mouse position state removed
   const [isLoaded, setIsLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,11 +31,7 @@ export default function CreateContestPage() {
 
   useEffect(() => {
     setIsLoaded(true);
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    // Mouse listener removed
   }, []);
 
   const handleSignOut = async () => {
@@ -51,6 +47,7 @@ export default function CreateContestPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    // ... same content
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -91,13 +88,7 @@ export default function CreateContestPage() {
           {/* Enhanced Animated Background */}
           <div className="absolute inset-0 pointer-events-none">
             {/* Solid shapes instead of glow */}
-            <div
-              className="absolute w-96 h-96 bg-[#1a1a1a] rounded-full transition-all duration-500 ease-out"
-              style={{
-                left: mousePosition.x - 200,
-                top: mousePosition.y - 200,
-              }}
-            />
+            {/* Mouse following div removed */}
 
             {/* Floating particles */}
             <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '0s' }}></div>

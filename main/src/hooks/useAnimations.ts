@@ -32,7 +32,7 @@ export function useStaggeredAnimation(items: unknown[], delay: number = 100) {
 
   useEffect(() => {
     const timers: NodeJS.Timeout[] = [];
-    
+
     items.forEach((_, index) => {
       const timer = setTimeout(() => {
         setVisibleItems(prev => [...prev, index]);
@@ -68,18 +68,8 @@ export function useScrollAnimation(threshold: number = 0.1) {
 }
 
 export function useMousePosition() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  return mousePosition;
+  // Global cursor tracking disabled
+  return { x: 0, y: 0 };
 }
 
 export function useHoverAnimation() {
@@ -206,15 +196,15 @@ export function useRippleAnimation() {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     const newRipple = {
       id: Date.now(),
       x,
       y
     };
-    
+
     setRipples(prev => [...prev, newRipple]);
-    
+
     setTimeout(() => {
       setRipples(prev => prev.filter(ripple => ripple.id !== newRipple.id));
     }, 600);

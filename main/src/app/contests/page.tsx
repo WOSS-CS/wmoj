@@ -18,7 +18,7 @@ export default function ContestsPage() {
   const [joinedContestId, setJoinedContestId] = useState<string | null>(null);
   const [loadingParticipation, setLoadingParticipation] = useState(false);
   const [joinedHistory, setJoinedHistory] = useState<Set<string>>(new Set());
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  // Mouse position state removed
   const [isLoaded, setIsLoaded] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -40,11 +40,7 @@ export default function ContestsPage() {
       }
     })();
     setIsLoaded(true);
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    // Mouse listener removed
   }, []);
 
   useEffect(() => {

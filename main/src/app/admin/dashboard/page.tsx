@@ -13,7 +13,8 @@ import DataTable, { type DataTableColumn } from '@/components/DataTable';
 
 export default function AdminDashboardPage() {
   const { user, signOut } = useAuth();
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  // Mouse position state removed
   const [isLoaded, setIsLoaded] = useState(false);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [submissions, setSubmissions] = useState<Array<{
@@ -27,11 +28,6 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     setIsLoaded(true);
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   const handleSignOut = async () => {
@@ -89,13 +85,7 @@ export default function AdminDashboardPage() {
           {/* Animated Background Removed/Simplified for Opacity */}
           <div className="absolute inset-0 pointer-events-none">
             {/* Solid shapes instead of glow */}
-            <div
-              className="absolute w-96 h-96 bg-[#1a1a1a] rounded-full transition-all duration-500 ease-out"
-              style={{
-                left: mousePosition.x - 200,
-                top: mousePosition.y - 200,
-              }}
-            />
+            {/* Mouse following div removed */}
 
             {/* Top Navigation Bar */}
             <nav className="relative z-10 flex justify-between items-center p-4 bg-[#0a0a0a] border-b border-[#262626]">
