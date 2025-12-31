@@ -198,24 +198,24 @@ export default function CreateProblemPage() {
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
       <AdminGuard>
-        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
+        <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
           {/* Enhanced Animated Background */}
           <div className="absolute inset-0 pointer-events-none">
             {/* Mouse-following glow */}
-            <div 
-              className="absolute w-96 h-96 bg-blue-400/5 rounded-full blur-3xl transition-all duration-500 ease-out"
+            <div
+              className="absolute w-96 h-96 bg-[#1a1a1a] rounded-full transition-all duration-500 ease-out"
               style={{
                 left: mousePosition.x - 200,
                 top: mousePosition.y - 200,
               }}
             />
-            
+
             {/* Floating particles */}
             <div className="absolute top-20 left-20 w-2 h-2 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '0s' }}></div>
             <div className="absolute top-40 right-32 w-1 h-1 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
             <div className="absolute bottom-32 left-1/3 w-1.5 h-1.5 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
             <div className="absolute top-1/2 right-20 w-1 h-1 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '3s' }}></div>
-            
+
             {/* Circuit Pattern with animations */}
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-20 left-20 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
@@ -224,12 +224,12 @@ export default function CreateProblemPage() {
               <div className="absolute top-20 left-52 w-0.5 h-16 bg-gradient-to-b from-blue-400 to-transparent animate-pulse" style={{ animationDelay: '0.5s' }}></div>
               <div className="absolute top-36 left-52 w-24 h-0.5 bg-gradient-to-r from-blue-400 to-transparent animate-pulse" style={{ animationDelay: '1s' }}></div>
               <div className="absolute top-36 left-76 w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
-              
+
               <div className="absolute top-40 right-20 w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '1.5s' }}></div>
               <div className="absolute top-40 right-20 w-0.5 h-20 bg-gradient-to-b from-blue-400 to-transparent animate-pulse" style={{ animationDelay: '1.5s' }}></div>
               <div className="absolute top-60 right-20 w-40 h-0.5 bg-gradient-to-r from-blue-400 to-transparent animate-pulse" style={{ animationDelay: '2s' }}></div>
               <div className="absolute top-60 right-60 w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
-              
+
               <div className="absolute bottom-32 left-32 w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '2.5s' }}></div>
               <div className="absolute bottom-32 left-32 w-0.5 h-24 bg-gradient-to-b from-blue-400 to-transparent animate-pulse" style={{ animationDelay: '2.5s' }}></div>
               <div className="absolute bottom-8 left-32 w-28 h-0.5 bg-gradient-to-r from-blue-400 to-transparent animate-pulse" style={{ animationDelay: '3s' }}></div>
@@ -238,10 +238,10 @@ export default function CreateProblemPage() {
           </div>
 
           {/* Top Navigation Bar */}
-          <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
+          <nav className="relative z-10 flex justify-between items-center p-4 bg-[#0a0a0a] border-b border-[#262626]">
             <Logo size="md" className="cursor-pointer" />
             <div className="flex items-center gap-4">
-              <span className="px-4 py-2 text-red-400 border border-red-400 rounded-lg bg-red-400/10 backdrop-blur-sm">
+              <span className="px-4 py-2 text-red-400 border border-red-900 rounded-lg bg-[#450a0a]">
                 Admin: {user?.user_metadata?.username || user?.email}
               </span>
               <button
@@ -292,7 +292,7 @@ export default function CreateProblemPage() {
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       placeholder="Enter problem name"
                     />
                   </div>
@@ -315,7 +315,7 @@ export default function CreateProblemPage() {
                       name="contest"
                       value={formData.contest}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     >
                       <option value="">Standalone Problem</option>
                       {contests.map((contest) => (
@@ -341,7 +341,7 @@ export default function CreateProblemPage() {
                       onChange={handleChange}
                       required
                       min="1"
-                      className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       placeholder="e.g., 5000"
                     />
                     <p className="text-gray-400 text-sm mt-1">
@@ -361,7 +361,7 @@ export default function CreateProblemPage() {
                       onChange={handleChange}
                       required
                       min="1"
-                      className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                       placeholder="e.g., 256"
                     />
                     <p className="text-gray-400 text-sm mt-1">
@@ -390,13 +390,13 @@ export default function CreateProblemPage() {
                     <p className="text-gray-400 text-sm mt-1">Upload a C++ generator. It must print input JSON to stdout and output JSON to stderr.</p>
 
                     {genError && (
-                      <div className="mt-3 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                      <div className="mt-3 bg-[#450a0a] border border-red-500/20 rounded-lg p-3">
                         <p className="text-red-400 whitespace-pre-wrap break-words">{genError}</p>
                       </div>
                     )}
 
                     {generatedInput && generatedOutput && (
-                      <div className="mt-4 p-4 border border-white/10 rounded-lg bg-white/5">
+                      <div className="mt-4 p-4 border border-[#333333] rounded-lg bg-[#111111]">
                         <div className="mb-3 text-gray-300 text-sm">Generated cases: {generatedInput.length}</div>
                         {(() => {
                           type Row = { idx: number; input: string; output: string };
@@ -427,13 +427,13 @@ export default function CreateProblemPage() {
                   </div>
 
                   {error && (
-                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                    <div className="bg-[#450a0a] border border-red-500/20 rounded-lg p-4">
                       <p className="text-red-400">{error}</p>
                     </div>
                   )}
 
                   {success && (
-                    <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                    <div className="bg-[#022c22] border border-green-500/20 rounded-lg p-4">
                       <p className="text-green-400">{success}</p>
                     </div>
                   )}

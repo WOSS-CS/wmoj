@@ -13,9 +13,9 @@ interface MarkdownEditorProps {
   className?: string;
 }
 
-export function MarkdownEditor({ 
-  value, 
-  onChange, 
+export function MarkdownEditor({
+  value,
+  onChange,
   placeholder = "Enter markdown content...",
   height = 400,
   className = ""
@@ -30,29 +30,27 @@ export function MarkdownEditor({
           <button
             type="button"
             onClick={() => setIsPreview(false)}
-            className={`px-3 py-1 rounded-lg text-sm transition-all duration-300 ${
-              !isPreview 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white/10 text-gray-300 hover:bg-white/20'
-            }`}
+            className={`px-3 py-1 rounded-lg text-sm transition-all duration-300 ${!isPreview
+                ? 'bg-blue-600 text-white'
+                : 'bg-[#1a1a1a] text-gray-300 hover:bg-[#262626]'
+              }`}
           >
             Edit
           </button>
           <button
             type="button"
             onClick={() => setIsPreview(true)}
-            className={`px-3 py-1 rounded-lg text-sm transition-all duration-300 ${
-              isPreview 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white/10 text-gray-300 hover:bg-white/20'
-            }`}
+            className={`px-3 py-1 rounded-lg text-sm transition-all duration-300 ${isPreview
+                ? 'bg-blue-600 text-white'
+                : 'bg-[#1a1a1a] text-gray-300 hover:bg-[#262626]'
+              }`}
           >
             Preview
           </button>
         </div>
       </div>
-      
-      <div className="border border-white/20 rounded-lg overflow-hidden">
+
+      <div className="border border-[#333333] rounded-lg overflow-hidden">
         {!isPreview && (
           <MDEditor
             value={value}
@@ -102,7 +100,7 @@ export function MarkdownEditor({
           </div>
         )}
       </div>
-      
+
       <div className="mt-2 text-xs text-gray-400">
         <p>💡 <strong>Markdown Tips:</strong></p>
         <ul className="list-disc list-inside ml-4 space-y-1">

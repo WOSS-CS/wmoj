@@ -66,13 +66,12 @@ export default function ContestLeaderboardOnlyPage() {
   return (
     <AuthGuard requireAuth allowAuthenticated>
       <RegularOnlyGuard>
-        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
-          <nav className="relative z-10 flex justify-between items-center p-6 backdrop-blur-sm">
+        <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
+          <nav className="relative z-10 flex justify-between items-center p-6 bg-[#0a0a0a]">
             <Logo size="md" className="cursor-pointer" />
             <div className="flex gap-4">
-              <Link href="/contests" className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-colors duration-300">All Contests</Link>
-              <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-green-400/10 backdrop-blur-sm hover:bg-green-400/20 transition-colors duration-300">{user?.user_metadata?.username || user?.email}</span>
-              <button onClick={handleSignOut} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300">Sign Out</button>
+              <Link href="/contests" className="px-6 py-2 text-white border border-green-900 rounded-lg hover:bg-green-900 hover:text-white transition-colors duration-300">All Contests</Link>
+              <span className="px-6 py-2 text-green-400 border border-green-900 rounded-lg bg-[#064e3b] hover:bg-[#065f46] transition-colors duration-300">{user?.user_metadata?.username || user?.email}</span>
             </div>
           </nav>
 
@@ -87,7 +86,7 @@ export default function ContestLeaderboardOnlyPage() {
               }
             >
               {error ? (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-8 backdrop-blur-sm">
+                <div className="bg-[#450a0a] border border-red-500/20 rounded-lg p-6 mb-8">
                   <p className="text-red-400">{error}</p>
                 </div>
               ) : (
@@ -96,7 +95,7 @@ export default function ContestLeaderboardOnlyPage() {
                     <h1 className="text-3xl font-bold text-white">{contestName} — Leaderboard</h1>
                     <p className="text-gray-400 text-sm mt-1">View-only leaderboard. Problems are not visible after your time is up.</p>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                  <div className="bg-[#171717] rounded-2xl p-6 border border-[#262626]">
                     {leaderboard.length === 0 ? (
                       <div className="text-center py-12">
                         <div className="text-6xl mb-4">🏁</div>
@@ -106,7 +105,7 @@ export default function ContestLeaderboardOnlyPage() {
                     ) : (
                       <div className="space-y-3">
                         {leaderboard.map((entry, index) => (
-                          <div key={entry.user_id} className="flex items-center justify-between bg-white/5 rounded-xl p-5 border border-white/10">
+                          <div key={entry.user_id} className="flex items-center justify-between bg-[#111111] rounded-xl p-5 border border-[#333333]">
                             <div className="flex items-center gap-4">
                               <div className="w-10 h-10 rounded-full bg-gray-700 text-white flex items-center justify-center font-bold">
                                 {index + 1}

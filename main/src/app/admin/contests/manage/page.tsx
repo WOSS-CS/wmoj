@@ -151,12 +151,12 @@ export default function ManageContestsPage() {
   return (
     <AuthGuard requireAuth allowAuthenticated>
       <AdminGuard>
-        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white relative overflow-hidden">
+        <div className="min-h-screen bg-[#0a0a0a] text-white relative overflow-hidden">
           {/* Top Navigation Bar */}
-          <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
+          <nav className="relative z-10 flex justify-between items-center p-4 bg-[#0a0a0a] border-b border-[#262626]">
             <Logo size="md" className="cursor-pointer" />
             <div className="flex items-center gap-4">
-              <span className="px-4 py-2 text-red-400 border border-red-400 rounded-lg bg-red-400/10 backdrop-blur-sm">
+              <span className="px-4 py-2 text-red-400 border border-red-900 rounded-lg bg-[#450a0a]">
                 Admin: {user?.user_metadata?.username || user?.email}
               </span>
               <button
@@ -178,7 +178,7 @@ export default function ManageContestsPage() {
                 <p className="text-gray-300 text-lg">Edit, activate/deactivate, or delete contests.</p>
               </div>
               {actionMessage && (
-                <div className="mb-4 p-3 rounded bg-white/10 border border-white/20 text-sm flex justify-between items-center">
+                <div className="mb-4 p-3 rounded bg-[#171717] border border-[#333333] text-sm flex justify-between items-center">
                   <span>{actionMessage}</span>
                   <button onClick={() => setActionMessage(null)} className="text-gray-400 hover:text-white">×</button>
                 </div>
@@ -191,12 +191,12 @@ export default function ManageContestsPage() {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Search by name..."
-                    className="flex-1 px-4 py-2 rounded-lg bg-black/30 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-400"
+                    className="flex-1 px-4 py-2 rounded-lg bg-[#111111] border border-[#262626] text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-400"
                   />
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter==='all'?'text-green-400 border-green-400/40 bg-green-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>All</button>
-                    <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter==='active'?'text-green-400 border-green-400/40 bg-green-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>Active</button>
-                    <button onClick={() => setFilter('inactive')} className={`px-3 py-2 rounded-lg border ${filter==='inactive'?'text-green-400 border-green-400/40 bg-green-400/10':'text-gray-300 border-white/10 hover:bg-white/10'}`}>Inactive</button>
+                    <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter === 'all' ? 'text-green-400 border-green-900 bg-[#064e3b]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>All</button>
+                    <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter === 'active' ? 'text-green-400 border-green-900 bg-[#064e3b]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>Active</button>
+                    <button onClick={() => setFilter('inactive')} className={`px-3 py-2 rounded-lg border ${filter === 'inactive' ? 'text-green-400 border-green-900 bg-[#064e3b]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>Inactive</button>
                   </div>
                 </div>
 
@@ -232,7 +232,7 @@ export default function ManageContestsPage() {
                           sortable: true,
                           sortAccessor: (r) => (r.is_active ? 1 : 0),
                           render: (r) => (
-                            <span className={`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-green-400/10 text-green-400 border-green-400/30' : 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30'}`}>
+                            <span className={`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-[#064e3b] text-green-400 border-green-900' : 'bg-[#422006] text-yellow-400 border-yellow-900'}`}>
                               {r.is_active ? 'Active' : 'Inactive'}
                             </span>
                           ),
@@ -272,10 +272,10 @@ export default function ManageContestsPage() {
               </div>
 
               {editing && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-                  <div className="w-full max-w-5xl bg-gray-900/95 border border-white/10 rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
+                  <div className="w-full max-w-5xl bg-[#111111] border border-[#333333] rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-gradient-to-r from-gray-900 to-gray-800 rounded-t-xl">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-[#333333] bg-[#1a1a1a] rounded-t-xl">
                       <div>
                         <h2 className="text-xl font-bold tracking-wide">Edit Contest</h2>
                         <p className="text-xs text-gray-400 mt-0.5">Modify contest settings & description</p>
@@ -292,7 +292,7 @@ export default function ManageContestsPage() {
                             <div className="md:col-span-2 space-y-2">
                               <label className="block text-sm font-medium">Name</label>
                               <input
-                                className="w-full px-3 py-2 rounded-md bg-black/40 border border-white/10 focus:outline-none focus:ring focus:ring-green-600/40"
+                                className="w-full px-3 py-2 rounded-md bg-[#0a0a0a] border border-[#333333] focus:outline-none focus:ring focus:ring-green-900"
                                 value={editing.name}
                                 placeholder="Enter contest title"
                                 onChange={e => setEditing(s => s ? { ...s, name: e.target.value } : s)}
@@ -322,7 +322,7 @@ export default function ManageContestsPage() {
                               <label className="block text-sm font-medium">Length (minutes)</label>
                               <input
                                 type="number"
-                                className="w-full px-3 py-2 rounded-md bg-black/40 border border-white/10 focus:outline-none focus:ring focus:ring-green-600/40"
+                                className="w-full px-3 py-2 rounded-md bg-[#0a0a0a] border border-[#333333] focus:outline-none focus:ring focus:ring-green-900"
                                 value={editing.length ?? ''}
                                 onChange={e => setEditing(s => s ? { ...s, length: e.target.value ? Number(e.target.value) : null } : s)}
                               />
@@ -344,8 +344,8 @@ export default function ManageContestsPage() {
                       )}
                     </div>
                     {/* Footer */}
-                    <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3 bg-gray-900/80 rounded-b-xl">
-                      <button onClick={closeEdit} className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20 transition text-sm font-medium">Close</button>
+                    <div className="px-6 py-4 border-t border-[#333333] flex justify-end gap-3 bg-[#1a1a1a] rounded-b-xl">
+                      <button onClick={closeEdit} className="px-4 py-2 rounded-md bg-[#262626] hover:bg-[#333333] transition text-sm font-medium">Close</button>
                       <button
                         onClick={saveEdit}
                         disabled={!editing?.name.trim()}

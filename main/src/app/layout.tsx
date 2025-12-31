@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google"; // [MODIFY] Replaced Geist
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CountdownProvider } from "@/contexts/CountdownContext";
 import { CountdownOverlay } from "@/components/CountdownOverlay";
 import { ActiveContestRedirect } from "@/components/ActiveContestRedirect";
+import { AppShell } from "@/components/layout/AppShell";
+import { ToastContainer } from "@/components/ui/Toast";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-body",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-heading",
   subsets: ["latin"],
 });
 
@@ -29,15 +31,16 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased smooth-transition`}
+        className={`${inter.variable} ${jetbrainsMono.variable} antialiased smooth-transition`}
       >
         <AuthProvider>
           <CountdownProvider>
-            <div className="animate-fade-in-up">
+            <AppShell>
               {children}
-            </div>
+            </AppShell>
             <CountdownOverlay />
             <ActiveContestRedirect />
+            <ToastContainer />
           </CountdownProvider>
         </AuthProvider>
       </body>

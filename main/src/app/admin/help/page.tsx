@@ -85,18 +85,18 @@ int main() {
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
       <AdminGuard>
-        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
+        <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none">
             <div
-              className="absolute w-96 h-96 bg-green-400/5 rounded-full blur-3xl transition-all duration-500 ease-out"
+              className="absolute w-96 h-96 bg-[#1a1a1a] rounded-full transition-all duration-500 ease-out"
               style={{ left: mousePosition.x - 200, top: mousePosition.y - 200 }}
             />
           </div>
 
-          <nav className="relative z-10 flex justify-between items-center p-4 backdrop-blur-sm border-b border-white/10">
+          <nav className="relative z-10 flex justify-between items-center p-4 bg-[#0a0a0a] border-b border-[#262626]">
             <Logo size="md" className="cursor-pointer" />
             <div className="flex items-center gap-4">
-              <span className="px-4 py-2 text-red-400 border border-red-400 rounded-lg bg-red-400/10 backdrop-blur-sm">
+              <span className="px-4 py-2 text-red-400 border border-red-900 rounded-lg bg-[#450a0a]">
                 Admin: {user?.user_metadata?.username || user?.email}
               </span>
               <button
@@ -139,20 +139,20 @@ int main() {
                   <h2 className="text-2xl font-semibold text-white">Creating Problems</h2>
                   <p>- Navigate to <Link href="/admin/problems/create" className="text-blue-400 underline">Admin → Create Problem</Link>.</p>
                   <p>- Fill in name, description (Markdown), and optionally choose a contest.</p>
-                  <p>- Test cases are generated via a C++ generator (see below). After successful generation, click <span className="px-2 py-0.5 rounded bg-blue-600/40">Create Problem</span> to save.</p>
+                  <p>- Test cases are generated via a C++ generator (see below). After successful generation, click <span className="px-2 py-0.5 rounded bg-blue-900">Create Problem</span> to save.</p>
                 </section>
 
                 <section id="generators" className="space-y-3">
                   <h2 className="text-2xl font-semibold text-white">Test Case Generators (C++)</h2>
-                  <p>- Upload a single <code className="px-1 py-0.5 bg-black/40 rounded">.cpp</code> file on the Create Problem page and click <span className="px-2 py-0.5 rounded bg-green-600/40">Generate Test Cases</span>.</p>
+                  <p>- Upload a single <code className="px-1 py-0.5 bg-[#262626] rounded">.cpp</code> file on the Create Problem page and click <span className="px-2 py-0.5 rounded bg-green-900">Generate Test Cases</span>.</p>
                   <p>- The generator is compiled and executed by the judge. It must:</p>
                   <ul className="list-disc list-inside ml-4 space-y-1">
-                    <li>Write the input JSON array to <code className="px-1 py-0.5 bg-black/40 rounded">stdout</code>.</li>
-                    <li>Write the output JSON array to <code className="px-1 py-0.5 bg-black/40 rounded">stderr</code>.</li>
+                    <li>Write the input JSON array to <code className="px-1 py-0.5 bg-[#262626] rounded">stdout</code>.</li>
+                    <li>Write the output JSON array to <code className="px-1 py-0.5 bg-[#262626] rounded">stderr</code>.</li>
                     <li>Both arrays must be the same length and contain strings.</li>
                   </ul>
                   <p className="text-gray-300">Example outputs for an addition problem:</p>
-                  <pre className="bg-black/50 text-gray-100 p-4 rounded-lg overflow-x-auto"><code>{`stdout: ["6 7", "10 5", "3 3"]
+                  <pre className="bg-[#111111] border border-[#262626] text-gray-100 p-4 rounded-lg overflow-x-auto"><code>{`stdout: ["6 7", "10 5", "3 3"]
 stderr: ["13", "15", "6"]`}</code></pre>
                   <p>- On failure (compile/runtime/JSON), errors appear on the page so you can fix and reupload.</p>
                   <p>- See the detailed guide below for a complete template.</p>
@@ -162,8 +162,8 @@ stderr: ["13", "15", "6"]`}</code></pre>
                   <h2 className="text-2xl font-semibold text-white">Detailed Generator Guide</h2>
                   <p>Every generator must emit <strong>verbatim JSON arrays</strong>:</p>
                   <ul className="list-disc list-inside ml-4 space-y-1">
-                    <li><code className="px-1 py-0.5 bg-black/40 rounded">stdout</code> → JSON array of input strings (one entry per test case).</li>
-                    <li><code className="px-1 py-0.5 bg-black/40 rounded">stderr</code> → JSON array of output strings in the same order.</li>
+                    <li><code className="px-1 py-0.5 bg-[#262626] rounded">stdout</code> → JSON array of input strings (one entry per test case).</li>
+                    <li><code className="px-1 py-0.5 bg-[#262626] rounded">stderr</code> → JSON array of output strings in the same order.</li>
                     <li>The arrays must be the same length, contain only strings, and be valid JSON (quoted, escaped, comma separated, enclosed in <code>[]</code>).</li>
                   </ul>
                   <p className="text-gray-300">Recommended structure:</p>
@@ -175,7 +175,7 @@ stderr: ["13", "15", "6"]`}</code></pre>
                     <li>Use <code>std::cout</code> for the input array and <code>std::cerr</code> for the output array, then flush/terminate with <code>std::endl</code>.</li>
                   </ol>
                   <p className="text-gray-300">Example generator:</p>
-                  <pre className="bg-black/50 text-gray-100 p-4 rounded-lg overflow-x-auto"><code>{generatorExample}</code></pre>
+                  <pre className="bg-[#111111] border border-[#262626] text-gray-100 p-4 rounded-lg overflow-x-auto"><code>{generatorExample}</code></pre>
                   <p>Key takeaways:</p>
                   <ul className="list-disc list-inside ml-4 space-y-1">
                     <li><code>json_escape</code> ensures control characters or quotes within strings do not break the JSON.</li>
