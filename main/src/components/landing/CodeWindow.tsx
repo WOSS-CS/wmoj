@@ -12,43 +12,25 @@ const CodeWindow = () => {
     const [showBadge, setShowBadge] = useState(false);
 
     useEffect(() => {
-        const cycle = async () => {
-            // Reset
-            setShowBadge(false);
-            setLines([
-                { text: 'function solve(input) {', color: '#ff7b72' },
-                { text: '  // Analyzing...', color: '#8b949e' },
-                { text: '  ', color: '#e5e5e5' },
-                { text: '}', color: '#e5e5e5' }
-            ]);
+        let isMounted = true;
 
-            // Simulate typing solution
-            await new Promise(r => setTimeout(r, 1000));
-            setLines(prev => {
-                const newLines = [...prev];
-                newLines[2] = { text: '  return optimizedSolution;', color: '#79c0ff' }; // Blue for var
-                return newLines;
-            });
-
-            // Show success
-            await new Promise(r => setTimeout(r, 1500));
-            setShowBadge(true);
-
-            // Loop
-            await new Promise(r => setTimeout(r, 2000));
-            cycle();
+        const typeLine = async (fullText: string) => {
+            let currentText = "  "; // Start with indentation
+            for (let i = 2; i < fullText.length; i++) {
+                if (!isMounted) break;
+                currentText += fullText[i];
+                setLines(prev => {
+                    const newLines = [...prev];
+                    newLines[2] = { text: currentText, color: '#e5e5e5' };
+                    return newLines;
+                });
+                await new Promise(r => setTimeout(r, 50 + Math.random() * 50));
+            }
         };
 
-        // Initial delay
-        const timer = setTimeout(() => {
-            cycle(); // Start the cycle but we need to manage the recursion correctly or use interval. 
-            // Re-implementing with a simple interval wrapper to avoid complexities of async recursion in useEffect cleanup
-        }, 100);
-
-        // Let's actually use a continuous loop controlled by a flag or just simplistic recursion
-        let isMounted = true;
         const runAnimation = async () => {
             while (isMounted) {
+                // Reset state
                 setShowBadge(false);
                 setLines([
                     { text: 'function solve(input) {', color: '#ff7b72' },
@@ -56,21 +38,33 @@ const CodeWindow = () => {
                     { text: '  ', color: '#e5e5e5' },
                     { text: '}', color: '#e5e5e5' }
                 ]);
+
+                // Wait a bit before starting
                 await new Promise(r => setTimeout(r, 1000));
                 if (!isMounted) break;
 
-                setLines(current => {
-                    const newLines = [...current];
-                    newLines[2] = { text: '  return optimizedSolution;', color: '#79c0ff' };
+                // Type the solution
+                await typeLine("  return optimizedSolution;");
+
+                // Highlight syntax after typing is done
+                if (!isMounted) break;
+                setLines(prev => {
+                    const newLines = [...prev];
+                    newLines[2] = { text: '  return optimizedSolution;', color: '#79c0ff' }; // Colorize
                     return newLines;
                 });
-                await new Promise(r => setTimeout(r, 800));
+
+                // Wait before showing badge
+                await new Promise(r => setTimeout(r, 500));
                 if (!isMounted) break;
 
+                // Show Success
                 setShowBadge(true);
-                await new Promise(r => setTimeout(r, 2200));
+
+                // Hold the success state
+                await new Promise(r => setTimeout(r, 4000));
             }
-        }
+        };
 
         runAnimation();
 
