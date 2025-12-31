@@ -6,13 +6,13 @@ import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
 import { Logo } from '@/components/Logo';
 import { useEffect, useState } from 'react';
+import { SocialProofTicker } from '@/components/landing/SocialProofTicker';
+import { FeatureHighlights } from '@/components/landing/FeatureHighlights';
 
 export default function Home() {
   const { user, signOut, userDashboardPath } = useAuth();
   const router = useRouter();
-  // Mouse position state removed
   const [isLoaded, setIsLoaded] = useState(false);
-  // Removed unused rotating feature indicator to satisfy linter
 
   useEffect(() => {
     setIsLoaded(true);
@@ -25,51 +25,38 @@ export default function Home() {
 
   return (
     <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo={userDashboardPath || "/dashboard"}>
-      <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
-        {/* Animated Background Removed/Simplified for Opacity */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Solid shapes instead of glow */}
-          {/* Solid shapes instead of glow */}
-          {/* Mouse following div removed */}
+      <div className="min-h-screen bg-[#0F1115] relative overflow-hidden font-sans text-gray-100 selection:bg-green-500/30">
 
-          {/* Floating particles */}
-          <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '0s' }}></div>
-          <div className="absolute top-40 right-32 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute bottom-32 left-1/3 w-1.5 h-1.5 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute top-1/2 right-20 w-1 h-1 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '3s' }}></div>
+        {/* Background Layer: Ambient Light & Geometric Overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{
+            background: `radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.15) 0%, transparent 60%), #0F1115`
+          }}
+        />
+        <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage: `linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)`,
+            backgroundSize: '40px 40px'
+          }}
+        />
 
-          {/* Circuit Pattern with animations */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-20 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <div className="absolute top-20 left-20 w-32 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse"></div>
-            <div className="absolute top-20 left-52 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-            <div className="absolute top-20 left-52 w-0.5 h-16 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-            <div className="absolute top-36 left-52 w-24 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1s' }}></div>
-            <div className="absolute top-36 left-76 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+        {/* Floating particles (Decorative) */}
+        <div className="absolute top-20 left-20 w-1 h-1 bg-green-400 rounded-full animate-pulse z-0" />
+        <div className="absolute top-40 right-32 w-1.5 h-1.5 bg-green-500/50 rounded-full animate-ping z-0" style={{ animationDuration: '3s' }} />
 
-            <div className="absolute top-40 right-20 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-            <div className="absolute top-40 right-20 w-0.5 h-20 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-            <div className="absolute top-60 right-20 w-40 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute top-60 right-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
-
-            <div className="absolute bottom-32 left-32 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '2.5s' }}></div>
-            <div className="absolute bottom-32 left-32 w-0.5 h-24 bg-gradient-to-b from-green-400 to-transparent animate-pulse" style={{ animationDelay: '2.5s' }}></div>
-            <div className="absolute bottom-8 left-32 w-28 h-0.5 bg-gradient-to-r from-green-400 to-transparent animate-pulse" style={{ animationDelay: '3s' }}></div>
-            <div className="absolute bottom-8 left-60 w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '3s' }}></div>
-          </div>
-        </div>
-        {/* Enhanced Navigation */}
-        <nav className="relative z-10 flex justify-between items-center p-6 bg-[#0a0a0a]">
+        {/* Navbar */}
+        <nav className="relative z-50 flex justify-between items-center p-6 max-w-7xl mx-auto">
           <Logo size="md" className="cursor-pointer" priority />
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
             {user ? (
               <>
-                <span className="px-6 py-2 text-green-400 border border-green-400 rounded-lg bg-[#064e3b] hover:bg-[#065f46] transition-colors duration-300">
-                  Welcome, {user.user_metadata?.username || user.email}
+                <span className="hidden md:inline-block px-4 py-1.5 text-sm text-green-300 border border-green-800/50 rounded-full bg-[#064e3b]/30">
+                  {user.user_metadata?.username || user.email}
                 </span>
                 <button
                   onClick={handleSignOut}
-                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300"
+                  className="px-5 py-2 text-sm bg-red-500/10 text-red-400 border border-red-900/50 rounded-lg hover:bg-red-500/20 transition-all duration-300"
                 >
                   Sign Out
                 </button>
@@ -78,13 +65,13 @@ export default function Home() {
               <>
                 <Link
                   href="/auth/login"
-                  className="px-6 py-2 text-white border border-green-400 rounded-lg hover:bg-green-400 hover:text-black transition-colors duration-300"
+                  className="px-5 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors duration-300"
                 >
                   Log In
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors duration-300"
+                  className="px-5 py-2 text-sm font-semibold bg-gradient-to-r from-green-600 to-emerald-500 text-white rounded-lg shadow-lg shadow-green-900/20 hover:shadow-green-900/40 hover:-translate-y-0.5 transition-all duration-300"
                 >
                   Sign Up
                 </Link>
@@ -93,119 +80,96 @@ export default function Home() {
           </div>
         </nav>
 
-        {/* Enhanced Hero Section */}
-        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-[80vh] px-6">
-          <div className={`lg:w-1/2 text-center lg:text-left mb-12 lg:mb-0 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <div className="mb-8 flex justify-center lg:justify-start">
-              <span className="px-4 py-1 rounded-full border border-green-900 bg-[#171717] text-green-300 text-xs font-semibold tracking-[0.3em] uppercase">Competitive Programming</span>
-            </div>
-            <h1 className="text-6xl lg:text-7xl font-bold text-white mb-6 relative">
-              Master
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400 relative">
+        {/* Section A: Hero (Above the fold) */}
+        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-[90vh] px-6 max-w-7xl mx-auto pt-10 pb-20">
+
+          {/* Left Side: Headline */}
+          <div className={`lg:w-3/5 text-center lg:text-left mb-16 lg:mb-0 transition-all duration-1000 ease-out ${isLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
+            <h1 className="font-mono text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight">
+              <span className="text-white block mb-2">Master</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300 block">
                 Competitive
-                <div className="absolute -inset-1 bg-[#064e3b] rounded-lg -z-10" />
               </span>
-              <span className="block text-white relative">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300 block">
                 Programming
-                <div className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-pulse" />
               </span>
             </h1>
-            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-              {user
-                ? `Welcome back to WMOJ, ${user.user_metadata?.username || 'competitive programmer'}! Ready to solve some problems?`
-                : 'Join WMOJ, the official White Oaks Secondary School Competitive Programming Platform.'
-              }
+            <p className="text-xl text-gray-400 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+              Join the official White Oaks Secondary School platform. Solve problems, climb the leaderboard, and prepare for the next contest.
             </p>
-            {/* Buttons removed as per instructions */}
           </div>
 
-          {/* Enhanced Auth Form / User Dashboard */}
-          <div className={`lg:w-1/2 max-w-md w-full transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.2s' }}>
-            <div className="bg-[#171717] rounded-2xl p-8 border border-[#262626] hover:bg-[#262626] transition-colors duration-300">
+          {/* Right Side: CTA Card */}
+          <div className={`lg:w-2/5 w-full max-w-md transition-all duration-1000 ease-out delay-200 ${isLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
+            <div className="glass-panel p-8 rounded-3xl border border-white/5 shadow-2xl shadow-green-900/10 backdrop-blur-xl relative overflow-hidden group">
+              {/* Subtle inner glow */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl -z-10 group-hover:bg-green-500/20 transition-all duration-500" />
+
               {user ? (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full mx-auto mb-4 flex items-center justify-center animate-pulse transition-colors duration-300">
-                      <span className="text-2xl font-bold text-black">
-                        {(user.user_metadata?.username || user.email || 'U').charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-white mb-2 animate-fade-in">
-                      Welcome back!
-                    </h3>
-                    <p className="text-gray-300 text-sm">
-                      {user.user_metadata?.username || user.email}
-                    </p>
+                <div className="text-center space-y-6">
+                  <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-green-500/20 mb-4">
+                    <span className="text-3xl font-bold text-white font-mono">
+                      {(user.user_metadata?.username || 'U').charAt(0).toUpperCase()}
+                    </span>
                   </div>
-
-                  <div className="space-y-4">
-                    <Link
-                      href="/dashboard"
-                      className="block w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 text-center relative overflow-hidden group"
-                    >
-                      <span className="relative z-10">View Dashboard</span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    </Link>
-
-                    <button className="block w-full py-3 border border-green-400 text-green-400 rounded-lg font-semibold hover:bg-green-400 hover:text-black transition-colors duration-300 text-center">
-                      Browse Problems
-                    </button>
-                  </div>
-
-                  <div className="text-center">
-                    <p className="text-gray-400 text-xs">
-                      Account created: {new Date(user.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
+                  <h3 className="text-2xl font-bold text-white">Welcome Back!</h3>
+                  <Link
+                    href="/dashboard"
+                    className="block w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:-translate-y-0.5 transition-all duration-300"
+                  >
+                    Go to Dashboard
+                  </Link>
                 </div>
               ) : (
-                <>
-                  <div className="space-y-6">
-                    <div className="text-center">
-                      <p className="text-gray-300 mb-4">
-                        Ready to start your competitive programming journey?
-                      </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <Link
-                        href="/auth/signup"
-                        className="block w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors duration-300 text-center relative overflow-hidden group"
-                      >
-                        <span className="relative z-10">Create Account</span>
-                        <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </Link>
-
-                      <Link
-                        href="/auth/login"
-                        className="block w-full py-3 border border-green-400 text-green-400 rounded-lg font-semibold hover:bg-green-400 hover:text-black transition-colors duration-300 text-center"
-                      >
-                        Sign In
-                      </Link>
-                    </div>
+                <div className="space-y-8">
+                  <h2 className="text-3xl font-bold text-white leading-tight">
+                    Ready to start your journey?
+                  </h2>
+                  <div className="space-y-4">
+                    <Link
+                      href="/auth/signup"
+                      className="block w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold text-center shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] hover:-translate-y-0.5 transition-all duration-300"
+                    >
+                      Create Account
+                    </Link>
+                    <Link
+                      href="/auth/login"
+                      className="block w-full py-4 bg-transparent border border-white/10 text-white rounded-xl font-semibold text-center hover:bg-[#21262D] transition-all duration-300"
+                    >
+                      Sign In
+                    </Link>
                   </div>
-
-                  <div className="mt-6 text-center">
-                    <p className="text-gray-400 text-sm">
-                      Join thousands of developers competing and learning together
-                    </p>
-                  </div>
-                </>
+                  <p className="text-center text-xs text-gray-500 uppercase tracking-widest font-mono">
+                    Official WOSS Platform
+                  </p>
+                </div>
               )}
             </div>
           </div>
         </div>
 
+        {/* Section B: Social Proof Ticker */}
+        <section className="relative z-20">
+          <SocialProofTicker />
+        </section>
 
-        {/* Enhanced Footer */}
-        <footer className="relative z-10 py-8 px-6 border-t border-[#262626] bg-[#0a0a0a]">
-          <div className="max-w-6xl mx-auto text-center space-y-4">
-            <span className="text-sm font-semibold tracking-[0.3em] uppercase text-green-300">WMOJ</span>
-            <p className="text-gray-400">
-              © 2025 WMOJ. All rights reserved.
+        {/* Section C: Feature Highlights */}
+        <div className={`transition-all duration-1000 ease-out delay-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
+          <FeatureHighlights />
+        </div>
+
+        {/* Footer */}
+        <footer className="relative z-10 py-12 px-6 border-t border-white/5 bg-[#0a0a0a]">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-gray-500">
+            <div className="mb-4 md:mb-0">
+              <span className="text-xs font-mono tracking-[0.2em] text-green-500/80 uppercase">White Oaks Secondary School</span>
+            </div>
+            <p className="text-sm">
+              © {new Date().getFullYear()} WMOJ. All rights reserved.
             </p>
           </div>
         </footer>
+
       </div>
     </AuthGuard>
   );
