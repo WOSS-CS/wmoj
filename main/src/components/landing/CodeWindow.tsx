@@ -1,9 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const CodeWindow = () => {
+    // State for rendering. We drive this from the ref.
     const [lines, setLines] = useState<{ text: string; color: string }[]>([]);
+
+    // Cursor position state
+    const [cursorLine, setCursorLine] = useState(0);
+
     const [badge, setBadge] = useState<{ text: string; color: 'green' | 'red'; visible: boolean }>({
         text: '',
         color: 'green',
@@ -13,23 +18,41 @@ const CodeWindow = () => {
     useEffect(() => {
         let isMounted = true;
 
+        // Use a ref to keep track of the lines state synchronously for the animation logic
+        // preventing stale closure issues relative to the 'lines' state.
+        const linesRef = { current: [] as { text: string; color: string }[] };
+
+        // Track acttive line internally for the loop
+        let activeLineIndex = 0;
+
+        const syncState = () => {
+            if (isMounted) {
+                setLines([...linesRef.current]);
+                setCursorLine(activeLineIndex);
+            }
+        };
+
         const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 
         // Helper to type text into a specific line index
         const typeLine = async (lineIndex: number, text: string, color: string, speed = 50) => {
+            activeLineIndex = lineIndex;
             let currentText = "";
+
+            // Ensure line exists in ref
+            while (linesRef.current.length <= lineIndex) {
+                linesRef.current.push({ text: '', color: '#e5e5e5' });
+            }
+
+            // Typing loop
             for (let i = 0; i < text.length; i++) {
                 if (!isMounted) break;
                 currentText += text[i];
-                setLines(prev => {
-                    const newLines = [...prev];
-                    // Ensure line exists
-                    while (newLines.length <= lineIndex) {
-                        newLines.push({ text: '', color: '#e5e5e5' });
-                    }
-                    newLines[lineIndex] = { text: currentText, color };
-                    return newLines;
-                });
+
+                // Update specific line
+                linesRef.current[lineIndex] = { text: currentText, color };
+                syncState();
+
                 await wait(speed + Math.random() * 30);
             }
         };
@@ -37,41 +60,30 @@ const CodeWindow = () => {
         // Helper to backspace a line
         const backspaceLine = async (lineIndex: number) => {
             if (!isMounted) return;
-            // Get current text length to know how many times to backspace
-            let currentLength = 0;
-            setLines(prev => {
-                if (prev[lineIndex]) currentLength = prev[lineIndex].text.length;
-                return prev;
-            });
+            activeLineIndex = lineIndex;
+            syncState(); // Ensure cursor moves to this line before deleting
 
-            for (let i = 0; i < currentLength; i++) {
+            // Get current text from ref
+            if (!linesRef.current[lineIndex]) return;
+            let currentText = linesRef.current[lineIndex].text;
+
+            while (currentText.length > 0) {
                 if (!isMounted) break;
-                setLines(prev => {
-                    const newLines = [...prev];
-                    if (newLines[lineIndex]) {
-                        newLines[lineIndex].text = newLines[lineIndex].text.slice(0, -1);
-                    }
-                    return newLines;
-                });
+                currentText = currentText.slice(0, -1);
+
+                linesRef.current[lineIndex].text = currentText;
+                syncState();
+
                 await wait(30);
             }
-            // Remove the line entirely if empty to clean up
-            setLines(prev => {
-                const newLines = [...prev];
-                if (newLines[lineIndex] && newLines[lineIndex].text === '') {
-                    // We keep the empty line object or remove it?
-                    // Keeping it prevents array shift issues if we rely on index,
-                    // but for "clearing" usually we want it gone.
-                    // For editing, we usually just clear the text.
-                }
-                return newLines;
-            });
         };
 
         const runAnimation = async () => {
             while (isMounted) {
                 // --- SETUP ---
-                setLines([]);
+                linesRef.current = [];
+                activeLineIndex = 0;
+                syncState();
                 setBadge({ text: '', color: 'green', visible: false });
                 await wait(1000);
 
@@ -81,7 +93,7 @@ const CodeWindow = () => {
                 await wait(200);
 
                 // Line 1:   if (n <= 1) return n;
-                await typeLine(1, '  if (n <= 1) return n;', '#e5e5e5'); // White/Default
+                await typeLine(1, '  if (n <= 1) return n;', '#e5e5e5');
                 await wait(200);
 
                 // Line 2:   return solve(n-1) + solve(n-2);
@@ -95,41 +107,41 @@ const CodeWindow = () => {
 
                 // --- PHASE 2: TLE ---
                 setBadge({ text: 'Time Limit Exceeded', color: 'red', visible: true });
-                await wait(2500); // Let user see the failure
+                await wait(2500);
                 setBadge(prev => ({ ...prev, visible: false }));
                 await wait(500);
 
                 // --- PHASE 3: Refactor (Memoization) ---
-                // Delete Line 3 '}'
-                await backspaceLine(3);
-                // Delete Line 2 'return ...'
-                await backspaceLine(2);
+                await backspaceLine(3); // Delete }
+                await backspaceLine(2); // Delete return ...
 
-                // Type new Line 2:   if (memo[n]) return memo[n];
-                // Using a slightly different color for variables if we want, but keeping simple for now
                 await typeLine(2, '  if (memo[n]) return memo[n];', '#e5e5e5');
                 await wait(200);
 
-                // Type new Line 3:   return memo[n] = solve(n-1) + solve(n-2);
                 await typeLine(3, '  return memo[n] = solve(n-1) + solve(n-2);', '#e5e5e5');
                 await wait(200);
 
-                // Type Line 4: }
                 await typeLine(4, '}', '#e5e5e5');
                 await wait(800);
 
                 // --- PHASE 4: Success ---
                 setBadge({ text: 'Passed: 12ms', color: 'green', visible: true });
-                await wait(4000); // Hold success
+                await wait(4000);
                 setBadge(prev => ({ ...prev, visible: false }));
                 await wait(500);
 
                 // --- PHASE 5: Clear ---
-                // Backspace all lines rapidly
-                for (let i = 4; i >= 0; i--) {
-                    await backspaceLine(i);
-                    await wait(100);
-                }
+                // Backspace all lines explicitly from bottom up
+                // We know we have lines 0, 1, 2, 3, 4
+                await backspaceLine(4); // }
+                await wait(50);
+                await backspaceLine(3); // memo return
+                await wait(50);
+                await backspaceLine(2); // memo check
+                await wait(50);
+                await backspaceLine(1); // base case
+                await wait(50);
+                await backspaceLine(0); // function
 
                 await wait(1000);
             }
@@ -160,20 +172,20 @@ const CodeWindow = () => {
                             <div key={i} className="flex min-h-[1.5em]">
                                 {/* Line Number */}
                                 <span className="w-8 text-gray-600 select-none text-right mr-4">{i + 1}</span>
-                                <span style={{ color: line.color }} className="transition-colors duration-300 whitespace-pre">
+                                <span style={{ color: line.color }} className="transition-colors duration-300 whitespace-pre flex items-center">
                                     {line.text}
-                                    {/* Blinking Cursor on the active typing line */}
-                                    {i === lines.length - 1 && !badge.visible && (
-                                        <span className="animate-pulse inline-block w-2 H-4 bg-brand-primary ml-1 align-middle"></span>
+                                    {/* Cursor Logic: Show if it's the active line, OR if it's the very first line and empty (start state) */}
+                                    {(!badge.visible) && (i === cursorLine || (lines.length === 0 && i === 0)) && (
+                                        <span className="animate-pulse inline-block w-2 h-4 bg-brand-primary ml-1"></span>
                                     )}
                                 </span>
                             </div>
                         ))}
-                        {/* Empty cursor if no lines */}
+                        {/* Empty State Cursor (if lines is empty) */}
                         {lines.length === 0 && (
                             <div className="flex">
                                 <span className="w-8 text-gray-600 select-none text-right mr-4">1</span>
-                                <span className="animate-pulse inline-block w-2 h-4 bg-brand-primary ml-1 align-middle"></span>
+                                <span className="animate-pulse inline-block w-2 h-4 bg-brand-primary ml-1"></span>
                             </div>
                         )}
                     </div>
