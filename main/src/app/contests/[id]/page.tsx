@@ -259,7 +259,7 @@ export default function ContestPage() {
                   <div className="glass-panel p-8 mb-8 animate-fade-in-up">
                     <div className="flex items-center justify-between mb-6">
                       <h2 className="text-xl font-heading text-white flex items-center gap-3">
-                        <span className="text-yellow-400">🏆</span> Live Leaderboard
+                        Live Leaderboard
                       </h2>
                       {leaderboardLoading && (
                         <div className="flex items-center gap-2 text-gray-400">
@@ -271,7 +271,6 @@ export default function ContestPage() {
 
                     {leaderboard.length === 0 ? (
                       <div className="text-center py-12 bg-black/20 rounded-xl">
-                        <div className="text-4xl mb-4 opacity-50">⚡️</div>
                         <h3 className="text-lg font-medium text-white mb-2">No Submissions Yet</h3>
                         <p className="text-gray-500 text-sm">Be the first to solve a problem!</p>
                       </div>
@@ -317,14 +316,12 @@ export default function ContestPage() {
                 {/* Enhanced Problems Section */}
                 <div className="mb-6">
                   <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3 font-heading">
-                    <span className="text-brand-primary">📝</span>
                     Contest Problems
                   </h2>
                 </div>
 
                 {problems.length === 0 ? (
                   <div className="text-center py-12 glass-panel">
-                    <div className="text-6xl mb-4 animate-bounce">🤔</div>
                     <h3 className="text-xl font-semibold text-white mb-2">No Problems Yet</h3>
                     <p className="text-gray-400">Problems will appear here when they&apos;re added to the contest.</p>
                   </div>

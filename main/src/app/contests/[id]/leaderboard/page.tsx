@@ -104,13 +104,12 @@ export default function ContestLeaderboardOnlyPage() {
                   <div className="glass-panel p-8">
                     <div className="flex items-center justify-between mb-6">
                       <h2 className="text-xl font-heading text-white flex items-center gap-2">
-                        <span className="text-yellow-400">🏆</span> Final Standings
+                        Final Standings
                       </h2>
                     </div>
 
                     {leaderboard.length === 0 ? (
                       <div className="text-center py-12 border-2 border-dashed border-white/5 rounded-xl">
-                        <div className="text-6xl mb-4 opacity-50">🏁</div>
                         <h3 className="text-xl font-semibold text-white mb-2">No Submissions</h3>
                         <p className="text-gray-500">The leaderboard is empty.</p>
                       </div>

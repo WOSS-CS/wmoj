@@ -146,10 +146,10 @@ export default function ProblemsPage() {
             <div className="space-y-4 glass-panel p-6">
               {problems.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-4 animate-bounce">📝</div>
+
                   <h3 className="text-2xl font-semibold text-white mb-2">No Problems Available</h3>
                   <p className="text-gray-300">
-                    There are no standalone problems available at the moment.
+                    Exciting problems are on the way!
                   </p>
                 </div>
               ) : (
@@ -165,7 +165,6 @@ export default function ProblemsPage() {
 
                   {filteredProblems.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="text-6xl mb-4">🔍</div>
                       <h3 className="text-2xl font-semibold text-white mb-2">No Problems Found</h3>
                       <p className="text-gray-300">
                         No problems match your search criteria. Try a different search term.
