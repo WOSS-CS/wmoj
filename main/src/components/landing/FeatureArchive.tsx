@@ -17,7 +17,7 @@ const FeatureArchive = () => {
     const scrollProblems = problems;
 
     return (
-        <section className="relative py-32 px-6 overflow-hidden">
+        <section className="relative py-24 px-6 overflow-hidden">
             <div className="max-w-7xl mx-auto flex flex-col-reverse lg:flex-row items-center gap-16">
 
                 {/* Visual Side (Left 60%) */}

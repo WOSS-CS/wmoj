@@ -30,7 +30,10 @@ const FeatureVerdict = () => {
     }, []);
 
     return (
-        <section className="relative py-32 px-6">
+        <section className="relative py-24 px-6">
+            {/* Visual Connector Line */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-32 bg-gradient-to-b from-green-500/20 to-transparent hidden lg:block" />
+
             <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
 
                 {/* Text Side (Left 40%) */}
@@ -79,11 +82,11 @@ const FeatureVerdict = () => {
 
                             {/* Case 3 Dynamic */}
                             <div className={`flex items-center justify-between bg-[#0d1117] p-4 rounded-lg border-l-4 transition-all duration-300 ${case3Status === 'failed' ? 'border-red-500 animate-wiggle' :
-                                    case3Status === 'passed' ? 'border-green-500' : 'border-gray-700'
+                                case3Status === 'passed' ? 'border-green-500' : 'border-gray-700'
                                 }`}>
                                 <div className="flex items-center gap-3">
                                     <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${case3Status === 'failed' ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' :
-                                            case3Status === 'passed' ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-gray-600'
+                                        case3Status === 'passed' ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-gray-600'
                                         }`}></div>
                                     <span className="font-mono text-sm text-gray-300">Test Case #3</span>
                                 </div>
