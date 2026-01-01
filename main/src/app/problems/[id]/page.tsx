@@ -300,9 +300,9 @@ export default function ProblemPage() {
                     {/* Tab Navigation */}
                     <div className="flex gap-2 mb-6 border-b border-white/10 pb-4">
                       {[
-                        { id: 'description', label: 'Description', icon: '📝' },
-                        { id: 'results', label: 'Results', icon: '📊' },
-                        { id: 'stats', label: 'Stats', icon: '📈' }
+                        { id: 'description', label: 'Description', icon: '' },
+                        { id: 'stats', label: 'Stats', icon: '' },
+                        { id: 'results', label: 'Results', icon: '' },
                       ].map((tab) => (
                         <button
                           key={tab.id}
@@ -312,7 +312,6 @@ export default function ProblemPage() {
                             : 'text-gray-400 hover:text-white hover:bg-surface-2'
                             }`}
                         >
-                          <span className="mr-2">{tab.icon}</span>
                           {tab.label}
                         </button>
                       ))}
