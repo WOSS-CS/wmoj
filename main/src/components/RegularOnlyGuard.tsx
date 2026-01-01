@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { PageLoading } from '@/components/LoadingStates';
+
 interface RegularOnlyGuardProps {
   children: React.ReactNode;
 }
@@ -28,16 +30,7 @@ export function RegularOnlyGuard({ children }: RegularOnlyGuardProps) {
 
   // Loading / transition states
   if (loading || (user && !userRole) || redirecting) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center relative overflow-hidden">
-        <div className="text-center animate-fade-in-up">
-          <div className="relative mb-6">
-            <div className="w-16 h-16 border-4 border-green-400/30 border-t-green-400 rounded-full animate-spin mx-auto" />
-          </div>
-          <p className="text-gray-300 text-sm">Preparing your workspace...</p>
-        </div>
-      </div>
-    );
+    return <PageLoading message="Preparing your workspace..." />;
   }
 
   // If admin (redirecting already triggered), don't render user content
