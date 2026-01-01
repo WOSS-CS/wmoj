@@ -13,13 +13,13 @@ interface LoadingStateProps {
   className?: string;
 }
 
-export function LoadingState({ 
-  children, 
-  isLoading, 
-  skeleton, 
+export function LoadingState({
+  children,
+  isLoading,
+  skeleton,
   fallback,
   delay = 0,
-  className = '' 
+  className = ''
 }: LoadingStateProps) {
   const [showLoading, setShowLoading] = useState(false);
 
@@ -52,28 +52,39 @@ interface PageLoadingProps {
   message?: string;
 }
 
-export function PageLoading({ 
+export function PageLoading({
   className = '',
-  message = 'Loading...' 
+  message = 'Loading...'
 }: PageLoadingProps) {
   return (
-    <div className={`min-h-screen bg-black flex items-center justify-center ${className}`}>
-      <div className="text-center space-y-6">
-        <div className="relative">
-          <div className="w-20 h-20 border-4 border-green-900 border-t-green-400 rounded-full animate-spin mx-auto"></div>
-          <div className="absolute inset-0 w-20 h-20 border-4 border-transparent border-r-green-800 rounded-full animate-spin mx-auto" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-          <div className="absolute inset-2 w-16 h-16 border-2 border-green-900 border-b-green-400 rounded-full animate-spin mx-auto" style={{ animationDuration: '2s' }}></div>
-        </div>
-        <div className="space-y-2">
-          <p className="text-gray-300 text-lg font-medium animate-pulse">{message}</p>
-          <div className="flex justify-center space-x-1">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+    <div className={`fixed inset-0 z-[9999] bg-[#0a0a0a] flex flex-col items-center justify-center ${className}`}>
+      {/* Background Ambience */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-brand-primary/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-brand-secondary/5 rounded-full blur-[120px]" />
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03]" />
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center">
+        {/* Logo Animation */}
+        <div className="relative w-20 h-20 mb-8">
+          <div className="absolute inset-0 border-2 border-brand-primary/20 rounded-full animate-ping-slow" />
+          <div className="absolute inset-2 border-2 border-brand-primary/40 rounded-full animate-spin-slow" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-3xl font-bold text-white font-heading">W</span>
           </div>
         </div>
-        <div className="w-48 h-1 bg-gray-700 rounded-full mx-auto overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-green-400 to-emerald-400 rounded-full animate-shimmer"></div>
+
+        {/* Loading Text */}
+        <div className="flex flex-col items-center gap-2">
+          <h2 className="text-xl font-bold text-white font-heading tracking-wide animate-pulse">
+            {message}
+          </h2>
+          <div className="flex gap-1.5">
+            <div className="w-1.5 h-1.5 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+            <div className="w-1.5 h-1.5 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+            <div className="w-1.5 h-1.5 bg-brand-primary rounded-full animate-bounce" />
+          </div>
         </div>
       </div>
     </div>
@@ -85,9 +96,9 @@ interface CardLoadingProps {
   count?: number;
 }
 
-export function CardLoading({ 
+export function CardLoading({
   className = '',
-  count = 3 
+  count = 3
 }: CardLoadingProps) {
   return (
     <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${className}`}>
@@ -104,13 +115,13 @@ interface TableLoadingProps {
   columns?: number;
 }
 
-export function TableLoading({ 
+export function TableLoading({
   className = '',
   rows = 5,
-  columns = 4 
+  columns = 4
 }: TableLoadingProps) {
   return (
-    <SkeletonTable 
+    <SkeletonTable
       className={className}
       rows={rows}
       columns={columns}
@@ -123,12 +134,12 @@ interface ListLoadingProps {
   items?: number;
 }
 
-export function ListLoading({ 
+export function ListLoading({
   className = '',
-  items = 5 
+  items = 5
 }: ListLoadingProps) {
   return (
-    <SkeletonList 
+    <SkeletonList
       className={className}
       items={items}
     />
@@ -141,13 +152,13 @@ interface GridLoadingProps {
   columns?: number;
 }
 
-export function GridLoading({ 
+export function GridLoading({
   className = '',
   items = 6,
-  columns = 3 
+  columns = 3
 }: GridLoadingProps) {
   return (
-    <SkeletonGrid 
+    <SkeletonGrid
       className={className}
       items={items}
       columns={columns}
@@ -160,12 +171,12 @@ interface FormLoadingProps {
   fields?: number;
 }
 
-export function FormLoading({ 
+export function FormLoading({
   className = '',
-  fields = 4 
+  fields = 4
 }: FormLoadingProps) {
   return (
-    <SkeletonForm 
+    <SkeletonForm
       className={className}
       fields={fields}
     />
@@ -178,13 +189,13 @@ interface ProfileLoadingProps {
   showBio?: boolean;
 }
 
-export function ProfileLoading({ 
+export function ProfileLoading({
   className = '',
   showStats = true,
-  showBio = true 
+  showBio = true
 }: ProfileLoadingProps) {
   return (
-    <SkeletonProfile 
+    <SkeletonProfile
       className={className}
       showStats={showStats}
       showBio={showBio}
@@ -197,12 +208,12 @@ interface LeaderboardLoadingProps {
   items?: number;
 }
 
-export function LeaderboardLoading({ 
+export function LeaderboardLoading({
   className = '',
-  items = 10 
+  items = 10
 }: LeaderboardLoadingProps) {
   return (
-    <SkeletonLeaderboard 
+    <SkeletonLeaderboard
       className={className}
       items={items}
     />
@@ -214,12 +225,12 @@ interface CodeEditorLoadingProps {
   lines?: number;
 }
 
-export function CodeEditorLoading({ 
+export function CodeEditorLoading({
   className = '',
-  lines = 10 
+  lines = 10
 }: CodeEditorLoadingProps) {
   return (
-    <SkeletonCodeEditor 
+    <SkeletonCodeEditor
       className={className}
       lines={lines}
     />
@@ -235,21 +246,20 @@ interface ButtonLoadingProps {
   onClick?: () => void;
 }
 
-export function ButtonLoading({ 
-  children, 
-  isLoading, 
+export function ButtonLoading({
+  children,
+  isLoading,
   loadingText = 'Loading...',
   className = '',
   disabled = false,
-  onClick 
+  onClick
 }: ButtonLoadingProps) {
   return (
     <button
       onClick={onClick}
       disabled={disabled || isLoading}
-      className={`relative overflow-hidden transition-all duration-300 ${
-        isLoading ? 'cursor-not-allowed opacity-75' : ''
-      } ${className}`}
+      className={`relative overflow-hidden transition-all duration-300 ${isLoading ? 'cursor-not-allowed opacity-75' : ''
+        } ${className}`}
     >
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-inherit">
@@ -273,11 +283,11 @@ interface InlineLoadingProps {
   className?: string;
 }
 
-export function InlineLoading({ 
-  children, 
-  isLoading, 
+export function InlineLoading({
+  children,
+  isLoading,
   loadingText = 'Loading...',
-  className = '' 
+  className = ''
 }: InlineLoadingProps) {
   if (isLoading) {
     return (
@@ -298,11 +308,11 @@ interface OverlayLoadingProps {
   className?: string;
 }
 
-export function OverlayLoading({ 
-  children, 
-  isLoading, 
+export function OverlayLoading({
+  children,
+  isLoading,
   message = 'Loading...',
-  className = '' 
+  className = ''
 }: OverlayLoadingProps) {
   return (
     <div className={`relative ${className}`}>
@@ -327,10 +337,10 @@ interface ProgressLoadingProps {
   className?: string;
 }
 
-export function ProgressLoading({ 
-  progress, 
+export function ProgressLoading({
+  progress,
   message = 'Loading...',
-  className = '' 
+  className = ''
 }: ProgressLoadingProps) {
   return (
     <div className={`space-y-4 ${className}`}>
@@ -339,7 +349,7 @@ export function ProgressLoading({
         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{Math.round(progress)}%</span>
       </div>
       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-        <div 
+        <div
           className="h-full bg-gradient-to-r from-green-400 to-emerald-400 rounded-full transition-all duration-300"
           style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
         />
@@ -354,19 +364,19 @@ interface SkeletonTextProps {
   width?: string;
 }
 
-export function SkeletonText({ 
-  lines = 3, 
+export function SkeletonText({
+  lines = 3,
   className = '',
-  width = '100%' 
+  width = '100%'
 }: SkeletonTextProps) {
   return (
     <div className={`space-y-2 ${className}`}>
       {Array.from({ length: lines }).map((_, index) => (
-        <Skeleton 
-          key={index} 
-          variant="text" 
-          width={index === lines - 1 ? '60%' : width} 
-          height={16} 
+        <Skeleton
+          key={index}
+          variant="text"
+          width={index === lines - 1 ? '60%' : width}
+          height={16}
         />
       ))}
     </div>
@@ -378,9 +388,9 @@ interface SkeletonAvatarProps {
   className?: string;
 }
 
-export function SkeletonAvatar({ 
-  size = 'md', 
-  className = '' 
+export function SkeletonAvatar({
+  size = 'md',
+  className = ''
 }: SkeletonAvatarProps) {
   const sizeClasses = {
     sm: 'w-8 h-8',
@@ -390,8 +400,8 @@ export function SkeletonAvatar({
   };
 
   return (
-    <Skeleton 
-      variant="circular" 
+    <Skeleton
+      variant="circular"
       className={`${sizeClasses[size]} ${className}`}
     />
   );
@@ -403,15 +413,15 @@ interface SkeletonButtonProps {
   className?: string;
 }
 
-export function SkeletonButton({ 
-  width = '120px', 
+export function SkeletonButton({
+  width = '120px',
   height = '40px',
-  className = '' 
+  className = ''
 }: SkeletonButtonProps) {
   return (
-    <Skeleton 
-      variant="rounded" 
-      width={width} 
+    <Skeleton
+      variant="rounded"
+      width={width}
       height={height}
       className={className}
     />
