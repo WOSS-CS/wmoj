@@ -1,8 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 
-const IDEFrame = () => {
+interface IDEFrameProps {
+    user: any;
+    onSignOut: () => void;
+}
+
+const IDEFrame = ({ user, onSignOut }: IDEFrameProps) => {
     const [scrollProgress, setScrollProgress] = useState(0);
     const [windowHeight, setWindowHeight] = useState(0);
 
@@ -41,12 +47,12 @@ const IDEFrame = () => {
     return (
         <div className="pointer-events-none fixed inset-0 z-0 hidden lg:block overflow-hidden">
 
-            {/* --- TOP BAR: Tabs & Breadcrumbs --- */}
-            <div className="absolute top-0 left-0 right-0 h-[70px] bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/5 z-50 flex flex-col pointer-events-auto">
-                {/* Tabs */}
-                <div className="flex h-[35px] items-end px-2 gap-1 bg-[#050505]">
+            {/* --- TOP BAR: Tabs & Breadcrumbs & Auth --- */}
+            <div className="absolute top-0 left-0 right-0 h-[70px] bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/5 z-50 flex flex-col pointer-events-auto">
+                {/* Tabs Row */}
+                <div className="flex h-[35px] items-end px-2 gap-1 bg-[#050505] relative">
                     {/* Active Tab */}
-                    <div className="relative h-full px-4 flex items-center gap-2 bg-[#0F1115] border-t-2 border-green-500 rounded-t-sm">
+                    <div className="relative h-full px-4 flex items-center gap-2 bg-[#0F1115] border-t-2 border-green-500 rounded-t-sm z-10">
                         <span className="text-blue-400 text-xs">TSX</span>
                         <span className="text-gray-200 text-xs font-mono">page.tsx</span>
                         <span className="ml-2 hover:bg-white/10 rounded p-0.5 cursor-pointer">
@@ -54,7 +60,7 @@ const IDEFrame = () => {
                         </span>
                     </div>
                     {/* Inactive Tabs */}
-                    <div className="h-full px-4 flex items-center gap-2 hover:bg-[#0F1115]/50 transition-colors cursor-pointer opacity-50">
+                    <div className="h-full px-4 flex items-center gap-2 hover:bg-[#0F1115]/50 transition-colors cursor-pointer opacity-50 border-t-2 border-transparent">
                         <span className="text-yellow-400 text-xs">TSX</span>
                         <span className="text-gray-400 text-xs font-mono">layout.tsx</span>
                     </div>
@@ -62,10 +68,38 @@ const IDEFrame = () => {
                         <span className="text-blue-300 text-xs text-opacity-50">#</span>
                         <span className="text-gray-400 text-xs font-mono">globals.css</span>
                     </div>
+
+                    {/* Desktop Toolbar (Auth Actions) - Far Right of Tabs Row */}
+                    <div className="ml-auto flex items-center gap-3 pr-4 h-full">
+                        {user ? (
+                            <>
+                                <span className="text-xs text-green-400 font-mono hidden xl:inline-block">
+                                    {user.user_metadata?.username || user.email}
+                                </span>
+                                <button onClick={onSignOut} className="text-xs text-gray-400 hover:text-white transition-colors bg-white/5 px-3 py-1 rounded hover:bg-white/10">
+                                    Sign Out
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <Link href="/auth/login" className="text-xs text-gray-400 hover:text-white transition-colors">
+                                    Log In
+                                </Link>
+                                <Link href="/auth/signup" className="text-xs text-black bg-white px-3 py-1 rounded font-bold hover:bg-gray-200 transition-colors shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+                                    Sign Up
+                                </Link>
+                            </>
+                        )}
+                        {/* Run Button (Just for visuals) */}
+                        <div className="w-px h-4 bg-white/10 mx-1" />
+                        <button className="text-green-500 hover:text-green-400 transition-colors">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
+                        </button>
+                    </div>
                 </div>
 
-                {/* Breadcrumbs */}
-                <div className="flex-1 flex items-center px-4 gap-2 text-[11px] font-mono text-gray-500">
+                {/* Breadcrumbs Row */}
+                <div className="flex-1 flex items-center px-4 gap-2 text-[11px] font-mono text-gray-500 bg-[#0F1115] border-t border-white/5">
                     <span>wmoj-client</span>
                     <span className="text-gray-700">/</span>
                     <span>src</span>

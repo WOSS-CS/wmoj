@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import CodeWindow from './CodeWindow';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { Logo } from '@/components/Logo';
 
 const HeroSection = () => {
     const { user } = useAuth();
@@ -51,6 +52,11 @@ const HeroSection = () => {
                     So it's a vertical stack: Text Top, Image Bottom.
                 */}
                 <div className="lg:col-span-12 flex flex-col items-center text-center">
+
+                    {/* Logo (Centered) */}
+                    <div className="mb-8 scale-150">
+                        <Logo size="md" priority />
+                    </div>
 
                     {/* Headline */}
                     <h1 className="font-heading font-extrabold text-5xl md:text-7xl lg:text-8xl tracking-tight text-white mb-4">
