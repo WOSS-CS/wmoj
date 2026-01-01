@@ -41,9 +41,9 @@ const HeroSection = () => {
     }, [text, isDeleting, loopNum, typingSpeed]); // Removing phrases from dependency array since it's constant ref in this render scope effectively
 
     return (
-        <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 pt-20 pb-32 overflow-hidden">
+        <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 pt-24 pb-16 overflow-hidden">
 
-            <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
 
                 {/* Text Content - Center Stage (col-span-12 initially) but design says Center Stage Typography usually implies centered overlay or just centered stack. 
                     However, the spec says "Discard Text on Left, Image on Right layout. It’s too standard." 
@@ -53,7 +53,7 @@ const HeroSection = () => {
                 <div className="lg:col-span-12 flex flex-col items-center text-center">
 
                     {/* Headline */}
-                    <h1 className="font-heading font-extrabold text-5xl md:text-7xl lg:text-8xl tracking-tight text-white mb-6">
+                    <h1 className="font-heading font-extrabold text-5xl md:text-7xl lg:text-8xl tracking-tight text-white mb-4">
                         Build. Break. <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500 inline-block min-w-[1.5em] text-left">
                             {text}
                             <span className="text-green-400 animate-pulse">_</span>
@@ -61,12 +61,12 @@ const HeroSection = () => {
                     </h1>
 
                     {/* Sub-headline */}
-                    <p className="font-body text-lg md:text-xl text-gray-400 max-w-2xl mb-12">
+                    <p className="font-body text-lg md:text-xl text-gray-400 max-w-2xl mb-8">
                         The competitive arena for White Oaks Competitive Programmers.
                     </p>
 
                     {/* CTAs */}
-                    <div className="flex gap-4 mb-16">
+                    <div className="flex gap-4 mb-10">
                         {user ? (
                             <Link
                                 href="/dashboard"
@@ -94,6 +94,7 @@ const HeroSection = () => {
 
                     {/* The Visual Hook */}
                     <div className="w-full max-w-4xl relative">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-b from-green-500/10 to-transparent blur-3xl -z-10 rounded-full pointer-events-none" />
                         <CodeWindow />
                     </div>
 
