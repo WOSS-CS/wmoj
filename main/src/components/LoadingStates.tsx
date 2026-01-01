@@ -57,13 +57,7 @@ export function PageLoading({
   message = 'Loading...'
 }: PageLoadingProps) {
   return (
-    <div className={`fixed inset-0 z-[9999] bg-[#0a0a0a] flex flex-col items-center justify-center ${className}`}>
-      {/* Background Ambience */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-brand-primary/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-brand-secondary/5 rounded-full blur-[120px]" />
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03]" />
-      </div>
+    <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center pointer-events-none ${className}`}>
 
       <div className="relative z-10 flex flex-col items-center">
         {/* Logo Animation */}
