@@ -62,7 +62,7 @@ const HeroSection = () => {
 
                     {/* Sub-headline */}
                     <p className="font-body text-lg md:text-xl text-gray-400 max-w-2xl mb-12">
-                        The competitive arena for White Oaks developers.
+                        The competitive arena for White Oaks Competitive Programmers.
                     </p>
 
                     {/* CTAs */}
