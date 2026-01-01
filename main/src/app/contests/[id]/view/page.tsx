@@ -102,9 +102,9 @@ export default function ContestViewPage() {
               ) : contest ? (
                 <div className={`transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
 
-                  <div className="mb-8">
-                    <Link href="/contests" className="inline-flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-4">
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                  <div className="mb-8 flex flex-col items-start gap-4">
+                    <Link href="/contests" className="flex items-center text-sm text-gray-400 hover:text-white transition-colors group">
+                      <svg className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                       Back to Contests
                     </Link>
                     <h1 className="text-5xl font-bold text-white font-heading relative inline-block">
