@@ -46,18 +46,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                <Link
-                  href="/auth/login"
-                  className="px-5 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors duration-300"
-                >
-                  Log In
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className="px-5 py-2 text-sm font-semibold bg-white text-black rounded-lg hover:bg-gray-200 hover:-translate-y-0.5 transition-all duration-300 shadow-lg shadow-white/10"
-                >
-                  Sign Up
-                </Link>
+
               </>
             )}
           </div>

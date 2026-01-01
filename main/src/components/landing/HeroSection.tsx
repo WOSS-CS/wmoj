@@ -80,13 +80,13 @@ const HeroSection = () => {
                                     href="/auth/signup"
                                     className="px-8 py-3 bg-white text-black hover:bg-gray-200 rounded-lg font-mono font-bold transition-all hover:scale-105"
                                 >
-                                    Start Coding
+                                    Sign up
                                 </Link>
                                 <Link
-                                    href="/problems"
+                                    href="/auth/login"
                                     className="px-8 py-3 bg-transparent border border-gray-700 text-gray-300 hover:border-white hover:text-white rounded-lg font-mono font-bold transition-all"
                                 >
-                                    Explore
+                                    Log in
                                 </Link>
                             </>
                         )}
