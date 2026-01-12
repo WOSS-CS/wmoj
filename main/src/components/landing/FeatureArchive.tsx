@@ -51,7 +51,7 @@ const FeatureArchive = () => {
                         Algorithmic <span className="text-blue-400 glow-text-blue" style={{ textShadow: "0 0 20px rgba(96, 165, 250, 0.5)" }}>Depth.</span>
                     </h2>
                     <p className="text-lg text-gray-400 leading-relaxed font-body border-r-2 border-blue-900/50 pr-6 ml-auto">
-                        A curated library of problems designed to break your bad habits.
+                        A curated library of problems designed to challenge your algorithmic skills.
                         From basic arrays to advanced graph traversal.
                     </p>
                 </div>
