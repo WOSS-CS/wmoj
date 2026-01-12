@@ -54,17 +54,6 @@ const FeatureArchive = () => {
                         A curated library of problems designed to break your bad habits.
                         From basic arrays to advanced graph traversal.
                     </p>
-                    <div className="flex gap-4 justify-end">
-                        <div className="flex flex-col items-center">
-                            <span className="text-3xl font-bold text-white">A wide variety of problems.</span>
-                            <span className="text-xs text-gray-500 uppercase tracking-widest"></span>
-                        </div>
-                        <div className="h-10 w-px bg-gray-800"></div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-3xl font-bold text-white">Many categories.</span>
-                            <span className="text-xs text-gray-500 uppercase tracking-widest"></span>
-                        </div>
-                    </div>
                 </div>
 
             </div>
