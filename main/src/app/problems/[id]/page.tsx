@@ -473,6 +473,57 @@ export default function ProblemPage() {
                       </button>
                     </form>
 
+                    {/* New Results Display Area */}
+                    {(submitting || summary) && (
+                      <div className="mt-6 p-4 rounded-xl bg-surface-2 border border-white/5 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {submitting ? (
+                          <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
+                            <span className="text-sm text-gray-400">Evaluating submission...</span>
+                          </div>
+                        ) : summary ? (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${summary.failed === 0 ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} />
+                                <span className={`text-sm font-bold uppercase tracking-wider ${summary.failed === 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                  {summary.failed === 0 ? 'Accepted' : 'Failed'}
+                                </span>
+                              </div>
+                              <button 
+                                onClick={() => setActiveTab('results')}
+                                className="text-[10px] uppercase font-bold text-brand-primary hover:text-brand-secondary transition-colors"
+                              >
+                                View Detailed Results
+                              </button>
+                            </div>
+                            
+                            <div className="flex items-end justify-between">
+                              <div>
+                                <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Test Cases Passed</div>
+                                <div className="text-2xl font-bold text-white font-mono">
+                                  {summary.passed}<span className="text-gray-600 mx-1">/</span>{summary.total}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Score</div>
+                                <div className="text-xl font-bold text-brand-primary font-mono text-right">
+                                  {Math.round((summary.passed / summary.total) * 100)}%
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
+                              <div 
+                                className={`h-full transition-all duration-1000 ease-out ${summary.failed === 0 ? 'bg-green-500' : 'bg-brand-primary'}`}
+                                style={{ width: `${(summary.passed / summary.total) * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+
                     {/* Enhanced Problem Stats */}
                     <div className="mt-8 pt-6 border-t border-white/10 space-y-3">
                       <h3 className="text-white font-heading text-sm mb-4">Problem Details</h3>
