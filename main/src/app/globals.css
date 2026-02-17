@@ -494,8 +494,7 @@
 
 .markdown-editor .w-md-editor-text-pre,
 .markdown-editor .w-md-editor-text-input {
-  background-color: #262626 !important;
-  color: #e5e5e5 !important;
+  background-color: transparent !important;
 }
 
 .markdown-editor .w-md-editor-preview {
