@@ -1,6 +1,6 @@
 # WMOJ – Documentation
 
-## 🤝 Contributing & Onboarding
+## Contributing & Onboarding
 
 **Interested in joining the WMOJ team?**
 To become a contributor, you **must** contact either `moizman` or `adhamabouaita` on Discord. They are the project leaders and will guide you through the onboarding process.
@@ -14,7 +14,7 @@ To become a contributor, you **must** contact either `moizman` or `adhamabouaita
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
 1. [Project Overview](#project-overview)
 2. [Architecture & Technology Stack](#architecture--technology-stack)
@@ -273,7 +273,7 @@ node server.js
 5.  Submit a solution.
 
 ---
-
+ 
 ## 9. Deployment Strategy
 
 ### **Web App (`main`)**
