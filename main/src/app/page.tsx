@@ -74,7 +74,7 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <footer className="relative z-10 py-12 px-6 border-t border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
+        <footer className="relative z-10 py-12 px-6 border-t border-border bg-surface-1/80 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-gray-500">
             <div className="mb-4 md:mb-0">
               <span className="text-xs font-mono tracking-[0.2em] text-green-500/80 uppercase">White Oaks Secondary School</span>
