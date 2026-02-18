@@ -11,8 +11,8 @@ export function CountdownOverlay() {
   const seconds = Math.max(0, timeRemaining % 60);
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 select-none text-white text-4xl font-bold">
+    <div className="fixed bottom-4 right-4 z-50 select-none text-foreground text-4xl font-bold">
       {totalMinutes}:{seconds.toString().padStart(2, '0')}
-      </div>
+    </div>
   );
 }

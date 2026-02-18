@@ -39,11 +39,11 @@ export function FeatureHighlights() {
                         key={idx}
                         className="glass-panel p-8 rounded-2xl hover:-translate-y-2 transition-transform duration-300 group"
                     >
-                        <div className="w-12 h-12 bg-[#064e3b] rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-green-900">
+                        <div className="w-12 h-12 bg-surface-2 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-border">
                             {feature.icon}
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-3 font-mono">{feature.title}</h3>
-                        <p className="text-gray-400 leading-relaxed">{feature.body}</p>
+                        <h3 className="text-xl font-bold text-foreground mb-3 font-mono">{feature.title}</h3>
+                        <p className="text-text-muted leading-relaxed">{feature.body}</p>
                     </div>
                 ))}
             </div>

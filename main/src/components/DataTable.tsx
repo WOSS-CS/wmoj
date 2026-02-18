@@ -115,10 +115,10 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
             })}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-800">
+        <tbody className="divide-y divide-border">
           {sortedRows.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-6 py-12 text-center text-gray-500">
+              <td colSpan={columns.length} className="px-6 py-12 text-center text-text-muted">
                 {emptyState || (
                   <div className="flex flex-col items-center justify-center">
                     <p>No data found.</p>
@@ -138,7 +138,7 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
               return (
                 <tr key={key} className={`${theme.rowHover} group`}>
                   {columns.map((col) => (
-                    <td key={col.key} className={`px-6 py-4 align-middle text-sm text-gray-300 ${col.className || ''}`}>
+                    <td key={col.key} className={`px-6 py-4 align-middle text-sm text-foreground ${col.className || ''}`}>
                       {col.render
                         ? col.render(row)
                         : ((row as unknown as Record<string, unknown>)[col.key] as ReactNode)}

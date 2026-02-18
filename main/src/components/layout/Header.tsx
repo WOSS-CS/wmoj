@@ -43,7 +43,7 @@ export const Header = () => {
                                 .charAt(0)
                                 .toUpperCase()}
                         </div>
-                        <span className="text-sm font-medium pr-2 hidden sm:block">
+                        <span className="text-sm font-medium pr-2 hidden sm:block text-foreground">
                             {user.user_metadata?.username || user.email}
                         </span>
                         <svg

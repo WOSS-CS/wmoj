@@ -23,17 +23,17 @@ const FeatureArchive = () => {
                 {/* Visual Side (Left 60%) */}
                 <div className="lg:w-3/5 w-full relative h-[500px] perspective-1000">
                     {/* Mask to fade top/bottom */}
-                    <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-[#0F1115] via-transparent to-[#0F1115] h-full" />
+                    <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-background via-transparent to-background h-full" />
 
                     {/* Scrolling Container */}
                     <div className="relative w-full h-full overflow-hidden flex justify-center transform rotate-y-12 rotate-x-6 scale-90">
                         <div className="absolute w-full max-w-md space-y-4 flex flex-col">
                             {scrollProblems.map((prob, idx) => (
-                                <div key={idx} className="bg-[#161b22] border border-[#30363d] p-5 rounded-xl shadow-lg flex items-center justify-between hover:bg-[#21262d] transition-colors group">
+                                <div key={idx} className="bg-surface-1 border border-border p-5 rounded-xl shadow-lg flex items-center justify-between hover:bg-surface-2 transition-colors group">
                                     <div>
-                                        <h3 className="text-gray-200 font-bold font-mono group-hover:text-white transition-colors">{prob.title}</h3>
+                                        <h3 className="text-foreground font-bold font-mono group-hover:text-green-400 transition-colors">{prob.title}</h3>
                                         <div className="mt-2 flex gap-2">
-                                            <span className="text-xs font-mono bg-[#30363d] text-gray-400 px-2 py-0.5 rounded">{prob.tag}</span>
+                                            <span className="text-xs font-mono bg-surface-2 text-text-muted px-2 py-0.5 rounded">{prob.tag}</span>
                                         </div>
                                     </div>
                                     <span className={`text-xs font-bold border px-2 py-1 rounded uppercase ${prob.color}`}>
@@ -47,10 +47,10 @@ const FeatureArchive = () => {
 
                 {/* Text Side (Right 40%) */}
                 <div className="lg:w-2/5 space-y-8 lg:text-right">
-                    <h2 className="text-4xl md:text-5xl font-heading font-bold text-white leading-tight">
+                    <h2 className="text-4xl md:text-5xl font-heading font-bold text-foreground leading-tight">
                         Algorithmic <span className="text-blue-400 glow-text-blue" style={{ textShadow: "0 0 20px rgba(96, 165, 250, 0.5)" }}>Depth.</span>
                     </h2>
-                    <p className="text-lg text-gray-400 leading-relaxed font-body border-r-2 border-blue-900/50 pr-6 ml-auto">
+                    <p className="text-lg text-text-muted leading-relaxed font-body border-r-2 border-blue-900/50 pr-6 ml-auto">
                         A curated library of problems designed to challenge your algorithmic skills.
                         From basic arrays to advanced graph traversal.
                     </p>
