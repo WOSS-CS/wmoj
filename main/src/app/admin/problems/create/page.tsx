@@ -241,7 +241,7 @@ export default function CreateProblemPage() {
               </div>
 
               <div>
-                <label htmlFor="contest" className="block text-sm font-medium text-white mb-2">
+                <label htmlFor="contest" className="block text-sm font-medium text-foreground mb-2">
                   Contest (Optional)
                 </label>
                 <select
@@ -249,7 +249,7 @@ export default function CreateProblemPage() {
                   name="contest"
                   value={formData.contest}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  className="w-full px-4 py-3 bg-surface-2 border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                 >
                   <option value="">Standalone Problem</option>
                   {contests.map((contest) => (
@@ -258,7 +258,7 @@ export default function CreateProblemPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-gray-400 text-sm mt-1">
+                <p className="text-text-muted text-sm mt-1">
                   Leave empty for standalone problems, or select a contest to add this problem to
                 </p>
               </div>
