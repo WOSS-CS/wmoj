@@ -87,7 +87,7 @@ const IDEFrame = ({ user, onSignOut }: IDEFrameProps) => {
                                 <Link href="/auth/login" className="text-xs text-text-muted hover:text-foreground transition-colors">
                                     Log In
                                 </Link>
-                                <Link href="/auth/signup" className="text-xs text-white dark:text-black bg-foreground px-3 py-1 rounded font-bold hover:bg-foreground/80 transition-colors shadow-[0_0_10px_rgba(var(--color-foreground-rgb),0.2)]">
+                                <Link href="/auth/signup" className="text-xs text-background bg-foreground px-3 py-1 rounded font-bold hover:bg-foreground/80 transition-colors shadow-lg">
                                     Sign Up
                                 </Link>
                             </>
