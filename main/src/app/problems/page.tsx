@@ -111,11 +111,11 @@ export default function ProblemsPage() {
             }
           >
             <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <h1 className="text-4xl font-bold text-white mb-4 relative">
+              <h1 className="text-4xl font-bold text-foreground mb-4 relative">
                 Practice Problems
                 <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-brand-primary to-emerald-400 rounded-full animate-pulse" />
               </h1>
-              <p className="text-gray-300 text-lg">
+              <p className="text-text-muted text-lg">
                 Solve standalone problems to improve your competitive programming skills
               </p>
             </div>
@@ -147,8 +147,8 @@ export default function ProblemsPage() {
               {problems.length === 0 ? (
                 <div className="text-center py-12">
 
-                  <h3 className="text-2xl font-semibold text-white mb-2">No Problems Available</h3>
-                  <p className="text-gray-300">
+                  <h3 className="text-2xl font-semibold text-foreground mb-2">No Problems Available</h3>
+                  <p className="text-text-muted">
                     Exciting problems are on the way!
                   </p>
                 </div>
@@ -159,14 +159,14 @@ export default function ProblemsPage() {
                       value={search}
                       onChange={e => setSearch(e.target.value)}
                       placeholder="Search problems by name..."
-                      className="w-full px-4 py-2 rounded-lg bg-surface-1 border border-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                      className="w-full px-4 py-2 rounded-lg bg-surface-2 border border-border text-foreground placeholder-text-muted/50 focus:outline-none focus:ring-1 focus:ring-brand-primary"
                     />
                   </div>
 
                   {filteredProblems.length === 0 ? (
                     <div className="text-center py-12">
-                      <h3 className="text-2xl font-semibold text-white mb-2">No Problems Found</h3>
-                      <p className="text-gray-300">
+                      <h3 className="text-2xl font-semibold text-foreground mb-2">No Problems Found</h3>
+                      <p className="text-text-muted">
                         No problems match your search criteria. Try a different search term.
                       </p>
                     </div>
@@ -182,7 +182,7 @@ export default function ProblemsPage() {
                             sortable: true,
                             sortAccessor: (r) => r.name.toLowerCase(),
                             render: (r) => (
-                              <h3 className="text-white font-semibold">{r.name}</h3>
+                              <h3 className="text-foreground font-semibold">{r.name}</h3>
                             ),
                           },
                           {

@@ -90,11 +90,11 @@ export default function AdminDashboardPage() {
             }
           >
             <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <h1 className="text-4xl font-bold text-white mb-4 relative">
+              <h1 className="text-4xl font-bold text-foreground mb-4 relative">
                 Admin Dashboard
                 <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-red-400 to-red-600 rounded-full animate-pulse" />
               </h1>
-              <p className="text-gray-300 text-lg">
+              <p className="text-text-muted text-lg">
                 Manage contests and problems for the competitive programming platform
               </p>
             </div>
@@ -102,7 +102,7 @@ export default function AdminDashboardPage() {
 
           {/* Recent Activity (last 24 hours submissions) */}
           <div className={`p-0 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.2s' }}>
-            <h2 className="text-2xl font-bold text-white mb-6 relative">
+            <h2 className="text-2xl font-bold text-foreground mb-6 relative">
               Recent Activity
               <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-red-400 to-red-600 animate-pulse" />
             </h2>
@@ -121,7 +121,7 @@ export default function AdminDashboardPage() {
                       className: 'w-[25%]',
                       sortable: true,
                       sortAccessor: (r) => r.user.toLowerCase(),
-                      render: (r) => <span className="text-white font-medium">{r.user}</span>,
+                      render: (r) => <span className="text-foreground font-medium">{r.user}</span>,
                     },
                     {
                       key: 'problem',
@@ -129,7 +129,7 @@ export default function AdminDashboardPage() {
                       className: 'w-[35%]',
                       sortable: true,
                       sortAccessor: (r) => r.problem.toLowerCase(),
-                      render: (r) => <span className="text-gray-200">{r.problem}</span>,
+                      render: (r) => <span className="text-text-muted">{r.problem}</span>,
                     },
                     {
                       key: 'result',
@@ -150,7 +150,7 @@ export default function AdminDashboardPage() {
                       sortable: true,
                       sortAccessor: (r) => new Date(r.timestamp).getTime(),
                       render: (r) => (
-                        <span className="text-gray-400 text-sm">{formatTimeAgo(r.timestamp)}</span>
+                        <span className="text-text-muted text-sm">{formatTimeAgo(r.timestamp)}</span>
                       ),
                     },
                   ];
@@ -166,7 +166,7 @@ export default function AdminDashboardPage() {
               </>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-400">No submissions in the last 24 hours.</p>
+                <p className="text-text-muted">No submissions in the last 24 hours.</p>
               </div>
             )}
           </div>

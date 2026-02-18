@@ -103,11 +103,11 @@ export default function ContestViewPage() {
                 <div className={`transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
 
                   <div className="mb-8 flex flex-col items-start gap-4">
-                    <Link href="/contests" className="flex items-center text-sm text-gray-400 hover:text-white transition-colors group">
+                    <Link href="/contests" className="flex items-center text-sm text-text-muted hover:text-foreground transition-colors group">
                       <svg className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                       Back to Contests
                     </Link>
-                    <h1 className="text-5xl font-bold text-white font-heading relative inline-block">
+                    <h1 className="text-5xl font-bold text-foreground font-heading relative inline-block">
                       {contest.name}
                       <div className="absolute -bottom-2 left-0 w-1/2 h-1 bg-gradient-to-r from-brand-primary to-emerald-400 rounded-full" />
                     </h1>
@@ -117,7 +117,7 @@ export default function ContestViewPage() {
                     <div className="md:col-span-2 space-y-8">
                       {/* Description Panel */}
                       <div className="glass-panel p-8">
-                        <h2 className="text-xl font-heading text-white mb-6 flex items-center gap-2">
+                        <h2 className="text-xl font-heading text-foreground mb-6 flex items-center gap-2">
                           <span className="text-brand-primary">#</span> About this Contest
                         </h2>
                         <div className="prose prose-invert max-w-none">
@@ -130,9 +130,9 @@ export default function ContestViewPage() {
                       {/* Action Panel */}
                       <div className="glass-panel p-6 border-t-4 border-t-brand-primary">
                         <div className="mb-6">
-                          <div className="text-sm text-gray-400 uppercase tracking-wider font-bold mb-2">Duration</div>
-                          <div className="text-3xl font-mono text-white flex items-baseline gap-2">
-                            {contest.length} <span className="text-sm text-gray-500 font-sans">minutes</span>
+                          <div className="text-sm text-text-muted uppercase tracking-wider font-bold mb-2">Duration</div>
+                          <div className="text-3xl font-mono text-foreground flex items-baseline gap-2">
+                            {contest.length} <span className="text-sm text-text-muted font-sans">minutes</span>
                           </div>
                         </div>
 
@@ -150,7 +150,7 @@ export default function ContestViewPage() {
                             'Join Contest Now'
                           )}
                         </button>
-                        <p className="text-xs text-gray-500 mt-4 text-center">
+                        <p className="text-xs text-text-muted mt-4 text-center">
                           By joining, you agree to the contest rules.
                         </p>
                       </div>

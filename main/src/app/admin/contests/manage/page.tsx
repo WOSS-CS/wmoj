@@ -151,16 +151,16 @@ export default function ManageContestsPage() {
       <AdminGuard>
         <div className="w-full">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white mb-4 relative">
+            <h1 className="text-4xl font-bold text-foreground mb-4 relative">
               Manage Contests
               <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-green-400 to-green-600 rounded-full animate-pulse" />
             </h1>
-            <p className="text-gray-300 text-lg">Edit, activate/deactivate, or delete contests.</p>
+            <p className="text-text-muted text-lg">Edit, activate/deactivate, or delete contests.</p>
           </div>
           {actionMessage && (
-            <div className="mb-4 p-3 rounded bg-[#171717] border border-[#333333] text-sm flex justify-between items-center">
+            <div className="mb-4 p-3 rounded bg-surface-2 border border-border text-sm flex justify-between items-center text-foreground">
               <span>{actionMessage}</span>
-              <button onClick={() => setActionMessage(null)} className="text-gray-400 hover:text-white">×</button>
+              <button onClick={() => setActionMessage(null)} className="text-text-muted hover:text-foreground">×</button>
             </div>
           )}
           {error && <div className="text-red-400 mb-4">{error}</div>}
@@ -171,12 +171,12 @@ export default function ManageContestsPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search by name..."
-                className="flex-1 px-4 py-2 rounded-lg bg-[#111111] border border-[#262626] text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-400"
+                className="flex-1 px-4 py-2 rounded-lg bg-surface-2 border border-border text-foreground placeholder-text-muted/50 focus:outline-none focus:ring-1 focus:ring-green-400"
               />
               <div className="flex items-center gap-2">
-                <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter === 'all' ? 'text-green-400 border-green-900 bg-[#064e3b]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>All</button>
-                <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter === 'active' ? 'text-green-400 border-green-900 bg-[#064e3b]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>Active</button>
-                <button onClick={() => setFilter('inactive')} className={`px-3 py-2 rounded-lg border ${filter === 'inactive' ? 'text-green-400 border-green-900 bg-[#064e3b]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>Inactive</button>
+                <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter === 'all' ? 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>All</button>
+                <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter === 'active' ? 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>Active</button>
+                <button onClick={() => setFilter('inactive')} className={`px-3 py-2 rounded-lg border ${filter === 'inactive' ? 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>Inactive</button>
               </div>
             </div>
 
@@ -195,7 +195,7 @@ export default function ManageContestsPage() {
                       className: 'w-[30%]',
                       sortable: true,
                       sortAccessor: (r) => r.name.toLowerCase(),
-                      render: (r) => <span className="text-white font-medium" title={r.name}>{r.name}</span>,
+                      render: (r) => <span className="text-foreground font-medium" title={r.name}>{r.name}</span>,
                     },
                     {
                       key: 'length',
@@ -203,7 +203,7 @@ export default function ManageContestsPage() {
                       className: 'w-[15%]',
                       sortable: true,
                       sortAccessor: (r) => r.length ?? 0,
-                      render: (r) => <span className="text-gray-300">{r.length ?? '-'}</span>,
+                      render: (r) => <span className="text-text-muted">{r.length ?? '-'}</span>,
                     },
                     {
                       key: 'status',
@@ -212,9 +212,11 @@ export default function ManageContestsPage() {
                       sortable: true,
                       sortAccessor: (r) => (r.is_active ? 1 : 0),
                       render: (r) => (
-                        <span className={`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-[#064e3b] text-green-400 border-green-900' : 'bg-[#422006] text-yellow-400 border-yellow-900'}`}>
+                        render: (r) => (
+                          <span className = {`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
                           {r.is_active ? 'Active' : 'Inactive'}
                         </span>
+                      ),
                       ),
                     },
                     {
@@ -223,7 +225,7 @@ export default function ManageContestsPage() {
                       className: 'w-[15%]',
                       sortable: true,
                       sortAccessor: (r) => new Date(r.updated_at).getTime(),
-                      render: (r) => <span className="text-gray-400" title={r.updated_at}>{new Date(r.updated_at).toLocaleDateString()}</span>,
+                      render: (r) => <span className="text-text-muted" title={r.updated_at}>{new Date(r.updated_at).toLocaleDateString()}</span>,
                     },
                     {
                       key: 'actions',
@@ -252,37 +254,37 @@ export default function ManageContestsPage() {
           </div>
 
           {editing && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
-              <div className="w-full max-w-5xl bg-[#111111] border border-[#333333] rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+              <div className="w-full max-w-5xl bg-surface-1 border border-border rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-[#333333] bg-[#1a1a1a] rounded-t-xl">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface-2 rounded-t-xl">
                   <div>
-                    <h2 className="text-xl font-bold tracking-wide">Edit Contest</h2>
-                    <p className="text-xs text-gray-400 mt-0.5">Modify contest settings & description</p>
+                    <h2 className="text-xl font-bold tracking-wide text-foreground">Edit Contest</h2>
+                    <p className="text-xs text-text-muted mt-0.5">Modify contest settings & description</p>
                   </div>
-                  <button onClick={closeEdit} className="text-gray-400 hover:text-white transition" aria-label="Close edit modal">✕</button>
+                  <button onClick={closeEdit} className="text-text-muted hover:text-foreground transition" aria-label="Close edit modal">✕</button>
                 </div>
                 {/* Body */}
                 <div className="overflow-y-auto custom-scrollbar px-6 py-5 space-y-6">
                   {fetchingEditContent ? (
-                    <div className="animate-pulse text-gray-400">Loading content...</div>
+                    <div className="animate-pulse text-text-muted">Loading content...</div>
                   ) : (
                     <>
                       <div className="grid md:grid-cols-3 gap-6 items-start">
                         <div className="md:col-span-2 space-y-2">
-                          <label className="block text-sm font-medium">Name</label>
+                          <label className="block text-sm font-medium text-foreground">Name</label>
                           <input
-                            className="w-full px-3 py-2 rounded-md bg-[#0a0a0a] border border-[#333333] focus:outline-none focus:ring focus:ring-green-900"
+                            className="w-full px-3 py-2 rounded-md bg-surface-2 border border-border text-foreground focus:outline-none focus:ring focus:ring-emerald-500/20"
                             value={editing.name}
                             placeholder="Enter contest title"
                             onChange={e => setEditing(s => s ? { ...s, name: e.target.value } : s)}
                           />
                         </div>
                         <div className="flex md:flex-col gap-4 md:gap-2 pt-6 md:pt-0">
-                          <label className="inline-flex items-center gap-2 text-sm select-none">
+                          <label className="inline-flex items-center gap-2 text-sm select-none text-foreground">
                             <input
                               type="checkbox"
-                              className="h-4 w-4"
+                              className="h-4 w-4 rounded border-border bg-surface-2 text-emerald-500 focus:ring-emerald-500/20"
                               checked={editing.is_active}
                               onChange={e => setEditing(s => s ? { ...s, is_active: e.target.checked } : s)}
                             />
@@ -291,7 +293,7 @@ export default function ManageContestsPage() {
                           <button
                             onClick={saveEdit}
                             disabled={!editing.name.trim()}
-                            className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-500 disabled:opacity-40 text-sm font-medium transition shadow-md shadow-green-600/20"
+                            className="px-4 py-2 rounded-md bg-brand-primary text-black hover:bg-brand-secondary disabled:opacity-40 text-sm font-medium transition shadow-md shadow-brand-primary/20"
                           >
                             Save Now
                           </button>
@@ -299,14 +301,14 @@ export default function ManageContestsPage() {
                       </div>
                       <div className="grid md:grid-cols-3 gap-6 items-start">
                         <div className="space-y-2 md:col-span-1">
-                          <label className="block text-sm font-medium">Length (minutes)</label>
+                          <label className="block text-sm font-medium text-foreground">Length (minutes)</label>
                           <input
                             type="number"
-                            className="w-full px-3 py-2 rounded-md bg-[#0a0a0a] border border-[#333333] focus:outline-none focus:ring focus:ring-green-900"
+                            className="w-full px-3 py-2 rounded-md bg-surface-2 border border-border text-foreground focus:outline-none focus:ring focus:ring-emerald-500/20"
                             value={editing.length ?? ''}
                             onChange={e => setEditing(s => s ? { ...s, length: e.target.value ? Number(e.target.value) : null } : s)}
                           />
-                          <p className="text-[11px] text-gray-500">Leave blank for unspecified length.</p>
+                          <p className="text-[11px] text-text-muted">Leave blank for unspecified length.</p>
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -324,12 +326,12 @@ export default function ManageContestsPage() {
                   )}
                 </div>
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-[#333333] flex justify-end gap-3 bg-[#1a1a1a] rounded-b-xl">
-                  <button onClick={closeEdit} className="px-4 py-2 rounded-md bg-[#262626] hover:bg-[#333333] transition text-sm font-medium">Close</button>
+                <div className="px-6 py-4 border-t border-border flex justify-end gap-3 bg-surface-2 rounded-b-xl">
+                  <button onClick={closeEdit} className="px-4 py-2 rounded-md bg-surface-3 hover:bg-surface-4 transition text-sm font-medium text-foreground">Close</button>
                   <button
                     onClick={saveEdit}
                     disabled={!editing?.name.trim()}
-                    className="px-5 py-2 rounded-md bg-green-600 hover:bg-green-500 disabled:opacity-40 font-semibold text-sm shadow-lg shadow-green-600/20 transition"
+                    className="px-5 py-2 rounded-md bg-brand-primary text-black hover:bg-brand-secondary disabled:opacity-40 font-semibold text-sm shadow-lg shadow-brand-primary/20 transition"
                   >
                     Save Changes
                   </button>
