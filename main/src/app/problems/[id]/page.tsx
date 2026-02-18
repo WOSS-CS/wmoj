@@ -20,7 +20,7 @@ export default function ProblemPage() {
   const { isActive, contestId } = useCountdown();
   // Mouse position state removed
   const [isLoaded, setIsLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState<'description' | 'results' | 'stats'>('description');
+  const [activeTab, setActiveTab] = useState<'description' | 'results'>('description');
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -301,12 +301,11 @@ export default function ProblemPage() {
                     <div className="flex gap-2 mb-6 border-b border-white/10 pb-4">
                       {[
                         { id: 'description', label: 'Description', icon: '' },
-                        { id: 'stats', label: 'Stats', icon: '' },
                         { id: 'results', label: 'Results', icon: '' },
                       ].map((tab) => (
                         <button
                           key={tab.id}
-                          onClick={() => setActiveTab(tab.id as 'description' | 'results' | 'stats')}
+                          onClick={() => setActiveTab(tab.id as 'description' | 'results')}
                           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 flex items-center ${activeTab === tab.id
                             ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20'
                             : 'text-text-muted hover:text-foreground hover:bg-surface-2'
@@ -371,37 +370,6 @@ export default function ProblemPage() {
                         </div>
                       )}
 
-                      {activeTab === 'stats' && (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 bg-surface-2 rounded-lg border border-border">
-                              <div className="text-2xl font-bold text-foreground font-mono">{problem.input.length}</div>
-                              <div className="text-xs text-text-muted uppercase tracking-wide">Test Cases</div>
-                            </div>
-                            <div className="p-4 bg-surface-2 rounded-lg border border-border">
-                              <div className="text-2xl font-bold text-brand-primary">{problem.contest ? 'Contest' : 'Practice'}</div>
-                              <div className="text-xs text-text-muted uppercase tracking-wide">Type</div>
-                            </div>
-                          </div>
-                          {bestSummary && (
-                            <div className="p-6 bg-surface-2 rounded-lg border border-white/5">
-                              <div className="flex items-center justify-between mb-4">
-                                <span className="text-sm text-text-muted">Best Score</span>
-                                <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${bestSummary.failed === 0 ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                  {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
-                                </span>
-                              </div>
-                              <div className="text-4xl font-bold text-foreground font-mono mb-4">{bestSummary.passed}/{bestSummary.total}</div>
-                              <div className="w-full bg-black/50 rounded-full h-1.5 overflow-hidden">
-                                <div
-                                  className="bg-brand-primary h-full transition-all duration-500"
-                                  style={{ width: `${(bestSummary.passed / bestSummary.total) * 100}%` }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
