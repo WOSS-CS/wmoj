@@ -59,7 +59,7 @@ const HeroSection = () => {
                     </div>
 
                     {/* Headline */}
-                    <h1 className="font-heading font-extrabold text-5xl md:text-7xl lg:text-8xl tracking-tight text-white mb-4">
+                    <h1 className="font-heading font-extrabold text-5xl md:text-7xl lg:text-8xl tracking-tight text-foreground mb-4">
                         Build. Break. <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500 inline-block min-w-[1.5em] text-left">
                             {text}
                             <span className="text-green-400 animate-pulse">_</span>
@@ -67,7 +67,7 @@ const HeroSection = () => {
                     </h1>
 
                     {/* Sub-headline */}
-                    <p className="font-body text-lg md:text-xl text-gray-400 max-w-2xl mb-8">
+                    <p className="font-body text-lg md:text-xl text-text-muted max-w-2xl mb-8">
                         The competitive arena for White Oaks Competitive Programmers.
                     </p>
 
@@ -90,7 +90,7 @@ const HeroSection = () => {
                                 </Link>
                                 <Link
                                     href="/auth/login"
-                                    className="px-8 py-3 bg-transparent border border-gray-700 text-gray-300 hover:border-white hover:text-white rounded-lg font-mono font-bold transition-all"
+                                    className="px-8 py-3 bg-transparent border border-border text-text-muted hover:border-foreground hover:text-foreground rounded-lg font-mono font-bold transition-all"
                                 >
                                     Log in
                                 </Link>

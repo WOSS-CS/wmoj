@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export const Header = () => {
     const { user, signOut } = useAuth();
@@ -30,7 +31,8 @@ export const Header = () => {
 
     return (
         <header className="sticky top-0 z-40 w-full p-4 pointer-events-none">
-            <div className="max-w-[calc(100%-17rem)] ml-auto pointer-events-auto flex justify-end">
+            <div className="max-w-[calc(100%-17rem)] ml-auto pointer-events-auto flex justify-end items-center gap-4">
+                <ThemeToggle />
                 <div className="relative" ref={menuRef}>
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -64,22 +66,22 @@ export const Header = () => {
                         <div className="absolute right-0 mt-2 w-48 glass-panel py-1 animate-scale-in origin-top-right">
                             <Link
                                 href="/profile"
-                                className="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-surface-2"
+                                className="block px-4 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-2"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 Profile
                             </Link>
                             <Link
                                 href="/settings"
-                                className="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-surface-2"
+                                className="block px-4 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-2"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 Settings
                             </Link>
-                            <div className="h-px bg-[#30363d] my-1" />
+                            <div className="h-px bg-border my-1" />
                             <button
                                 onClick={handleSignOut}
-                                className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-surface-2"
+                                className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-500 hover:bg-surface-2"
                             >
                                 Sign Out
                             </button>

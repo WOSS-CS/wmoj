@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -54,12 +55,16 @@ export default function LoginPage() {
   return (
     <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo={userDashboardPath || "/dashboard"}>
       <div className="min-h-full flex items-center justify-center p-6 relative z-10">
+        {/* Toggle in Top Right */}
+        <div className="fixed top-6 right-6 z-50">
+          <ThemeToggle />
+        </div>
         <div className="max-w-md w-full">
           {/* Back to Home */}
           <div className="mb-8">
             <Link
               href="/"
-              className="text-gray-400 hover:text-white flex items-center gap-2 transition-colors duration-300 group"
+              className="text-text-muted hover:text-foreground flex items-center gap-2 transition-colors duration-300 group"
             >
               <svg className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -69,8 +74,8 @@ export default function LoginPage() {
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white font-heading mb-2">Welcome Back</h1>
-            <p className="text-gray-400 text-sm">Sign in to continue to your dashboard</p>
+            <h1 className="text-3xl font-bold text-foreground font-heading mb-2">Welcome Back</h1>
+            <p className="text-text-muted text-sm">Sign in to continue to your dashboard</p>
           </div>
 
           {/* Enhanced Login Form Container */}
@@ -88,7 +93,7 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <label className="block text-gray-300 text-xs font-bold uppercase tracking-wider mb-2">
+                <label className="block text-text-muted text-xs font-bold uppercase tracking-wider mb-2">
                   Email
                 </label>
                 <div className="relative">
@@ -100,9 +105,9 @@ export default function LoginPage() {
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 bg-surface-2 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${focusedField === 'email'
-                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-3'
-                      : 'border-white/10 hover:border-brand-primary/50'
+                    className={`w-full px-4 py-3 bg-surface-2 border rounded-lg text-foreground placeholder-text-muted/50 focus:outline-none transition-all duration-300 ${focusedField === 'email'
+                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-1'
+                      : 'border-border hover:border-brand-primary/50'
                       }`}
                     placeholder="Enter your email"
                   />
@@ -111,7 +116,7 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="block text-gray-300 text-xs font-bold uppercase tracking-wider">
+                  <label className="block text-text-muted text-xs font-bold uppercase tracking-wider">
                     Password
                   </label>
                   <Link
@@ -130,9 +135,9 @@ export default function LoginPage() {
                     onFocus={() => setFocusedField('password')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 pr-12 bg-surface-2 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${focusedField === 'password'
-                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-3'
-                      : 'border-white/10 hover:border-brand-primary/50'
+                    className={`w-full px-4 py-3 pr-12 bg-surface-2 border rounded-lg text-foreground placeholder-text-muted/50 focus:outline-none transition-all duration-300 ${focusedField === 'password'
+                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-1'
+                      : 'border-border hover:border-brand-primary/50'
                       }`}
                     placeholder="Enter your password"
                   />
@@ -159,9 +164,9 @@ export default function LoginPage() {
                 <label className="flex items-center cursor-pointer group">
                   <input
                     type="checkbox"
-                    className="mr-3 rounded border-white/10 bg-surface-2 text-brand-primary focus:ring-brand-primary focus:ring-2 transition-colors duration-300"
+                    className="mr-3 rounded border-border bg-surface-2 text-brand-primary focus:ring-brand-primary focus:ring-2 transition-colors duration-300"
                   />
-                  <span className="text-gray-400 text-sm group-hover:text-white transition-colors duration-300">Remember me</span>
+                  <span className="text-text-muted text-sm group-hover:text-foreground transition-colors duration-300">Remember me</span>
                 </label>
               </div>
 
@@ -174,8 +179,8 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="mt-8 text-center pt-6 border-t border-white/10">
-              <p className="text-gray-400 text-sm">
+            <div className="mt-8 text-center pt-6 border-t border-border">
+              <p className="text-text-muted text-sm">
                 Don&apos;t have an account?{' '}
                 <Link
                   href="/auth/signup"

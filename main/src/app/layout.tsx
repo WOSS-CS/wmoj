@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google"; // [MODIFY] Replaced Geist
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { CountdownProvider } from "@/contexts/CountdownContext";
 import { CountdownOverlay } from "@/components/CountdownOverlay";
 import { ActiveContestRedirect } from "@/components/ActiveContestRedirect";
@@ -67,16 +68,18 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased smooth-transition`}
       >
-        <AuthProvider>
-          <CountdownProvider>
-            <AppShell>
-              {children}
-            </AppShell>
-            <CountdownOverlay />
-            <ActiveContestRedirect />
-            <ToastContainer />
-          </CountdownProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <CountdownProvider>
+              <AppShell>
+                {children}
+              </AppShell>
+              <CountdownOverlay />
+              <ActiveContestRedirect />
+              <ToastContainer />
+            </CountdownProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

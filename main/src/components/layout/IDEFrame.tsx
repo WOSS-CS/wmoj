@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface IDEFrameProps {
     user: any;
@@ -71,6 +72,7 @@ const IDEFrame = ({ user, onSignOut }: IDEFrameProps) => {
 
                     {/* Desktop Toolbar (Auth Actions) - Far Right of Tabs Row */}
                     <div className="ml-auto flex items-center gap-3 pr-4 h-full">
+                        <ThemeToggle className="!p-1 !glass-panel hover:!bg-white/10 !border-white/10 h-8 w-8" />
                         {user ? (
                             <>
                                 <span className="text-xs text-green-400 font-mono hidden xl:inline-block">

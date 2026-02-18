@@ -1,29 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  /* New Color Palette v2.0 */
+  /* New Color Palette v2.0 - Dark Mode (Default) */
   --background: #0F1115;
-  /* Deep Charcoal */
   --foreground: #ffffff;
-  /* White text for dark mode default */
-
-  /* Surfaces */
   --surface-1: #161B22;
-  /* Panels/Cards/Sidebar */
   --surface-2: #21262D;
-  /* Inputs/Hover States */
-
-  /* Brand */
   --color-brand-primary: #10B981;
   --color-brand-secondary: #34D399;
-
-  /* Semantic */
   --color-success: #2EA043;
   --color-error: #F85149;
   --color-warning: #D29922;
-
   --font-heading: 'JetBrains Mono', 'Fira Code', monospace;
   --font-body: 'Inter', system-ui, sans-serif;
+  --sidebar-border: #30363d;
+  --border: #30363d;
+  --text-muted: #9ca3af;
+}
+
+.light {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --surface-1: #ffffff;
+  --surface-2: #f1f5f9;
+  --sidebar-border: #e2e8f0;
+  --border: #e2e8f0;
+  --text-muted: #64748b;
+  --color-brand-primary: #059669;
+  --color-brand-secondary: #10b981;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+  --color-warning: #ca8a04;
+}
+
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 @theme inline {
@@ -38,6 +49,8 @@
   --color-success: var(--color-success);
   --color-error: var(--color-error);
   --color-warning: var(--color-warning);
+  --color-border: var(--border);
+  --color-text-muted: var(--text-muted);
 
   --font-sans: var(--font-body);
   --font-mono: var(--font-heading);
@@ -441,24 +454,31 @@
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Glass Effect Utility */
+.glass-panel {
+  background: var(--surface-1);
+  border: 1px solid var(--sidebar-border);
+  border-radius: 12px;
+}
+
 /* Enhanced Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: var(--background);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #22c55e;
+  background: var(--color-brand-primary);
   border-radius: 4px;
   transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #22c55e;
+  background: var(--color-brand-secondary);
 }
 
 /* Selection Styling */

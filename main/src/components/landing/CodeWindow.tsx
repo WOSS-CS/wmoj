@@ -41,7 +41,7 @@ const CodeWindow = () => {
 
             // Ensure line exists in ref
             while (linesRef.current.length <= lineIndex) {
-                linesRef.current.push({ text: '', color: '#e5e5e5' });
+                linesRef.current.push({ text: '', color: 'var(--foreground)' });
             }
 
             // Typing loop
@@ -93,15 +93,15 @@ const CodeWindow = () => {
                 await wait(200);
 
                 // Line 1:   if (n <= 1) return n;
-                await typeLine(1, '  if (n <= 1) return n;', '#e5e5e5');
+                await typeLine(1, '  if (n <= 1) return n;', 'var(--foreground)');
                 await wait(200);
 
                 // Line 2:   return solve(n-1) + solve(n-2);
-                await typeLine(2, '  return solve(n-1) + solve(n-2);', '#e5e5e5');
+                await typeLine(2, '  return solve(n-1) + solve(n-2);', 'var(--foreground)');
                 await wait(200);
 
                 // Line 3: }
-                await typeLine(3, '}', '#e5e5e5');
+                await typeLine(3, '}', 'var(--foreground)');
 
                 await wait(800);
 
@@ -115,13 +115,13 @@ const CodeWindow = () => {
                 await backspaceLine(3); // Delete }
                 await backspaceLine(2); // Delete return ...
 
-                await typeLine(2, '  if (memo[n]) return memo[n];', '#e5e5e5');
+                await typeLine(2, '  if (memo[n]) return memo[n];', 'var(--foreground)');
                 await wait(200);
 
-                await typeLine(3, '  return memo[n] = solve(n-1) + solve(n-2);', '#e5e5e5');
+                await typeLine(3, '  return memo[n] = solve(n-1) + solve(n-2);', 'var(--foreground)');
                 await wait(200);
 
-                await typeLine(4, '}', '#e5e5e5');
+                await typeLine(4, '}', 'var(--foreground)');
                 await wait(800);
 
                 // --- PHASE 4: Success ---
@@ -156,14 +156,14 @@ const CodeWindow = () => {
         <div className="relative group perspective-1000 w-full max-w-lg mx-auto">
             <div className="relative transform transition-all duration-500 ease-out hover:rotate-x-2 hover:rotate-y-2 preserve-3d">
                 {/* Glass Container */}
-                <div className="glass-panel p-6 bg-[#0d1117]/80 backdrop-blur-md rounded-xl border border-[#30363d] shadow-2xl shadow-black/50 overflow-hidden min-h-[220px]">
+                <div className="glass-panel p-6 bg-surface-1/80 backdrop-blur-md rounded-xl border border-border shadow-2xl shadow-black/50 overflow-hidden min-h-[220px]">
 
                     {/* Header */}
-                    <div className="flex items-center gap-2 mb-4 border-b border-[#30363d] pb-3">
+                    <div className="flex items-center gap-2 mb-4 border-b border-border pb-3">
                         <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
                         <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
                         <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
-                        <div className="ml-4 text-xs text-gray-400 font-mono">solution.js</div>
+                        <div className="ml-4 text-xs text-text-muted font-mono">solution.js</div>
                     </div>
 
                     {/* Code Content */}
@@ -171,7 +171,7 @@ const CodeWindow = () => {
                         {lines.map((line, i) => (
                             <div key={i} className="flex min-h-[1.5em]">
                                 {/* Line Number */}
-                                <span className="w-8 text-gray-600 select-none text-right mr-4">{i + 1}</span>
+                                <span className="w-8 text-text-muted/50 select-none text-right mr-4">{i + 1}</span>
                                 <span style={{ color: line.color }} className="transition-colors duration-300 whitespace-pre flex items-center">
                                     {line.text}
                                     {/* Cursor Logic: Show if it's the active line, OR if it's the very first line and empty (start state) */}
@@ -184,7 +184,7 @@ const CodeWindow = () => {
                         {/* Empty State Cursor (if lines is empty) */}
                         {lines.length === 0 && (
                             <div className="flex">
-                                <span className="w-8 text-gray-600 select-none text-right mr-4">1</span>
+                                <span className="w-8 text-text-muted/50 select-none text-right mr-4">1</span>
                                 <span className="animate-pulse inline-block w-2 h-4 bg-brand-primary ml-1"></span>
                             </div>
                         )}
