@@ -172,16 +172,16 @@ export default function ManageProblemsPage() {
       <AdminGuard>
         <div className="w-full">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white mb-4 relative">
+            <h1 className="text-4xl font-bold text-foreground mb-4 relative">
               Manage Problems
               <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full animate-pulse" />
             </h1>
-            <p className="text-gray-300 text-lg">Edit, activate/deactivate, or delete problems.</p>
+            <p className="text-text-muted text-lg">Edit, activate/deactivate, or delete problems.</p>
           </div>
           {actionMessage && (
-            <div className="mb-4 p-3 rounded bg-[#171717] border border-[#333333] text-sm flex justify-between items-center">
+            <div className="mb-4 p-3 rounded bg-surface-2 border border-border text-sm flex justify-between items-center text-foreground">
               <span>{actionMessage}</span>
-              <button onClick={() => setActionMessage(null)} className="text-gray-400 hover:text-white">×</button>
+              <button onClick={() => setActionMessage(null)} className="text-text-muted hover:text-foreground">×</button>
             </div>
           )}
           {error && <div className="text-red-400 mb-4">{error}</div>}
@@ -192,19 +192,19 @@ export default function ManageProblemsPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search by name or contest..."
-                className="flex-1 px-4 py-2 rounded-lg bg-[#111111] border border-[#262626] text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                className="flex-1 px-4 py-2 rounded-lg bg-surface-2 border border-border text-foreground placeholder-text-muted/50 focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
               <div className="flex items-center gap-2">
-                <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter === 'all' ? 'text-blue-400 border-blue-900 bg-[#172554]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>All</button>
-                <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter === 'active' ? 'text-blue-400 border-blue-900 bg-[#172554]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>Active</button>
-                <button onClick={() => setFilter('inactive')} className={`px-3 py-2 rounded-lg border ${filter === 'inactive' ? 'text-blue-400 border-blue-900 bg-[#172554]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>Inactive</button>
+                <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter === 'all' ? 'text-blue-400 border-blue-400/30 bg-blue-400/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>All</button>
+                <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter === 'active' ? 'text-blue-400 border-blue-400/30 bg-blue-400/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>Active</button>
+                <button onClick={() => setFilter('inactive')} className={`px-3 py-2 rounded-lg border ${filter === 'inactive' ? 'text-blue-400 border-blue-400/30 bg-blue-400/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>Inactive</button>
               </div>
             </div>
 
             {loading ? (
-              <div className="animate-pulse text-gray-400">Loading problems...</div>
+              <div className="animate-pulse text-text-muted">Loading problems...</div>
             ) : filteredProblems.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">No problems match your filters.</div>
+              <div className="text-center py-12 text-text-muted">No problems match your filters.</div>
             ) : (
               <div className="overflow-x-auto">
                 {(() => {
@@ -216,7 +216,7 @@ export default function ManageProblemsPage() {
                       className: 'w-3/12',
                       sortable: true,
                       sortAccessor: (r) => r.name.toLowerCase(),
-                      render: (r) => <span className="text-white font-medium" title={r.name}>{r.name}</span>,
+                      render: (r) => <span className="text-foreground font-medium" title={r.name}>{r.name}</span>,
                     },
                     {
                       key: 'contest',
@@ -224,7 +224,7 @@ export default function ManageProblemsPage() {
                       className: 'w-2/12',
                       sortable: true,
                       sortAccessor: (r) => (r.contest_name || r.contest || '').toLowerCase(),
-                      render: (r) => <span className="text-gray-300">{r.contest_name || r.contest || '-'}</span>,
+                      render: (r) => <span className="text-text-muted">{r.contest_name || r.contest || '-'}</span>,
                     },
                     {
                       key: 'status',
@@ -233,7 +233,7 @@ export default function ManageProblemsPage() {
                       sortable: true,
                       sortAccessor: (r) => (r.is_active ? 1 : 0),
                       render: (r) => (
-                        <span className={`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-[#064e3b] text-green-400 border-green-900' : 'bg-[#422006] text-yellow-400 border-yellow-900'}`}>
+                        <span className={`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
                           {r.is_active ? 'Active' : 'Inactive'}
                         </span>
                       ),
@@ -244,7 +244,7 @@ export default function ManageProblemsPage() {
                       className: 'w-2/12',
                       sortable: true,
                       sortAccessor: (r) => new Date(r.updated_at).getTime(),
-                      render: (r) => <span className="text-gray-400" title={r.updated_at}>{new Date(r.updated_at).toLocaleDateString()}</span>,
+                      render: (r) => <span className="text-text-muted" title={r.updated_at}>{new Date(r.updated_at).toLocaleDateString()}</span>,
                     },
                     {
                       key: 'actions',
@@ -275,38 +275,38 @@ export default function ManageProblemsPage() {
 
           {/* Edit Modal */}
           {editing && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
-              <div className="w-full max-w-5xl bg-[#111111] border border-[#333333] rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+              <div className="w-full max-w-5xl bg-surface-1 border border-border rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
                 {/* Modal Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-[#333333] bg-[#1a1a1a] rounded-t-xl">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface-2 rounded-t-xl">
                   <div>
-                    <h2 className="text-xl font-bold tracking-wide">Edit Problem</h2>
-                    <p className="text-xs text-gray-400 mt-0.5">Update problem metadata & statement</p>
+                    <h2 className="text-xl font-bold tracking-wide text-foreground">Edit Problem</h2>
+                    <p className="text-xs text-text-muted mt-0.5">Update problem metadata & statement</p>
                   </div>
-                  <button onClick={closeEdit} className="text-gray-400 hover:text-white transition" aria-label="Close edit modal">✕</button>
+                  <button onClick={closeEdit} className="text-text-muted hover:text-foreground transition" aria-label="Close edit modal">✕</button>
                 </div>
                 {/* Modal Body (scrollable) */}
                 <div className="overflow-y-auto custom-scrollbar px-6 py-5 space-y-6">
                   {fetchingEditContent ? (
-                    <div className="animate-pulse text-gray-400">Loading content...</div>
+                    <div className="animate-pulse text-text-muted">Loading content...</div>
                   ) : (
                     <>
                       {/* Name & Status Row */}
                       <div className="grid md:grid-cols-3 gap-6 items-start">
                         <div className="md:col-span-2 space-y-2">
-                          <label className="block text-sm font-medium">Name</label>
+                          <label className="block text-sm font-medium text-foreground">Name</label>
                           <input
-                            className="w-full px-3 py-2 rounded-md bg-[#0a0a0a] border border-[#333333] focus:outline-none focus:ring focus:ring-green-900"
+                            className="w-full px-3 py-2 rounded-md bg-surface-2 border border-border text-foreground focus:outline-none focus:ring focus:ring-blue-500/20"
                             value={editing.name}
                             placeholder="Enter problem title"
                             onChange={e => setEditing(s => s ? { ...s, name: e.target.value } : s)}
                           />
                         </div>
                         <div className="flex md:flex-col gap-4 md:gap-2 pt-6 md:pt-0">
-                          <label className="inline-flex items-center gap-2 text-sm select-none">
+                          <label className="inline-flex items-center gap-2 text-sm select-none text-foreground">
                             <input
                               type="checkbox"
-                              className="h-4 w-4"
+                              className="h-4 w-4 rounded border-border bg-surface-2 text-blue-500 focus:ring-blue-500/20"
                               checked={editing.is_active}
                               onChange={e => setEditing(s => s ? { ...s, is_active: e.target.checked } : s)}
                             />
@@ -315,7 +315,7 @@ export default function ManageProblemsPage() {
                           <button
                             onClick={saveEdit}
                             disabled={!editing.name.trim()}
-                            className="px-4 py-2 rounded-md bg-green-600 hover:bg-green-500 disabled:opacity-40 text-sm font-medium transition shadow-md shadow-green-600/20"
+                            className="px-4 py-2 rounded-md bg-brand-primary text-black hover:bg-brand-secondary disabled:opacity-40 text-sm font-medium transition shadow-md shadow-brand-primary/20"
                           >
                             Save Now
                           </button>
@@ -325,28 +325,28 @@ export default function ManageProblemsPage() {
                       {/* Time Limit and Memory Limit Row */}
                       <div className="grid md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="block text-sm font-medium">Time Limit (ms)</label>
+                          <label className="block text-sm font-medium text-foreground">Time Limit (ms)</label>
                           <input
                             type="number"
                             min="1"
-                            className="w-full px-3 py-2 rounded-md bg-[#0a0a0a] border border-[#333333] focus:outline-none focus:ring focus:ring-green-900"
+                            className="w-full px-3 py-2 rounded-md bg-surface-2 border border-border text-foreground focus:outline-none focus:ring focus:ring-blue-500/20"
                             value={editing.time_limit}
                             placeholder="e.g., 5000"
                             onChange={e => setEditing(s => s ? { ...s, time_limit: parseInt(e.target.value, 10) || 5000 } : s)}
                           />
-                          <p className="text-xs text-gray-400">Maximum execution time in milliseconds</p>
+                          <p className="text-xs text-text-muted">Maximum execution time in milliseconds</p>
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-sm font-medium">Memory Limit (MB)</label>
+                          <label className="block text-sm font-medium text-foreground">Memory Limit (MB)</label>
                           <input
                             type="number"
                             min="1"
-                            className="w-full px-3 py-2 rounded-md bg-[#0a0a0a] border border-[#333333] focus:outline-none focus:ring focus:ring-green-900"
+                            className="w-full px-3 py-2 rounded-md bg-surface-2 border border-border text-foreground focus:outline-none focus:ring focus:ring-blue-500/20"
                             value={editing.memory_limit}
                             placeholder="e.g., 256"
                             onChange={e => setEditing(s => s ? { ...s, memory_limit: parseInt(e.target.value, 10) || 256 } : s)}
                           />
-                          <p className="text-xs text-gray-400">Maximum memory usage in megabytes</p>
+                          <p className="text-xs text-text-muted">Maximum memory usage in megabytes</p>
                         </div>
                       </div>
 
@@ -366,12 +366,12 @@ export default function ManageProblemsPage() {
                   )}
                 </div>
                 {/* Modal Footer */}
-                <div className="px-6 py-4 border-t border-[#333333] flex justify-end gap-3 bg-[#1a1a1a] rounded-b-xl">
-                  <button onClick={closeEdit} className="px-4 py-2 rounded-md bg-[#262626] hover:bg-[#333333] transition text-sm font-medium">Close</button>
+                <div className="px-6 py-4 border-t border-border flex justify-end gap-3 bg-surface-2 rounded-b-xl">
+                  <button onClick={closeEdit} className="px-4 py-2 rounded-md bg-surface-3 hover:bg-surface-4 transition text-sm font-medium text-foreground">Close</button>
                   <button
                     onClick={saveEdit}
                     disabled={!editing.name.trim()}
-                    className="px-5 py-2 rounded-md bg-green-600 hover:bg-green-500 disabled:opacity-40 font-semibold text-sm shadow-lg shadow-green-600/20 transition"
+                    className="px-5 py-2 rounded-md bg-brand-primary text-black hover:bg-brand-secondary disabled:opacity-40 font-semibold text-sm shadow-lg shadow-brand-primary/20 transition"
                   >
                     Save Changes
                   </button>

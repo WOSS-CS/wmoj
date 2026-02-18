@@ -166,17 +166,17 @@ export default function DashboardPage() {
             <div className="md:col-span-2 glass-panel p-8 relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative z-10">
-                <h1 className="text-3xl font-bold text-white mb-2">
+                <h1 className="text-3xl font-bold text-foreground mb-2">
                   Welcome back, <span className="text-brand-primary">{user?.user_metadata?.username || 'Programmer'}</span>
                 </h1>
-                <p className="text-gray-400 max-w-lg">
+                <p className="text-text-muted max-w-lg">
                   Ready to continue your journey? You have solved {recentSolves} problems recently. Keep up the momentum!
                 </p>
                 <div className="mt-6 flex gap-4">
                   <Link href="/problems" className="px-6 py-2 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-secondary transition-colors">
                     Solve Problems
                   </Link>
-                  <Link href="/contests" className="px-6 py-2 border border-gray-700 text-gray-300 font-medium rounded-lg hover:text-white hover:bg-surface-2 transition-colors">
+                  <Link href="/contests" className="px-6 py-2 border border-border text-text-muted font-medium rounded-lg hover:text-foreground hover:bg-surface-2 transition-colors">
                     View Contests
                   </Link>
                 </div>
@@ -185,15 +185,15 @@ export default function DashboardPage() {
 
             {/* Stats Card */}
             <div className="glass-panel p-6 flex flex-col justify-center">
-              <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4">Quick Stats</h3>
+              <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-4">Quick Stats</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-surface-2/50">
-                  <div className="text-2xl font-bold text-white mb-1">{totalSubmissions}</div>
-                  <div className="text-xs text-gray-500">Submissions</div>
+                  <div className="text-2xl font-bold text-foreground mb-1">{totalSubmissions}</div>
+                  <div className="text-xs text-text-muted">Submissions</div>
                 </div>
                 <div className="p-4 rounded-lg bg-surface-2/50">
                   <div className="text-2xl font-bold text-brand-primary mb-1">{recentSolves}</div>
-                  <div className="text-xs text-gray-500">Recent Solves</div>
+                  <div className="text-xs text-text-muted">Recent Solves</div>
                 </div>
               </div>
             </div>
@@ -202,7 +202,7 @@ export default function DashboardPage() {
           {/* Activity Section */}
           <div className="glass-panel p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">Recent Activity</h2>
+              <h2 className="text-xl font-bold text-foreground">Recent Activity</h2>
               <Link href="/profile" className="text-sm text-brand-primary hover:text-brand-secondary">
                 View All
               </Link>
@@ -225,7 +225,7 @@ export default function DashboardPage() {
                     sortable: true,
                     sortAccessor: (r) => r.item.toLowerCase(),
                     render: (r) => (
-                      <span className="text-white font-medium">{r.item}</span>
+                      <span className="text-foreground font-medium">{r.item}</span>
                     ),
                   },
                   {
@@ -235,7 +235,7 @@ export default function DashboardPage() {
                     sortable: true,
                     sortAccessor: (r) => r.type,
                     render: (r) => (
-                      <span className="text-gray-400 text-xs uppercase tracking-wide">
+                      <span className="text-text-muted text-xs uppercase tracking-wide">
                         {r.type === 'submission' ? 'Submission' : 'Join'}
                       </span>
                     ),
@@ -262,7 +262,7 @@ export default function DashboardPage() {
                     header: 'Score',
                     className: 'w-[15%]',
                     render: (r) => (
-                      <span className="text-gray-400 font-mono text-xs">
+                      <span className="text-text-muted font-mono text-xs">
                         {r.type === 'submission' && r.passed != null && r.total != null
                           ? `${r.passed}/${r.total}`
                           : '-'}
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                     sortable: true,
                     sortAccessor: (r) => new Date(r.timestamp).getTime(),
                     render: (r) => (
-                      <span className="text-gray-500 text-xs">
+                      <span className="text-text-muted text-xs">
                         {formatTimeAgo(r.timestamp)}
                       </span>
                     ),

@@ -150,7 +150,7 @@ export default function ContestPage() {
 
             {/* Header / Config Area */}
             <div className="flex justify-between items-center mb-6">
-              <Link href="/contests" className="text-sm text-gray-400 hover:text-white flex items-center gap-2 hover:translate-x-[-2px] transition-transform">
+              <Link href="/contests" className="text-sm text-text-muted hover:text-foreground flex items-center gap-2 hover:translate-x-[-2px] transition-transform">
                 ← Back to Contests
               </Link>
               {leaving && <span className="text-xs text-red-400 animate-pulse">Leaving contest...</span>}
@@ -197,7 +197,7 @@ export default function ContestPage() {
                 <div className="flex flex-col lg:flex-row justify-between items-start mb-8 gap-6">
                   <div className="flex-1 w-full">
                     <div className="flex items-center gap-4 mb-2">
-                      <h1 className="text-4xl font-bold text-white font-heading relative inline-block">
+                      <h1 className="text-4xl font-bold text-foreground font-heading relative inline-block">
                         {contest?.name}
                       </h1>
                       <span className="px-3 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-full text-xs font-mono uppercase tracking-wider animate-pulse">
@@ -212,17 +212,17 @@ export default function ContestPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-6 text-sm font-mono">
-                      <div className="flex items-center gap-2 text-gray-400 bg-surface-2 px-3 py-1.5 rounded-lg border border-white/5">
+                      <div className="flex items-center gap-2 text-text-muted bg-surface-2 px-3 py-1.5 rounded-lg border border-border">
                         <svg className="w-4 h-4 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Length: <span className="text-white">{contest?.length} min</span>
+                        Length: <span className="text-foreground">{contest?.length} min</span>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-400 bg-surface-2 px-3 py-1.5 rounded-lg border border-white/5">
+                      <div className="flex items-center gap-2 text-text-muted bg-surface-2 px-3 py-1.5 rounded-lg border border-border">
                         <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        Problems: <span className="text-white">{problems.length}</span>
+                        Problems: <span className="text-foreground">{problems.length}</span>
                       </div>
                     </div>
                   </div>
@@ -230,7 +230,7 @@ export default function ContestPage() {
                   <div className="flex gap-3 w-full lg:w-auto">
                     <button
                       onClick={handleLeaderboardToggle}
-                      className="flex-1 lg:flex-none px-6 py-3 bg-surface-2 text-white border border-white/10 rounded-lg hover:bg-surface-3 transition-colors flex items-center justify-center gap-2 group"
+                      className="flex-1 lg:flex-none px-6 py-3 bg-surface-2 text-foreground border border-border rounded-lg hover:bg-surface-3 transition-colors flex items-center justify-center gap-2 group"
                     >
                       <svg className="w-4 h-4 text-yellow-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -258,11 +258,11 @@ export default function ContestPage() {
                 {showLeaderboard && (
                   <div className="glass-panel p-8 mb-8 animate-fade-in-up">
                     <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-xl font-heading text-white flex items-center gap-3">
+                      <h2 className="text-xl font-heading text-foreground flex items-center gap-3">
                         Live Leaderboard
                       </h2>
                       {leaderboardLoading && (
-                        <div className="flex items-center gap-2 text-gray-400">
+                        <div className="flex items-center gap-2 text-text-muted">
                           <div className="w-3 h-3 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
                           <span className="text-xs uppercase tracking-wider">Refreshing...</span>
                         </div>
@@ -270,9 +270,9 @@ export default function ContestPage() {
                     </div>
 
                     {leaderboard.length === 0 ? (
-                      <div className="text-center py-12 bg-black/20 rounded-xl">
-                        <h3 className="text-lg font-medium text-white mb-2">No Submissions Yet</h3>
-                        <p className="text-gray-500 text-sm">Be the first to solve a problem!</p>
+                      <div className="text-center py-12 bg-surface-2/30 rounded-xl border border-border">
+                        <h3 className="text-lg font-medium text-foreground mb-2">No Submissions Yet</h3>
+                        <p className="text-text-muted text-sm">Be the first to solve a problem!</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -285,7 +285,7 @@ export default function ContestPage() {
                               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-lg font-mono ${index === 0 ? 'bg-yellow-400 text-black' :
                                 index === 1 ? 'bg-gray-300 text-black' :
                                   index === 2 ? 'bg-orange-400 text-white' :
-                                    'bg-surface-3 text-gray-400'
+                                    'bg-surface-3 text-text-muted'
                                 }`}>
                                 {index < 3 ? (
                                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -296,13 +296,13 @@ export default function ContestPage() {
                                 )}
                               </div>
                               <div>
-                                <div className="text-white font-medium">{entry.username}</div>
-                                <div className="text-gray-500 text-xs">{entry.email}</div>
+                                <div className="text-foreground font-medium">{entry.username}</div>
+                                <div className="text-text-muted text-xs">{entry.email}</div>
                               </div>
                             </div>
                             <div className="text-right">
                               <div className="text-brand-primary font-bold font-mono">{entry.total_score} pts</div>
-                              <div className="text-gray-500 text-xs font-mono">
+                              <div className="text-text-muted text-xs font-mono">
                                 {entry.solved_problems}/{entry.total_problems} solved
                               </div>
                             </div>
@@ -315,15 +315,15 @@ export default function ContestPage() {
 
                 {/* Enhanced Problems Section */}
                 <div className="mb-6">
-                  <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3 font-heading">
+                  <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-3 font-heading">
                     Contest Problems
                   </h2>
                 </div>
 
                 {problems.length === 0 ? (
                   <div className="text-center py-12 glass-panel">
-                    <h3 className="text-xl font-semibold text-white mb-2">No Problems Yet</h3>
-                    <p className="text-gray-400">Problems will appear here when they&apos;re added to the contest.</p>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">No Problems Yet</h3>
+                    <p className="text-text-muted">Problems will appear here when they&apos;re added to the contest.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -338,16 +338,16 @@ export default function ContestPage() {
                         style={{ transitionDelay: `${index * 0.05}s` }}
                       >
                         <div className="flex items-start justify-between mb-4">
-                          <div className="text-lg font-bold text-white group-hover:text-brand-primary transition-colors duration-300 font-heading">
+                          <div className="text-lg font-bold text-foreground group-hover:text-brand-primary transition-colors duration-300 font-heading">
                             {p.name}
                           </div>
                           <div className="w-2 h-2 bg-brand-primary rounded-full animate-pulse"></div>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-400 text-xs uppercase tracking-wider font-bold mb-4">
+                        <div className="flex items-center gap-2 text-text-muted text-xs uppercase tracking-wider font-bold mb-4">
                           <span>Contest Problem</span>
                         </div>
-                        <div className="flex items-center justify-between border-t border-white/5 pt-4">
-                          <span className="text-gray-500 text-sm group-hover:text-white transition-colors">Solve Now</span>
+                        <div className="flex items-center justify-between border-t border-border pt-4">
+                          <span className="text-text-muted text-sm group-hover:text-foreground transition-colors">Solve Now</span>
                           <svg className="w-5 h-5 text-brand-primary transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                           </svg>

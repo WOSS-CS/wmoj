@@ -94,11 +94,11 @@ export default function ContestsPage() {
             }
           >
             <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <h1 className="text-4xl font-bold text-white mb-4 relative">
+              <h1 className="text-4xl font-bold text-foreground mb-4 relative">
                 Available Contests
                 <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-brand-primary to-emerald-400 rounded-full animate-pulse" />
               </h1>
-              <p className="text-gray-300 text-lg">
+              <p className="text-text-muted text-lg">
                 Browse and join available contests
               </p>
             </div>
@@ -124,8 +124,8 @@ export default function ContestsPage() {
               {contests.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4 animate-bounce">⏳</div>
-                  <h3 className="text-2xl font-semibold text-white mb-2">No Contests Available</h3>
-                  <p className="text-gray-300">Please check back later.</p>
+                  <h3 className="text-2xl font-semibold text-foreground mb-2">No Contests Available</h3>
+                  <p className="text-text-muted">Please check back later.</p>
                 </div>
               ) : (
                 <>
@@ -134,15 +134,15 @@ export default function ContestsPage() {
                       value={search}
                       onChange={e => setSearch(e.target.value)}
                       placeholder="Search contests by name or description..."
-                      className="w-full px-4 py-2 rounded-lg bg-surface-1 border border-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                      className="w-full px-4 py-2 rounded-lg bg-surface-2 border border-border text-foreground placeholder-text-muted/50 focus:outline-none focus:ring-1 focus:ring-brand-primary"
                     />
                   </div>
 
                   {filteredContests.length === 0 ? (
                     <div className="text-center py-12">
                       <div className="text-6xl mb-4">🔍</div>
-                      <h3 className="text-2xl font-semibold text-white mb-2">No Contests Found</h3>
-                      <p className="text-gray-300">
+                      <h3 className="text-2xl font-semibold text-foreground mb-2">No Contests Found</h3>
+                      <p className="text-text-muted">
                         No contests match your search criteria. Try a different search term.
                       </p>
                     </div>
@@ -159,7 +159,7 @@ export default function ContestsPage() {
                             sortAccessor: (r) => (r.name || '').toLowerCase(),
                             render: (r) => (
                               <div className="flex items-center gap-3 flex-wrap">
-                                <h3 className="text-white font-semibold">
+                                <h3 className="text-foreground font-semibold">
                                   {r.name || 'Untitled Contest'}
                                 </h3>
                                 {(r.problems_count ?? 0) > 0 && (
@@ -175,7 +175,7 @@ export default function ContestsPage() {
                             sortable: true,
                             sortAccessor: (r) => r.length,
                             render: (r) => (
-                              <span className="text-white font-medium">{r.length} min</span>
+                              <span className="text-foreground font-medium">{r.length} min</span>
                             ),
                           },
                           {
@@ -197,7 +197,7 @@ export default function ContestsPage() {
                             sortable: true,
                             sortAccessor: (r) => r.participants_count ?? 0,
                             render: (r) => (
-                              <span className="text-gray-300 text-sm">
+                              <span className="text-text-muted text-sm">
                                 {(r.participants_count ?? 0)} participant{(r.participants_count ?? 0) === 1 ? '' : 's'}
                               </span>
                             ),

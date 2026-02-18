@@ -226,7 +226,7 @@ export default function ProblemPage() {
               <button
                 type="button"
                 onClick={() => router.push(problem?.contest ? `/contests/${problem.contest}` : '/problems')}
-                className="px-4 py-2 text-sm text-gray-300 hover:text-white flex items-center gap-2 hover:translate-x-[-2px] transition-transform"
+                className="px-4 py-2 text-sm text-text-muted hover:text-foreground flex items-center gap-2 hover:translate-x-[-2px] transition-transform"
               >
                 ← Back to {problem?.contest ? 'Contest' : 'Problems'}
               </button>
@@ -288,7 +288,7 @@ export default function ProblemPage() {
                   <div className="glass-panel p-8 transition-colors duration-300">
                     <div className="flex flex-wrap items-center gap-4 mb-6">
                       <div className="relative">
-                        <h1 className="text-3xl font-bold text-white font-heading">
+                        <h1 className="text-3xl font-bold text-foreground font-heading">
                           {problem.name}
                         </h1>
                       </div>
@@ -309,7 +309,7 @@ export default function ProblemPage() {
                           onClick={() => setActiveTab(tab.id as 'description' | 'results' | 'stats')}
                           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 flex items-center ${activeTab === tab.id
                             ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20'
-                            : 'text-gray-400 hover:text-white hover:bg-surface-2'
+                            : 'text-text-muted hover:text-foreground hover:bg-surface-2'
                             }`}
                         >
                           {tab.label}
@@ -333,8 +333,8 @@ export default function ProblemPage() {
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${summary.failed === 0 ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                                   {summary.failed === 0 ? 'ALL PASSED' : 'SOME FAILED'}
                                 </span>
-                                <span className="text-gray-400 text-sm">Score:</span>
-                                <span className="text-white font-mono font-bold">{summary.passed}/{summary.total}</span>
+                                <span className="text-text-muted text-sm">Score:</span>
+                                <span className="text-foreground font-mono font-bold">{summary.passed}/{summary.total}</span>
                               </div>
                               <div className="space-y-3">
                                 {results.map((r) => (
@@ -342,19 +342,19 @@ export default function ProblemPage() {
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-3">
                                         <span className={`w-2 h-2 rounded-full ${r.passed ? 'bg-green-500' : 'bg-red-500'}`} />
-                                        <span className="text-white font-mono text-sm">Test case {r.index + 1}</span>
+                                        <span className="text-foreground font-mono text-sm">Test case {r.index + 1}</span>
                                       </div>
-                                      <div className="text-xs text-gray-500 font-mono">exit {r.exitCode}{r.timedOut ? ' · timed out' : ''}</div>
+                                      <div className="text-xs text-text-muted font-mono">exit {r.exitCode}{r.timedOut ? ' · timed out' : ''}</div>
                                     </div>
                                     {!r.passed && (
                                       <div className="mt-3 grid md:grid-cols-2 gap-3 text-xs font-mono">
                                         <div>
-                                          <div className="text-gray-500 mb-1">Expected</div>
-                                          <pre className="p-2 rounded bg-black/50 text-gray-300 overflow-x-auto">{r.expected}</pre>
+                                          <div className="text-text-muted mb-1">Expected</div>
+                                          <pre className="p-2 rounded bg-surface-1 text-text-muted overflow-x-auto border border-border">{r.expected}</pre>
                                         </div>
                                         <div>
-                                          <div className="text-gray-500 mb-1">Received</div>
-                                          <pre className="p-2 rounded bg-black/50 text-red-300 overflow-x-auto">{r.received}</pre>
+                                          <div className="text-text-muted mb-1">Received</div>
+                                          <pre className="p-2 rounded bg-surface-1 text-red-500 overflow-x-auto border border-border">{r.received}</pre>
                                         </div>
                                       </div>
                                     )}
@@ -363,9 +363,9 @@ export default function ProblemPage() {
                               </div>
                             </div>
                           ) : (
-                            <div className="text-center py-12 border-2 border-dashed border-white/5 rounded-xl">
+                            <div className="text-center py-12 border-2 border-dashed border-border rounded-xl">
                               <div className="text-4xl mb-4 opacity-50">📊</div>
-                              <p className="text-gray-500">No submission results yet</p>
+                              <p className="text-text-muted">No submission results yet</p>
                             </div>
                           )}
                         </div>
@@ -374,24 +374,24 @@ export default function ProblemPage() {
                       {activeTab === 'stats' && (
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 bg-surface-2 rounded-lg border border-white/5">
-                              <div className="text-2xl font-bold text-white font-mono">{problem.input.length}</div>
-                              <div className="text-xs text-gray-500 uppercase tracking-wide">Test Cases</div>
+                            <div className="p-4 bg-surface-2 rounded-lg border border-border">
+                              <div className="text-2xl font-bold text-foreground font-mono">{problem.input.length}</div>
+                              <div className="text-xs text-text-muted uppercase tracking-wide">Test Cases</div>
                             </div>
-                            <div className="p-4 bg-surface-2 rounded-lg border border-white/5">
+                            <div className="p-4 bg-surface-2 rounded-lg border border-border">
                               <div className="text-2xl font-bold text-brand-primary">{problem.contest ? 'Contest' : 'Practice'}</div>
-                              <div className="text-xs text-gray-500 uppercase tracking-wide">Type</div>
+                              <div className="text-xs text-text-muted uppercase tracking-wide">Type</div>
                             </div>
                           </div>
                           {bestSummary && (
                             <div className="p-6 bg-surface-2 rounded-lg border border-white/5">
                               <div className="flex items-center justify-between mb-4">
-                                <span className="text-sm text-gray-400">Best Score</span>
+                                <span className="text-sm text-text-muted">Best Score</span>
                                 <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${bestSummary.failed === 0 ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                                   {bestSummary.failed === 0 ? 'Perfect' : 'Partial'}
                                 </span>
                               </div>
-                              <div className="text-4xl font-bold text-white font-mono mb-4">{bestSummary.passed}/{bestSummary.total}</div>
+                              <div className="text-4xl font-bold text-foreground font-mono mb-4">{bestSummary.passed}/{bestSummary.total}</div>
                               <div className="w-full bg-black/50 rounded-full h-1.5 overflow-hidden">
                                 <div
                                   className="bg-brand-primary h-full transition-all duration-500"
@@ -409,7 +409,7 @@ export default function ProblemPage() {
                 {/* Enhanced Code Submission Panel */}
                 <div className="lg:col-span-1">
                   <div className="glass-panel p-6 sticky top-8">
-                    <h2 className="text-lg font-bold text-white mb-6 font-heading flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-foreground mb-6 font-heading flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
                       Submit Solution
                     </h2>
@@ -417,7 +417,7 @@ export default function ProblemPage() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                       {/* Enhanced Language Selection */}
                       <div>
-                        <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">
+                        <label className="block text-text-muted text-xs font-bold uppercase tracking-wider mb-2">
                           Language
                         </label>
                         <div className="relative">
@@ -437,7 +437,7 @@ export default function ProblemPage() {
 
                       {/* Enhanced File Upload */}
                       <div>
-                        <label className="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">
+                        <label className="block text-text-muted text-xs font-bold uppercase tracking-wider mb-2">
                           Source Code
                         </label>
                         <div className="relative group">
@@ -479,7 +479,7 @@ export default function ProblemPage() {
                         {submitting ? (
                           <div className="flex items-center gap-3">
                             <div className="w-4 h-4 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm text-gray-400">Evaluating submission...</span>
+                            <span className="text-sm text-text-muted">Evaluating submission...</span>
                           </div>
                         ) : summary ? (
                           <div className="space-y-3">
@@ -490,23 +490,23 @@ export default function ProblemPage() {
                                   {summary.failed === 0 ? 'Accepted' : 'Failed'}
                                 </span>
                               </div>
-                              <button 
+                              <button
                                 onClick={() => setActiveTab('results')}
                                 className="text-[10px] uppercase font-bold text-brand-primary hover:text-brand-secondary transition-colors"
                               >
                                 View Detailed Results
                               </button>
                             </div>
-                            
+
                             <div className="flex items-end justify-between">
                               <div>
-                                <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Test Cases Passed</div>
-                                <div className="text-2xl font-bold text-white font-mono">
-                                  {summary.passed}<span className="text-gray-600 mx-1">/</span>{summary.total}
+                                <div className="text-[10px] text-text-muted uppercase font-bold mb-1">Test Cases Passed</div>
+                                <div className="text-2xl font-bold text-foreground font-mono">
+                                  {summary.passed}<span className="text-text-muted mx-1">/</span>{summary.total}
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Score</div>
+                                <div className="text-[10px] text-text-muted uppercase font-bold mb-1">Score</div>
                                 <div className="text-xl font-bold text-brand-primary font-mono text-right">
                                   {Math.round((summary.passed / summary.total) * 100)}%
                                 </div>
@@ -514,7 +514,7 @@ export default function ProblemPage() {
                             </div>
 
                             <div className="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
-                              <div 
+                              <div
                                 className={`h-full transition-all duration-1000 ease-out ${summary.failed === 0 ? 'bg-green-500' : 'bg-brand-primary'}`}
                                 style={{ width: `${(summary.passed / summary.total) * 100}%` }}
                               />
@@ -525,24 +525,24 @@ export default function ProblemPage() {
                     )}
 
                     {/* Enhanced Problem Stats */}
-                    <div className="mt-8 pt-6 border-t border-white/10 space-y-3">
-                      <h3 className="text-white font-heading text-sm mb-4">Problem Details</h3>
+                    <div className="mt-8 pt-6 border-t border-border space-y-3">
+                      <h3 className="text-foreground font-heading text-sm mb-4">Problem Details</h3>
 
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-500">Test Cases</span>
-                        <span className="text-white font-mono">{problem.input.length}</span>
+                        <span className="text-text-muted">Test Cases</span>
+                        <span className="text-foreground font-mono">{problem.input.length}</span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-500">Time Limit</span>
-                        <span className="text-white font-mono">{problem.time_limit || 5000}ms</span>
+                        <span className="text-text-muted">Time Limit</span>
+                        <span className="text-foreground font-mono">{problem.time_limit || 5000}ms</span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-500">Memory Limit</span>
-                        <span className="text-white font-mono">{problem.memory_limit || 256}MB</span>
+                        <span className="text-text-muted">Memory Limit</span>
+                        <span className="text-foreground font-mono">{problem.memory_limit || 256}MB</span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-500">Added</span>
-                        <span className="text-white font-mono">{new Date(problem.created_at).toLocaleDateString()}</span>
+                        <span className="text-text-muted">Added</span>
+                        <span className="text-foreground font-mono">{new Date(problem.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
