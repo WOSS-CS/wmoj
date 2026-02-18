@@ -22,9 +22,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     const showNavigation = !isLandingPage && !isAuthPage && user;
 
     return (
-        <div className="min-h-screen text-foreground relative overflow-hidden">
+        <div className="min-h-screen text-foreground relative overflow-hidden bg-background">
             {/* Global Background Layer - The "Gold Standard" */}
-            <div className="fixed inset-0 bg-[#0F1115] -z-50" />
+            <div className="fixed inset-0 bg-background -z-50" />
             <div className="bg-noise fixed inset-0 z-0 opacity-[0.04] pointer-events-none" />
             {/* Code Rain is part of the aesthetic, rendered fixed at z-0 with low opacity */}
             <div className="fixed inset-0 z-0 pointer-events-none opacity-40">

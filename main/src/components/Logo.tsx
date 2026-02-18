@@ -41,10 +41,10 @@ export function Logo({
   const content = (
     <>
       <span
-        className="relative flex items-center justify-center rounded-full border border-[#333333] bg-[#171717] shadow-[0_0_18px_rgba(34,197,94,0.18)]"
+        className="relative flex items-center justify-center rounded-full border border-border bg-surface-1 shadow-[0_0_18px_rgba(34,197,94,0.18)]"
         style={{ width: wrapperSize, height: wrapperSize }}
       >
-        <span className="absolute inset-0 rounded-full bg-[#064e3b]" aria-hidden />
+        <span className="absolute inset-0 rounded-full bg-surface-2" aria-hidden />
         <Image
           src="/logo.png"
           alt="WMOJ logo"
@@ -55,7 +55,7 @@ export function Logo({
         />
       </span>
       {withText && (
-        <span className={`flex flex-col items-start leading-none ${textSizeClass} font-semibold tracking-wide text-white transition-colors duration-300 ${textClassName}`}>
+        <span className={`flex flex-col items-start leading-none ${textSizeClass} font-semibold tracking-wide text-foreground transition-colors duration-300 ${textClassName}`}>
           <span>
             <span className="text-green-400 inline-block">
               W

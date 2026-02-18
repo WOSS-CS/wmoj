@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -80,13 +81,16 @@ export default function SignUpPage() {
   return (
     <AuthGuard requireAuth={false} allowAuthenticated={false} redirectTo={userDashboardPath || "/dashboard"}>
       <div className="min-h-full flex items-center justify-center p-6 relative z-10">
-
+        {/* Toggle in Top Right */}
+        <div className="fixed top-6 right-6 z-50">
+          <ThemeToggle />
+        </div>
         <div className="max-w-md w-full">
           {/* Back to Home */}
           <div className="mb-8">
             <Link
               href="/"
-              className="text-gray-400 hover:text-white flex items-center gap-2 transition-colors duration-300 group"
+              className="text-text-muted hover:text-foreground flex items-center gap-2 transition-colors duration-300 group"
             >
               <svg className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -96,8 +100,8 @@ export default function SignUpPage() {
           </div>
 
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white font-heading mb-2">Create Account</h1>
-            <p className="text-gray-400 text-sm">Join the competitive programming community</p>
+            <h1 className="text-3xl font-bold text-foreground font-heading mb-2">Create Account</h1>
+            <p className="text-text-muted text-sm">Join the competitive programming community</p>
           </div>
 
           {/* Enhanced Sign Up Form Container */}
@@ -127,7 +131,7 @@ export default function SignUpPage() {
               )}
 
               <div className="space-y-2">
-                <label className="block text-gray-300 text-xs font-bold uppercase tracking-wider mb-2">
+                <label className="block text-text-muted text-xs font-bold uppercase tracking-wider mb-2">
                   Username
                 </label>
                 <div className="relative">
@@ -139,9 +143,9 @@ export default function SignUpPage() {
                     onFocus={() => setFocusedField('username')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 bg-surface-2 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${focusedField === 'username'
-                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-3'
-                      : 'border-white/10 hover:border-brand-primary/50'
+                    className={`w-full px-4 py-3 bg-surface-2 border rounded-lg text-foreground placeholder-text-muted/50 focus:outline-none transition-all duration-300 ${focusedField === 'username'
+                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-1'
+                      : 'border-border hover:border-brand-primary/50'
                       }`}
                     placeholder="Choose a username"
                   />
@@ -149,7 +153,7 @@ export default function SignUpPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-gray-300 text-xs font-bold uppercase tracking-wider mb-2">
+                <label className="block text-text-muted text-xs font-bold uppercase tracking-wider mb-2">
                   Email
                 </label>
                 <div className="relative">
@@ -161,9 +165,9 @@ export default function SignUpPage() {
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 bg-surface-2 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${focusedField === 'email'
-                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-3'
-                      : 'border-white/10 hover:border-brand-primary/50'
+                    className={`w-full px-4 py-3 bg-surface-2 border rounded-lg text-foreground placeholder-text-muted/50 focus:outline-none transition-all duration-300 ${focusedField === 'email'
+                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-1'
+                      : 'border-border hover:border-brand-primary/50'
                       }`}
                     placeholder="Enter your email"
                   />
@@ -171,7 +175,7 @@ export default function SignUpPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-gray-300 text-xs font-bold uppercase tracking-wider mb-2">
+                <label className="block text-text-muted text-xs font-bold uppercase tracking-wider mb-2">
                   Password
                 </label>
                 <div className="relative">
@@ -183,9 +187,9 @@ export default function SignUpPage() {
                     onFocus={() => setFocusedField('password')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 pr-12 bg-surface-2 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${focusedField === 'password'
-                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-3'
-                      : 'border-white/10 hover:border-brand-primary/50'
+                    className={`w-full px-4 py-3 pr-12 bg-surface-2 border rounded-lg text-foreground placeholder-text-muted/50 focus:outline-none transition-all duration-300 ${focusedField === 'password'
+                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-1'
+                      : 'border-border hover:border-brand-primary/50'
                       }`}
                     placeholder="Create a password"
                   />
@@ -209,7 +213,7 @@ export default function SignUpPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-gray-300 text-xs font-bold uppercase tracking-wider mb-2">
+                <label className="block text-text-muted text-xs font-bold uppercase tracking-wider mb-2">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -221,9 +225,9 @@ export default function SignUpPage() {
                     onFocus={() => setFocusedField('confirmPassword')}
                     onBlur={() => setFocusedField(null)}
                     required
-                    className={`w-full px-4 py-3 pr-12 bg-surface-2 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${focusedField === 'confirmPassword'
-                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-3'
-                      : 'border-white/10 hover:border-brand-primary/50'
+                    className={`w-full px-4 py-3 pr-12 bg-surface-2 border rounded-lg text-foreground placeholder-text-muted/50 focus:outline-none transition-all duration-300 ${focusedField === 'confirmPassword'
+                      ? 'border-brand-primary shadow-lg shadow-brand-primary/10 bg-surface-1'
+                      : 'border-border hover:border-brand-primary/50'
                       }`}
                     placeholder="Confirm your password"
                   />
@@ -251,9 +255,9 @@ export default function SignUpPage() {
                   type="checkbox"
                   id="terms"
                   required
-                  className="mr-3 rounded border-white/10 bg-surface-2 text-brand-primary focus:ring-brand-primary focus:ring-2 transition-colors duration-300"
+                  className="mr-3 rounded border-border bg-surface-2 text-brand-primary focus:ring-brand-primary focus:ring-2 transition-colors duration-300"
                 />
-                <label htmlFor="terms" className="text-gray-400 text-sm cursor-pointer">
+                <label htmlFor="terms" className="text-text-muted text-sm cursor-pointer hover:text-foreground transition-colors">
                   I agree to the{' '}
                   <a href="#" className="text-brand-primary hover:text-brand-secondary transition-colors duration-300">
                     Terms of Service
@@ -274,8 +278,8 @@ export default function SignUpPage() {
               </button>
             </form>
 
-            <div className="mt-8 text-center pt-6 border-t border-white/10">
-              <p className="text-gray-400 text-sm">
+            <div className="mt-8 text-center pt-6 border-t border-border">
+              <p className="text-text-muted text-sm">
                 Already have an account?{' '}
                 <Link
                   href="/auth/login"
