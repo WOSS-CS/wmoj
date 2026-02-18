@@ -19,14 +19,14 @@ const SidebarItem = ({
         <Link
             href={href}
             className={`group relative flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
-                    ? "text-brand-primary bg-[rgba(16,185,129,0.1)]"
-                    : "text-gray-400 hover:text-white hover:bg-surface-2"
+                ? "text-brand-primary bg-[rgba(16,185,129,0.1)]"
+                : "text-text-muted hover:text-foreground hover:bg-surface-2"
                 }`}
         >
             {isActive && (
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-brand-primary rounded-r-full" />
             )}
-            <span className={isActive ? "text-brand-primary" : "group-hover:text-white"}>
+            <span className={isActive ? "text-brand-primary" : "group-hover:text-foreground"}>
                 {icon}
             </span>
             <span className="font-medium">{label}</span>

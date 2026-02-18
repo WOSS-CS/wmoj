@@ -29,7 +29,7 @@ export const Badge = ({ children, variant = "neutral", className = "" }: BadgePr
                 return "bg-[#f85149]/15 text-[#f85149] border border-[#f85149]/20";
             case "neutral":
             default:
-                return "bg-gray-700/50 text-gray-300 border border-gray-600/30";
+                return "bg-surface-2 text-text-muted border border-border";
         }
     };
 

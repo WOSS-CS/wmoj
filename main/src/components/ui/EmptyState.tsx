@@ -19,14 +19,14 @@ export const EmptyState = ({
 }: EmptyStateProps) => {
     return (
         <div
-            className={`glass-panel border-dashed border-gray-700 flex flex-col items-center justify-center p-12 text-center ${className}`}
+            className={`glass-panel border-dashed border-border flex flex-col items-center justify-center p-12 text-center ${className}`}
         >
             {icon ? (
-                <div className="text-gray-500 mb-4">{icon}</div>
+                <div className="text-text-muted mb-4">{icon}</div>
             ) : (
                 <div className="w-16 h-16 bg-surface-2 rounded-full flex items-center justify-center mb-4">
                     <svg
-                        className="w-8 h-8 text-gray-500"
+                        className="w-8 h-8 text-text-muted"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -40,8 +40,8 @@ export const EmptyState = ({
                     </svg>
                 </div>
             )}
-            <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
-            {description && <p className="text-gray-400 max-w-sm mb-6">{description}</p>}
+            <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
+            {description && <p className="text-text-muted max-w-sm mb-6">{description}</p>}
             {action}
         </div>
     );

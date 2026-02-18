@@ -14,21 +14,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         return (
             <div className="w-full">
                 {label && (
-                    <label className="block text-sm font-medium text-gray-400 mb-1.5">
+                    <label className="block text-sm font-medium text-text-muted mb-1.5">
                         {label}
                     </label>
                 )}
                 <div className="relative">
                     {leftIcon && (
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
                             {leftIcon}
                         </div>
                     )}
                     <input
                         ref={ref}
                         className={`
-              block w-full rounded-lg bg-[#0d1117] border border-[#30363d]
-              text-white placeholder-gray-500
+              block w-full rounded-lg bg-surface-2 border border-border
+              text-foreground placeholder-text-muted/50
               focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/20 focus:outline-none
               transition-all duration-200
               disabled:opacity-50 disabled:cursor-not-allowed
@@ -40,7 +40,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         {...props}
                     />
                     {rightIcon && (
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500">
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-text-muted">
                             {rightIcon}
                         </div>
                     )}

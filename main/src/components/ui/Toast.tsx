@@ -56,12 +56,12 @@ export const ToastContainer = () => {
                 >
                     <div className="flex items-start gap-3">
                         <div className="flex-1">
-                            <h4 className="text-sm font-semibold text-white">{t.title}</h4>
-                            {t.message && <p className="text-sm text-gray-400 mt-1">{t.message}</p>}
+                            <h4 className="text-sm font-semibold text-foreground">{t.title}</h4>
+                            {t.message && <p className="text-sm text-text-muted mt-1">{t.message}</p>}
                         </div>
                         <button
                             onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
-                            className="text-gray-500 hover:text-white"
+                            className="text-text-muted hover:text-foreground"
                         >
                             ×
                         </button>

@@ -10,8 +10,8 @@ type TableTheme = {
 
 const base: Omit<TableTheme, 'headerRow' | 'headerCell'> = {
   rowHover: 'hover:bg-surface-2 transition-colors duration-200',
-  zebra: '', // Removed zebra striping for cleaner look, or keep subtle? Spec says "Modern tables use spacing, not borders". 
-  border: 'border-b border-gray-800',
+  zebra: '',
+  border: 'border-b border-border',
 };
 
 // Spec: Header: Uppercase, smaller font size, text color #6B7280 (Gray 500).
@@ -21,7 +21,7 @@ const base: Omit<TableTheme, 'headerRow' | 'headerCell'> = {
 // Spec implies uniformity: "Remove Grid Lines... Header... text color #6B7280".
 // I'll make the header background transparent or subtle.
 
-const sharedHeader = "uppercase text-xs font-medium tracking-wider text-gray-500";
+const sharedHeader = "uppercase text-xs font-medium tracking-wider text-text-muted";
 
 export const tableThemeByVariant: Record<HeaderVariant, TableTheme> = {
   green: {
