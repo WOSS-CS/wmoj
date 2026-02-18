@@ -93,11 +93,11 @@ export default function CreateContestPage() {
             }
           >
             <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <h1 className="text-4xl font-bold text-white mb-4 relative">
+              <h1 className="text-4xl font-bold text-foreground mb-4 relative">
                 Create New Contest
                 <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-purple-400 to-purple-600 rounded-full animate-pulse" />
               </h1>
-              <p className="text-gray-300 text-lg">
+              <p className="text-text-muted text-lg">
                 Create a new competitive programming contest with custom settings
               </p>
             </div>
@@ -107,7 +107,7 @@ export default function CreateContestPage() {
           <div className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
+                <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
                   Contest Name *
                 </label>
                 <input
@@ -117,13 +117,13 @@ export default function CreateContestPage() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                  className="w-full px-4 py-3 bg-surface-2 border border-border rounded-lg text-foreground placeholder-text-muted/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
                   placeholder="Enter contest name"
                 />
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-white mb-2">
+                <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
                   Description (Markdown) *
                 </label>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -136,7 +136,7 @@ export default function CreateContestPage() {
                     />
                   </div>
                   <div className="p-4 overflow-auto max-h-[480px]">
-                    <div className="text-xs uppercase tracking-wide text-gray-400 mb-3 flex items-center gap-2">
+                    <div className="text-xs uppercase tracking-wide text-text-muted mb-3 flex items-center gap-2">
                       <span className="inline-block w-2 h-2 rounded-full bg-purple-400 animate-pulse" /> Live Preview
                     </div>
                     <div className="prose prose-invert max-w-none text-sm leading-relaxed">
@@ -147,7 +147,7 @@ export default function CreateContestPage() {
               </div>
 
               <div>
-                <label htmlFor="length" className="block text-sm font-medium text-white mb-2">
+                <label htmlFor="length" className="block text-sm font-medium text-foreground mb-2">
                   Duration (minutes) *
                 </label>
                 <input
@@ -159,10 +159,10 @@ export default function CreateContestPage() {
                   required
                   min="1"
                   max="1440"
-                  className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                  className="w-full px-4 py-3 bg-surface-2 border border-border rounded-lg text-foreground placeholder-text-muted/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
                   placeholder="Enter duration in minutes"
                 />
-                <p className="text-gray-400 text-sm mt-1">
+                <p className="text-text-muted text-sm mt-1">
                   Contest duration in minutes (1-1440 minutes)
                 </p>
               </div>
@@ -172,10 +172,10 @@ export default function CreateContestPage() {
                 {(() => {
                   type Row = { name: string; description: string; length: number; active: boolean };
                   const columns: Array<DataTableColumn<Row>> = [
-                    { key: 'name', header: 'Name', className: 'w-[25%]', render: (r) => <span className="text-white font-medium">{r.name || '-'}</span> },
-                    { key: 'description', header: 'Description (preview)', className: 'w-[50%]', render: (r) => <div className="text-gray-300 text-sm line-clamp-2 break-words">{r.description || '-'}</div> },
-                    { key: 'length', header: 'Length (min)', className: 'w-[15%]', render: (r) => <span className="text-gray-300">{r.length || 0}</span> },
-                    { key: 'active', header: 'Active', className: 'w-[10%]', render: (r) => <span className="px-2 py-0.5 rounded text-xs border bg-[#064e3b] text-green-400 border-green-900">{r.active ? 'Yes' : 'No'}</span> },
+                    { key: 'name', header: 'Name', className: 'w-[25%]', render: (r) => <span className="text-foreground font-medium">{r.name || '-'}</span> },
+                    { key: 'description', header: 'Description (preview)', className: 'w-[50%]', render: (r) => <div className="text-text-muted text-sm line-clamp-2 break-words">{r.description || '-'}</div> },
+                    { key: 'length', header: 'Length (min)', className: 'w-[15%]', render: (r) => <span className="text-text-muted">{r.length || 0}</span> },
+                    { key: 'active', header: 'Active', className: 'w-[10%]', render: (r) => <span className="px-2 py-0.5 rounded text-xs border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">{r.active ? 'Yes' : 'No'}</span> },
                   ];
                   const rows: Row[] = [
                     { name: formData.name, description: formData.description, length: formData.length, active: true },
@@ -221,7 +221,7 @@ export default function CreateContestPage() {
 
                 <Link
                   href="/admin/dashboard"
-                  className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-300"
+                  className="px-6 py-3 bg-surface-3 text-foreground rounded-lg hover:bg-surface-4 transition-colors duration-300"
                 >
                   Cancel
                 </Link>

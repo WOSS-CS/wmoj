@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import MDEditor, { commands } from '@uiw/react-md-editor';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { useTheme } from '@/contexts/ThemeContext';
 import '@uiw/react-md-editor/markdown-editor.css';
 
 interface MarkdownEditorProps {
@@ -21,18 +22,19 @@ export function MarkdownEditor({
   className = ""
 }: MarkdownEditorProps) {
   const [isPreview, setIsPreview] = useState(false);
+  const { theme } = useTheme();
 
   return (
     <div className={`markdown-editor ${className}`}>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-white">Problem Description</h3>
+        <h3 className="text-lg font-semibold text-foreground">Problem Description</h3>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setIsPreview(false)}
             className={`px-3 py-1 rounded-lg text-sm transition-all duration-300 ${!isPreview
-                ? 'bg-blue-600 text-white'
-                : 'bg-[#1a1a1a] text-gray-300 hover:bg-[#262626]'
+              ? 'bg-brand-primary text-black font-bold'
+              : 'bg-surface-2 text-text-muted hover:bg-surface-3'
               }`}
           >
             Edit
@@ -41,8 +43,8 @@ export function MarkdownEditor({
             type="button"
             onClick={() => setIsPreview(true)}
             className={`px-3 py-1 rounded-lg text-sm transition-all duration-300 ${isPreview
-                ? 'bg-blue-600 text-white'
-                : 'bg-[#1a1a1a] text-gray-300 hover:bg-[#262626]'
+              ? 'bg-brand-primary text-black font-bold'
+              : 'bg-surface-2 text-text-muted hover:bg-surface-3'
               }`}
           >
             Preview
@@ -50,13 +52,13 @@ export function MarkdownEditor({
         </div>
       </div>
 
-      <div className="border border-[#333333] rounded-lg overflow-hidden">
+      <div className="border border-border rounded-lg overflow-hidden">
         {!isPreview && (
           <MDEditor
             value={value}
             onChange={(val) => onChange(val || '')}
             height={height}
-            data-color-mode="dark"
+            data-color-mode={theme === 'dark' ? 'dark' : 'light'}
             preview="edit"
             hideToolbar={false}
             visibleDragbar={false}
@@ -95,13 +97,13 @@ export function MarkdownEditor({
           />
         )}
         {isPreview && (
-          <div className="p-6 bg-black/30 max-h-[600px] overflow-auto">
+          <div className="p-6 bg-surface-2/30 max-h-[600px] overflow-auto">
             <MarkdownRenderer content={value} />
           </div>
         )}
       </div>
 
-      <div className="mt-2 text-xs text-gray-400">
+      <div className="mt-2 text-xs text-text-muted">
         <p>💡 <strong>Markdown Tips:</strong></p>
         <ul className="list-disc list-inside ml-4 space-y-1">
           <li>Use <code>**bold**</code> for bold text</li>

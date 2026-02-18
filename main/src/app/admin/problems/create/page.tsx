@@ -202,11 +202,11 @@ export default function CreateProblemPage() {
             }
           >
             <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <h1 className="text-4xl font-bold text-white mb-4 relative">
+              <h1 className="text-4xl font-bold text-foreground mb-4 relative">
                 Create New Problem
                 <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full animate-pulse" />
               </h1>
-              <p className="text-gray-300 text-lg">
+              <p className="text-text-muted text-lg">
                 Add a new problem to a contest or create a standalone problem
               </p>
             </div>
@@ -216,7 +216,7 @@ export default function CreateProblemPage() {
           <div className="p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
+                <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
                   Problem Name *
                 </label>
                 <input
@@ -226,7 +226,7 @@ export default function CreateProblemPage() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  className="w-full px-4 py-3 bg-surface-2 border border-border rounded-lg text-foreground placeholder-text-muted/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                   placeholder="Enter problem name"
                 />
               </div>
@@ -264,7 +264,7 @@ export default function CreateProblemPage() {
               </div>
 
               <div>
-                <label htmlFor="timeLimit" className="block text-sm font-medium text-white mb-2">
+                <label htmlFor="timeLimit" className="block text-sm font-medium text-foreground mb-2">
                   Time Limit (ms) *
                 </label>
                 <input
@@ -275,16 +275,16 @@ export default function CreateProblemPage() {
                   onChange={handleChange}
                   required
                   min="1"
-                  className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  className="w-full px-4 py-3 bg-surface-2 border border-border rounded-lg text-foreground placeholder-text-muted/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                   placeholder="e.g., 5000"
                 />
-                <p className="text-gray-400 text-sm mt-1">
+                <p className="text-text-muted text-sm mt-1">
                   Maximum time allowed for problem execution in milliseconds.
                 </p>
               </div>
 
               <div>
-                <label htmlFor="memoryLimit" className="block text-sm font-medium text-white mb-2">
+                <label htmlFor="memoryLimit" className="block text-sm font-medium text-foreground mb-2">
                   Memory Limit (MB) *
                 </label>
                 <input
@@ -295,22 +295,22 @@ export default function CreateProblemPage() {
                   onChange={handleChange}
                   required
                   min="1"
-                  className="w-full px-4 py-3 bg-[#111111] border border-[#262626] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  className="w-full px-4 py-3 bg-surface-2 border border-border rounded-lg text-foreground placeholder-text-muted/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                   placeholder="e.g., 256"
                 />
-                <p className="text-gray-400 text-sm mt-1">
+                <p className="text-text-muted text-sm mt-1">
                   Maximum memory allowed for problem execution in megabytes.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">Generator (C++) *</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Generator (C++) *</label>
                 <div className="flex flex-col gap-3 md:flex-row md:items-center">
                   <input
                     type="file"
                     accept=".cpp"
                     onChange={handleGeneratorSelect}
-                    className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+                    className="block w-full text-sm text-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
                   />
                   <button
                     type="button"
@@ -321,7 +321,7 @@ export default function CreateProblemPage() {
                     {genLoading ? 'Generating…' : 'Generate Test Cases'}
                   </button>
                 </div>
-                <p className="text-gray-400 text-sm mt-1">Upload a C++ generator. It must print input JSON to stdout and output JSON to stderr.</p>
+                <p className="text-text-muted text-sm mt-1">Upload a C++ generator. It must print input JSON to stdout and output JSON to stderr.</p>
 
                 {genError && (
                   <div className="mt-3 bg-[#450a0a] border border-red-500/20 rounded-lg p-3">
@@ -330,14 +330,14 @@ export default function CreateProblemPage() {
                 )}
 
                 {generatedInput && generatedOutput && (
-                  <div className="mt-4 p-4 border border-[#333333] rounded-lg bg-[#111111]">
-                    <div className="mb-3 text-gray-300 text-sm">Generated cases: {generatedInput.length}</div>
+                  <div className="mt-4 p-4 border border-border rounded-lg bg-surface-2">
+                    <div className="mb-3 text-text-muted text-sm">Generated cases: {generatedInput.length}</div>
                     {(() => {
                       type Row = { idx: number; input: string; output: string };
                       const columns: Array<DataTableColumn<Row>> = [
-                        { key: 'idx', header: '#', className: 'w-1/12', sortable: true, sortAccessor: (r) => r.idx, render: (r) => <span className="text-gray-400">{r.idx + 1}</span> },
-                        { key: 'input', header: 'Input', className: 'w-5/12', render: (r) => <pre className="text-gray-200 text-xs whitespace-pre-wrap break-words">{r.input}</pre> },
-                        { key: 'output', header: 'Output', className: 'w-5/12', render: (r) => <pre className="text-gray-200 text-xs whitespace-pre-wrap break-words">{r.output}</pre> },
+                        { key: 'idx', header: '#', className: 'w-1/12', sortable: true, sortAccessor: (r) => r.idx, render: (r) => <span className="text-text-muted">{r.idx + 1}</span> },
+                        { key: 'input', header: 'Input', className: 'w-5/12', render: (r) => <pre className="text-foreground text-xs whitespace-pre-wrap break-words">{r.input}</pre> },
+                        { key: 'output', header: 'Output', className: 'w-5/12', render: (r) => <pre className="text-foreground text-xs whitespace-pre-wrap break-words">{r.output}</pre> },
                       ];
                       const rows: Row[] = generatedInput.slice(0, Math.min(10, generatedInput.length)).map((inp, i) => ({
                         idx: i,
@@ -354,7 +354,7 @@ export default function CreateProblemPage() {
                       );
                     })()}
                     {generatedInput.length > 10 && (
-                      <div className="mt-2 text-xs text-gray-400">Showing first 10 of {generatedInput.length} cases…</div>
+                      <div className="mt-2 text-xs text-text-muted">Showing first 10 of {generatedInput.length} cases…</div>
                     )}
                   </div>
                 )}
@@ -390,7 +390,7 @@ export default function CreateProblemPage() {
 
                 <Link
                   href="/admin/dashboard"
-                  className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-300"
+                  className="px-6 py-3 bg-surface-3 text-foreground rounded-lg hover:bg-surface-4 transition-colors duration-300"
                 >
                   Cancel
                 </Link>
