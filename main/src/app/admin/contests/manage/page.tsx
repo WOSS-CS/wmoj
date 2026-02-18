@@ -212,11 +212,9 @@ export default function ManageContestsPage() {
                       sortable: true,
                       sortAccessor: (r) => (r.is_active ? 1 : 0),
                       render: (r) => (
-                        render: (r) => (
-                          <span className = {`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
+                        <span className={`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
                           {r.is_active ? 'Active' : 'Inactive'}
                         </span>
-                      ),
                       ),
                     },
                     {
