@@ -49,83 +49,83 @@ const IDEFrame = ({ user, onSignOut }: IDEFrameProps) => {
         <div className="pointer-events-none fixed inset-0 z-0 hidden lg:block overflow-hidden">
 
             {/* --- TOP BAR: Tabs & Breadcrumbs & Auth --- */}
-            <div className="absolute top-0 left-0 right-0 h-[70px] bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/5 z-50 flex flex-col pointer-events-auto">
+            <div className="absolute top-0 left-0 right-0 h-[70px] bg-background/90 backdrop-blur-md border-b border-border z-50 flex flex-col pointer-events-auto">
                 {/* Tabs Row */}
-                <div className="flex h-[35px] items-end px-2 gap-1 bg-[#050505] relative">
+                <div className="flex h-[35px] items-end px-2 gap-1 bg-surface-2/50 relative">
                     {/* Active Tab */}
-                    <div className="relative h-full px-4 flex items-center gap-2 bg-[#0F1115] border-t-2 border-green-500 rounded-t-sm z-10">
-                        <span className="text-blue-400 text-xs">TSX</span>
-                        <span className="text-gray-200 text-xs font-mono">page.tsx</span>
-                        <span className="ml-2 hover:bg-white/10 rounded p-0.5 cursor-pointer">
-                            <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    <div className="relative h-full px-4 flex items-center gap-2 bg-background border-t-2 border-brand-primary rounded-t-sm z-10">
+                        <span className="text-blue-500 dark:text-blue-400 text-xs text-opacity-100">TSX</span>
+                        <span className="text-foreground text-xs font-mono">page.tsx</span>
+                        <span className="ml-2 hover:bg-foreground/10 rounded p-0.5 cursor-pointer">
+                            <svg className="w-3 h-3 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </span>
                     </div>
                     {/* Inactive Tabs */}
-                    <div className="h-full px-4 flex items-center gap-2 hover:bg-[#0F1115]/50 transition-colors cursor-pointer opacity-50 border-t-2 border-transparent">
-                        <span className="text-yellow-400 text-xs">TSX</span>
-                        <span className="text-gray-400 text-xs font-mono">layout.tsx</span>
+                    <div className="h-full px-4 flex items-center gap-2 hover:bg-surface-2/80 transition-colors cursor-pointer opacity-50 border-t-2 border-transparent">
+                        <span className="text-yellow-600 dark:text-yellow-400 text-xs">TSX</span>
+                        <span className="text-text-muted text-xs font-mono">layout.tsx</span>
                     </div>
-                    <div className="h-full px-4 flex items-center gap-2 hover:bg-[#0F1115]/50 transition-colors cursor-pointer opacity-50">
-                        <span className="text-blue-300 text-xs text-opacity-50">#</span>
-                        <span className="text-gray-400 text-xs font-mono">globals.css</span>
+                    <div className="h-full px-4 flex items-center gap-2 hover:bg-surface-2/80 transition-colors cursor-pointer opacity-50">
+                        <span className="text-blue-600 dark:text-blue-300 text-xs text-opacity-50">#</span>
+                        <span className="text-text-muted text-xs font-mono">globals.css</span>
                     </div>
 
                     {/* Desktop Toolbar (Auth Actions) - Far Right of Tabs Row */}
                     <div className="ml-auto flex items-center gap-3 pr-4 h-full">
-                        <ThemeToggle className="!p-1 !glass-panel hover:!bg-white/10 !border-white/10 h-8 w-8" />
+                        <ThemeToggle className="!p-1 !glass-panel hover:!bg-foreground/10 !border-border h-8 w-8" />
                         {user ? (
                             <>
-                                <span className="text-xs text-green-400 font-mono hidden xl:inline-block">
+                                <span className="text-xs text-brand-primary font-mono hidden xl:inline-block">
                                     {user.user_metadata?.username || user.email}
                                 </span>
-                                <button onClick={onSignOut} className="text-xs text-gray-400 hover:text-white transition-colors bg-white/5 px-3 py-1 rounded hover:bg-white/10">
+                                <button onClick={onSignOut} className="text-xs text-text-muted hover:text-foreground transition-colors bg-foreground/5 px-3 py-1 rounded hover:bg-foreground/10">
                                     Sign Out
                                 </button>
                             </>
                         ) : (
                             <>
-                                <Link href="/auth/login" className="text-xs text-gray-400 hover:text-white transition-colors">
+                                <Link href="/auth/login" className="text-xs text-text-muted hover:text-foreground transition-colors">
                                     Log In
                                 </Link>
-                                <Link href="/auth/signup" className="text-xs text-black bg-white px-3 py-1 rounded font-bold hover:bg-gray-200 transition-colors shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+                                <Link href="/auth/signup" className="text-xs text-white dark:text-black bg-foreground px-3 py-1 rounded font-bold hover:bg-foreground/80 transition-colors shadow-[0_0_10px_rgba(var(--color-foreground-rgb),0.2)]">
                                     Sign Up
                                 </Link>
                             </>
                         )}
                         {/* Run Button (Just for visuals) */}
-                        <div className="w-px h-4 bg-white/10 mx-1" />
-                        <button className="text-green-500 hover:text-green-400 transition-colors">
+                        <div className="w-px h-4 bg-border mx-1" />
+                        <button className="text-brand-primary/80 hover:text-brand-primary transition-colors">
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
                         </button>
                     </div>
                 </div>
 
                 {/* Breadcrumbs Row */}
-                <div className="flex-1 flex items-center px-4 gap-2 text-[11px] font-mono text-gray-500 bg-[#0F1115] border-t border-white/5">
+                <div className="flex-1 flex items-center px-4 gap-2 text-[11px] font-mono text-text-muted/80 bg-background border-t border-border">
                     <span>wmoj-client</span>
-                    <span className="text-gray-700">/</span>
+                    <span className="text-border">/</span>
                     <span>src</span>
-                    <span className="text-gray-700">/</span>
+                    <span className="text-border">/</span>
                     <span>app</span>
-                    <span className="text-gray-700">/</span>
-                    <span className="text-gray-300">page.tsx</span>
-                    <span className="ml-4 flex items-center gap-1 text-gray-600">
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-600" />
+                    <span className="text-border">/</span>
+                    <span className="text-foreground/80">page.tsx</span>
+                    <span className="ml-4 flex items-center gap-1 text-text-muted/60">
+                        <span className="w-1.5 h-1.5 rounded-full bg-text-muted/40" />
                         Home
                     </span>
-                    <span className="ml-auto text-gray-600 flex items-center gap-2">
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full border border-gray-600" /> 0 errors</span>
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full border border-gray-600" /> 0 warnings</span>
+                    <span className="ml-auto text-text-muted/60 flex items-center gap-2">
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full border border-text-muted/40" /> 0 errors</span>
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full border border-text-muted/40" /> 0 warnings</span>
                     </span>
                 </div>
             </div>
 
             {/* --- LEFT GUTTER: Line Numbers & Git Markers --- */}
-            <div className="absolute top-[70px] bottom-[24px] left-0 w-16 bg-[#0a0a0a]/50 border-r border-white/5 flex flex-col items-end py-4 pr-3 select-none font-mono text-[11px] text-gray-700/50">
+            <div className="absolute top-[70px] bottom-[24px] left-0 w-16 bg-surface-1/30 border-r border-border flex flex-col items-end py-4 pr-3 select-none font-mono text-[11px] text-text-muted/40">
                 {lineNumbers.map((num) => (
                     <div key={num} className="leading-6 font-medium tracking-wide flex items-center gap-3 w-full justify-end relative group">
                         {/* Git Diff Marker (Randomized simulation) */}
-                        {num % 12 === 0 && <div className="absolute left-1 w-0.5 h-4 bg-green-500/50" />}
+                        {num % 12 === 0 && <div className="absolute left-1 w-0.5 h-4 bg-brand-primary/50" />}
                         {num % 23 === 0 && <div className="absolute left-1 w-0.5 h-4 bg-blue-500/50" />}
 
                         {/* Breakpoint Hint */}
@@ -137,7 +137,7 @@ const IDEFrame = ({ user, onSignOut }: IDEFrameProps) => {
             </div>
 
             {/* --- RIGHT GUTTER: Interactive Minimap --- */}
-            <div className="absolute top-[70px] bottom-[24px] right-0 w-24 bg-[#0a0a0a]/30 border-l border-white/5 p-2 flex flex-col gap-0.5 select-none z-40 pointer-events-auto">
+            <div className="absolute top-[70px] bottom-[24px] right-0 w-24 bg-surface-1/20 border-l border-border p-2 flex flex-col gap-0.5 select-none z-40 pointer-events-auto">
                 <div className="w-full relative h-full overflow-hidden">
                     {/* Code Blocks */}
                     {minimapBlocks.map((block, i) => (
@@ -146,7 +146,7 @@ const IDEFrame = ({ user, onSignOut }: IDEFrameProps) => {
                             className="h-[2px] rounded-full mb-[1px]"
                             style={{
                                 width: block.width,
-                                backgroundColor: block.color,
+                                backgroundColor: block.color === '#ffffff' ? 'var(--foreground)' : block.color === '#22c55e' ? 'var(--color-brand-primary)' : block.color,
                                 opacity: block.opacity
                             }}
                         />
@@ -154,7 +154,7 @@ const IDEFrame = ({ user, onSignOut }: IDEFrameProps) => {
 
                     {/* Viewport Slider Overlay */}
                     <div
-                        className="absolute w-full bg-white/5 border border-white/10 shadow-sm backdrop-blur-[1px] cursor-grab active:cursor-grabbing hover:bg-white/10 transition-colors"
+                        className="absolute w-full bg-foreground/5 border border-foreground/10 shadow-sm backdrop-blur-[1px] cursor-grab active:cursor-grabbing hover:bg-foreground/10 transition-colors"
                         style={{
                             height: '150px', // Approximated viewport ratio
                             top: `${scrollProgress}%`,
@@ -165,52 +165,52 @@ const IDEFrame = ({ user, onSignOut }: IDEFrameProps) => {
             </div>
 
             {/* --- BOTTOM STATUS BAR --- */}
-            <div className="absolute bottom-0 left-0 right-0 h-6 bg-[#0F1115] border-t border-green-900/20 flex items-center justify-between px-3 text-[10px] font-mono text-gray-500 z-50 select-none">
+            <div className="absolute bottom-0 left-0 right-0 h-6 bg-surface-2 border-t border-brand-primary/20 flex items-center justify-between px-3 text-[10px] font-mono text-text-muted z-50 select-none">
 
                 {/* Left: Source Control */}
                 <div className="flex items-center gap-4 h-full">
-                    <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer h-full px-2 hover:bg-white/5">
-                        <svg className="w-3 h-3 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 3v12" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><path d="M18 9a9 9 0 0 1-9 9" /></svg>
-                        <span className="text-gray-300">main*</span>
-                        <span className="ml-1 text-gray-600 text-[9px] flex gap-1">
+                    <div className="flex items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer h-full px-2 hover:bg-foreground/5">
+                        <svg className="w-3 h-3 text-purple-500 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 3v12" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><path d="M18 9a9 9 0 0 1-9 9" /></svg>
+                        <span className="text-foreground/80">main*</span>
+                        <span className="ml-1 text-text-muted/60 text-[9px] flex gap-1">
                             <span>0↓</span>
                             <span>1↑</span>
                         </span>
                     </div>
-                    <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer h-full px-2 hover:bg-white/5">
-                        <span className="w-3 h-3 rounded-full border border-gray-600 flex items-center justify-center text-[7px]">x</span>
+                    <div className="flex items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer h-full px-2 hover:bg-foreground/5">
+                        <span className="w-3 h-3 rounded-full border border-text-muted/40 flex items-center justify-center text-[7px]">x</span>
                         0
-                        <span className="w-3 h-3 rounded-full border border-gray-600 flex items-center justify-center text-[7px] ml-1">!</span>
+                        <span className="w-3 h-3 rounded-full border border-text-muted/40 flex items-center justify-center text-[7px] ml-1">!</span>
                         0
                     </div>
                 </div>
 
                 {/* Right: Language/Config */}
                 <div className="flex items-center gap-4 h-full">
-                    <div className="hover:text-white transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-white/5">
+                    <div className="hover:text-foreground transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-foreground/5">
                         Ln {Math.floor(scrollProgress + 1)}, Col {Math.floor(Math.random() * 80) + 1}
                     </div>
-                    <div className="hover:text-white transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-white/5">
+                    <div className="hover:text-foreground transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-foreground/5">
                         Spaces: 2
                     </div>
-                    <div className="hover:text-white transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-white/5">
+                    <div className="hover:text-foreground transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-foreground/5">
                         UTF-8
                     </div>
-                    <div className="hover:text-white transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-white/5">
+                    <div className="hover:text-foreground transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-foreground/5">
                         CRLF
                     </div>
-                    <div className="hover:text-white transition-colors cursor-pointer h-full flex items-center gap-1.5 px-2 hover:bg-white/5 text-blue-400">
+                    <div className="hover:text-foreground transition-colors cursor-pointer h-full flex items-center gap-1.5 px-2 hover:bg-foreground/5 text-blue-600 dark:text-blue-400">
                         {/* Brackets Icon */}
                         <span className="font-bold">{'{}'}</span>
                         <span>TypeScript React</span>
                     </div>
-                    <div className="hover:text-white transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-white/5">
-                        <span className="text-green-500 flex items-center gap-1">
+                    <div className="hover:text-foreground transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-foreground/5">
+                        <span className="text-brand-primary flex items-center gap-1">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                             Prettier
                         </span>
                     </div>
-                    <div className="hover:text-white transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-white/5 text-gray-400">
+                    <div className="hover:text-foreground transition-colors cursor-pointer h-full flex items-center px-2 hover:bg-foreground/5 text-text-muted/60">
                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
                     </div>
                 </div>
