@@ -461,6 +461,19 @@
   border-radius: 12px;
 }
 
+/* Code Editor Container */
+.code-editor-container {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-editor-container .monaco-editor,
+.code-editor-container .monaco-editor .margin,
+.code-editor-container .monaco-editor-background {
+  background-color: #0a0a0a !important;
+}
+
 /* Enhanced Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

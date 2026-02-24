@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -12,6 +13,11 @@ import { supabase } from '@/lib/supabase';
 import { checkContestParticipation } from '@/utils/participationCheck';
 import { useCountdown } from '@/contexts/CountdownContext';
 
+const CodeEditor = dynamic(() => import('@/components/CodeEditor'), {
+  ssr: false,
+  loading: () => <CodeEditorLoading lines={12} />,
+});
+
 export default function ProblemPage() {
   const routeParams = useParams<{ id: string }>();
   const problemId = Array.isArray(routeParams?.id) ? routeParams.id[0] : routeParams?.id;
@@ -20,13 +26,13 @@ export default function ProblemPage() {
   const { isActive, contestId } = useCountdown();
   // Mouse position state removed
   const [isLoaded, setIsLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState<'description' | 'results'>('description');
+  const [activeTab, setActiveTab] = useState<'description' | 'results' | 'editor'>('description');
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [accessChecked, setAccessChecked] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('python');
-  const [codeFile, setCodeFile] = useState<File | null>(null);
+  const [codeText, setCodeText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [results, setResults] = useState<Array<{
@@ -167,30 +173,23 @@ export default function ProblemPage() {
     await signOut();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setCodeFile(file);
-    }
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!problem || !user || !codeFile) return;
+
+  const handleSubmit = async () => {
+    if (!problem || !user || !codeText.trim()) return;
     setSubmitting(true);
     setSubmitError('');
     setResults(null);
     setSummary(null);
 
     try {
-      const code = await codeFile.text();
       const resp = await fetch(`/api/problems/${problem.id}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ language: selectedLanguage, code }),
+        body: JSON.stringify({ language: selectedLanguage, code: codeText }),
       });
       const data = await resp.json();
       if (!resp.ok) {
@@ -198,6 +197,7 @@ export default function ProblemPage() {
       }
       setResults(data.results || []);
       setSummary(data.summary || null);
+      setActiveTab('results');
       await fetchBestSubmission(user.id, problem.id);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Submission failed';
@@ -300,12 +300,13 @@ export default function ProblemPage() {
                     {/* Tab Navigation */}
                     <div className="flex gap-2 mb-6 border-b border-white/10 pb-4">
                       {[
-                        { id: 'description', label: 'Description', icon: '' },
-                        { id: 'results', label: 'Results', icon: '' },
+                        { id: 'description', label: 'Description' },
+                        { id: 'results', label: 'Results' },
+                        { id: 'editor', label: 'Editor' },
                       ].map((tab) => (
                         <button
                           key={tab.id}
-                          onClick={() => setActiveTab(tab.id as 'description' | 'results')}
+                          onClick={() => setActiveTab(tab.id as 'description' | 'results' | 'editor')}
                           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 flex items-center ${activeTab === tab.id
                             ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20'
                             : 'text-text-muted hover:text-foreground hover:bg-surface-2'
@@ -370,132 +371,114 @@ export default function ProblemPage() {
                         </div>
                       )}
 
+                      {activeTab === 'editor' && (
+                        <div className="space-y-4">
+                          {/* Language Selection */}
+                          <div className="flex items-center gap-3">
+                            <label className="text-text-muted text-xs font-bold uppercase tracking-wider">
+                              Language
+                            </label>
+                            <select
+                              value={selectedLanguage}
+                              onChange={(e) => setSelectedLanguage(e.target.value)}
+                              className="px-3 py-1.5 bg-black/20 border border-white/10 rounded-lg text-foreground text-sm focus:outline-none focus:border-brand-primary transition-colors appearance-none cursor-pointer hover:bg-black/40"
+                            >
+                              {languages.map((lang) => (
+                                <option key={lang.value} value={lang.value} className="bg-[#1a1a1a]">
+                                  {lang.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Monaco Code Editor */}
+                          <CodeEditor
+                            language={selectedLanguage}
+                            value={codeText}
+                            onChange={setCodeText}
+                          />
+
+                          {/* Submit Error */}
+                          {submitError && (
+                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-lg">
+                              {submitError}
+                            </div>
+                          )}
+
+                          {/* Submit Button */}
+                          <button
+                            type="button"
+                            onClick={handleSubmit}
+                            disabled={!codeText.trim() || submitting}
+                            className="w-full py-3 bg-brand-primary text-black rounded-lg font-bold hover:bg-brand-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:lift"
+                          >
+                            {submitting ? 'Submitting...' : 'Submit Solution'}
+                          </button>
+
+                          {/* Inline submission result summary */}
+                          {(submitting || summary) && (
+                            <div className="p-4 rounded-xl bg-surface-2 border border-white/5">
+                              {submitting ? (
+                                <div className="flex items-center gap-3">
+                                  <div className="w-4 h-4 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
+                                  <span className="text-sm text-text-muted">Evaluating submission...</span>
+                                </div>
+                              ) : summary ? (
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`w-2 h-2 rounded-full ${summary.failed === 0 ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} />
+                                      <span className={`text-sm font-bold uppercase tracking-wider ${summary.failed === 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                        {summary.failed === 0 ? 'Accepted' : 'Failed'}
+                                      </span>
+                                    </div>
+                                    <button
+                                      onClick={() => setActiveTab('results')}
+                                      className="text-[10px] uppercase font-bold text-brand-primary hover:text-brand-secondary transition-colors"
+                                    >
+                                      View Detailed Results
+                                    </button>
+                                  </div>
+                                  <div className="flex items-end justify-between">
+                                    <div>
+                                      <div className="text-[10px] text-text-muted uppercase font-bold mb-1">Test Cases Passed</div>
+                                      <div className="text-2xl font-bold text-foreground font-mono">
+                                        {summary.passed}<span className="text-text-muted mx-1">/</span>{summary.total}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-[10px] text-text-muted uppercase font-bold mb-1">Score</div>
+                                      <div className="text-xl font-bold text-brand-primary font-mono text-right">
+                                        {Math.round((summary.passed / summary.total) * 100)}%
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
+                                    <div
+                                      className={`h-full transition-all duration-1000 ease-out ${summary.failed === 0 ? 'bg-green-500' : 'bg-brand-primary'}`}
+                                      style={{ width: `${(summary.passed / summary.total) * 100}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                     </div>
                   </div>
                 </div>
 
-                {/* Enhanced Code Submission Panel */}
+                {/* Problem Details Sidebar */}
                 <div className="lg:col-span-1">
                   <div className="glass-panel p-6 sticky top-8">
                     <h2 className="text-lg font-bold text-foreground mb-6 font-heading flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
-                      Submit Solution
+                      Problem Details
                     </h2>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      {/* Enhanced Language Selection */}
-                      <div>
-                        <label className="block text-text-muted text-xs font-bold uppercase tracking-wider mb-2">
-                          Language
-                        </label>
-                        <div className="relative">
-                          <select
-                            value={selectedLanguage}
-                            onChange={(e) => setSelectedLanguage(e.target.value)}
-                            className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white focus:outline-none focus:border-brand-primary transition-colors appearance-none cursor-pointer hover:bg-black/40"
-                          >
-                            {languages.map((lang) => (
-                              <option key={lang.value} value={lang.value} className="bg-[#1a1a1a]">
-                                {lang.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Enhanced File Upload */}
-                      <div>
-                        <label className="block text-text-muted text-xs font-bold uppercase tracking-wider mb-2">
-                          Source Code
-                        </label>
-                        <div className="relative group">
-                          <input
-                            type="file"
-                            onChange={handleFileChange}
-                            accept=".py,.cpp,.java,.c,.h"
-                            className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:uppercase file:bg-surface-2 file:text-brand-primary hover:file:bg-brand-primary hover:file:text-black cursor-pointer transition-all"
-                          />
-                        </div>
-                        {codeFile && (
-                          <div className="mt-2 p-3 bg-brand-primary/10 border border-brand-primary/20 rounded-lg flex items-center gap-2">
-                            <span className="text-xs text-brand-primary font-mono truncate">
-                              {codeFile.name}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Enhanced Submit Button */}
-                      {submitError && (
-                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-lg">
-                          {submitError}
-                        </div>
-                      )}
-
-                      <button
-                        type="submit"
-                        disabled={!codeFile || submitting}
-                        className="w-full py-3 bg-brand-primary text-black rounded-lg font-bold hover:bg-brand-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:lift"
-                      >
-                        {submitting ? 'Submitting...' : 'Submit Solution'}
-                      </button>
-                    </form>
-
-                    {/* New Results Display Area */}
-                    {(submitting || summary) && (
-                      <div className="mt-6 p-4 rounded-xl bg-surface-2 border border-white/5 animate-in fade-in slide-in-from-top-4 duration-500">
-                        {submitting ? (
-                          <div className="flex items-center gap-3">
-                            <div className="w-4 h-4 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm text-text-muted">Evaluating submission...</span>
-                          </div>
-                        ) : summary ? (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${summary.failed === 0 ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} />
-                                <span className={`text-sm font-bold uppercase tracking-wider ${summary.failed === 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                  {summary.failed === 0 ? 'Accepted' : 'Failed'}
-                                </span>
-                              </div>
-                              <button
-                                onClick={() => setActiveTab('results')}
-                                className="text-[10px] uppercase font-bold text-brand-primary hover:text-brand-secondary transition-colors"
-                              >
-                                View Detailed Results
-                              </button>
-                            </div>
-
-                            <div className="flex items-end justify-between">
-                              <div>
-                                <div className="text-[10px] text-text-muted uppercase font-bold mb-1">Test Cases Passed</div>
-                                <div className="text-2xl font-bold text-foreground font-mono">
-                                  {summary.passed}<span className="text-text-muted mx-1">/</span>{summary.total}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-[10px] text-text-muted uppercase font-bold mb-1">Score</div>
-                                <div className="text-xl font-bold text-brand-primary font-mono text-right">
-                                  {Math.round((summary.passed / summary.total) * 100)}%
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
-                              <div
-                                className={`h-full transition-all duration-1000 ease-out ${summary.failed === 0 ? 'bg-green-500' : 'bg-brand-primary'}`}
-                                style={{ width: `${(summary.passed / summary.total) * 100}%` }}
-                              />
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
-                    )}
-
-                    {/* Enhanced Problem Stats */}
-                    <div className="mt-8 pt-6 border-t border-border space-y-3">
-                      <h3 className="text-foreground font-heading text-sm mb-4">Problem Details</h3>
-
+                    <div className="space-y-3">
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-text-muted">Test Cases</span>
                         <span className="text-foreground font-mono">{problem.input.length}</span>
@@ -513,6 +496,22 @@ export default function ProblemPage() {
                         <span className="text-foreground font-mono">{new Date(problem.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
+
+                    {/* Best Submission */}
+                    {bestSummary && (
+                      <div className="mt-6 pt-6 border-t border-border">
+                        <h3 className="text-foreground font-heading text-sm mb-3">Best Submission</h3>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${bestSummary.failed === 0 ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                            <span className="text-foreground font-mono text-sm">{bestSummary.passed}/{bestSummary.total}</span>
+                          </div>
+                          <span className="text-brand-primary font-mono text-sm font-bold">
+                            {Math.round((bestSummary.passed / bestSummary.total) * 100)}%
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
