@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface CodeEditorProps {
   language: string;
@@ -16,7 +17,9 @@ const LANGUAGE_MAP: Record<string, string> = {
 };
 
 export default function CodeEditor({ language, value, onChange }: CodeEditorProps) {
+  const { theme } = useTheme();
   const monacoLanguage = LANGUAGE_MAP[language] || 'plaintext';
+  const monacoTheme = theme === 'light' ? 'light' : 'vs-dark';
 
   const handleMount: OnMount = useCallback((editor) => {
     editor.focus();
@@ -30,7 +33,7 @@ export default function CodeEditor({ language, value, onChange }: CodeEditorProp
         value={value}
         onChange={(val) => onChange(val ?? '')}
         onMount={handleMount}
-        theme="vs-dark"
+        theme={monacoTheme}
         options={{
           fontSize: 14,
           fontFamily: "'JetBrains Mono', 'Fira Code', monospace",

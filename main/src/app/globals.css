@@ -474,6 +474,12 @@
   background-color: #0a0a0a !important;
 }
 
+.light .code-editor-container .monaco-editor,
+.light .code-editor-container .monaco-editor .margin,
+.light .code-editor-container .monaco-editor-background {
+  background-color: #ffffff !important;
+}
+
 /* Enhanced Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
