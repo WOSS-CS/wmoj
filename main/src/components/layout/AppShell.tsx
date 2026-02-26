@@ -19,6 +19,13 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     const isLandingPage = pathname === "/";
     const isAuthPage = pathname.startsWith("/auth");
     const isAdminPage = pathname.startsWith("/admin");
+    const isPoopthrowerPage = pathname.startsWith("/poopthrower");
+
+    // Secret game route — render nothing but the page itself
+    if (isPoopthrowerPage) {
+        return <>{children}</>;
+    }
+
     const showNavigation = !isLandingPage && !isAuthPage && user;
 
     return (

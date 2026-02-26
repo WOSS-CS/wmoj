@@ -3,9 +3,7 @@ export default function PoopthrowerLayout({
 }: {
     children: React.ReactNode;
 }) {
-    return (
-        <html lang="en">
-            <body style={{ margin: 0, overflow: "hidden" }}>{children}</body>
-        </html>
-    );
+    // Just pass through children — the AppShell in the root layout
+    // will detect this route and skip rendering the sidebar/header.
+    return <>{children}</>;
 }

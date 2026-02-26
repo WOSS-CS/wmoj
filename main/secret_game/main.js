@@ -178,11 +178,16 @@ function init() {
     scene.add(wallW);
 
     // Particle System Initialization
-    const particleGeo = new THREE.SphereGeometry(0.5, 6, 6);
-    const particleMat = new THREE.MeshLambertMaterial({ color: 0x6B4226 });
+    const particleGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+    const particleMat = new THREE.MeshStandardMaterial({
+        color: 0x6B4226,
+        emissive: 0x3A2010,
+        emissiveIntensity: 0.6,
+    });
     particleMesh = new THREE.InstancedMesh(particleGeo, particleMat, maxParticles);
     particleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     particleMesh.castShadow = true;
+    particleMesh.frustumCulled = false;
     scene.add(particleMesh);
 
     // Add initial targets
@@ -477,7 +482,7 @@ function animate() {
 
             // Update instance matrix
             dummy.position.copy(p.position);
-            dummy.scale.setScalar(p.life * 3.0); // Shrink as it dies
+            dummy.scale.setScalar(p.life * 1.5); // Shrink as it dies
             dummy.updateMatrix();
             particleMesh.setMatrixAt(activeCount, dummy.matrix);
             activeCount++;
