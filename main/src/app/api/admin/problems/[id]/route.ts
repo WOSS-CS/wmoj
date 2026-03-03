@@ -59,6 +59,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     updates.memory_limit = body.memory_limit;
   }
+  if (body.contest !== undefined) {
+    if (body.contest !== null && typeof body.contest !== 'string') {
+        return NextResponse.json({ error: 'Contest must be a string ID or null' }, { status: 400 });
+    }
+    updates.contest = body.contest;
+  }
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
   }
