@@ -23,7 +23,7 @@ export default function CreateProblemPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [contests, setContests] = useState<Contest[]>([]);
-  const [formData, setFormData] = useState({ name: '', content: '', contest: '', timeLimit: '5000', memoryLimit: '256' });
+  const [formData, setFormData] = useState({ name: '', content: '', contest: '', timeLimit: '5000', memoryLimit: '256', difficulty: 'Easy' });
   const [generatorFile, setGeneratorFile] = useState<File | null>(null);
   const [genLoading, setGenLoading] = useState(false);
   const [generatedInput, setGeneratedInput] = useState<string[] | null>(null);
@@ -79,12 +79,12 @@ export default function CreateProblemPage() {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch('/api/admin/problems/create', {
         method: 'POST', headers,
-        body: JSON.stringify({ name: formData.name, content: formData.content, contest: formData.contest || null, input: generatedInput, output: generatedOutput, timeLimit: parseInt(formData.timeLimit, 10), memoryLimit: parseInt(formData.memoryLimit, 10) })
+        body: JSON.stringify({ name: formData.name, content: formData.content, contest: formData.contest || null, input: generatedInput, output: generatedOutput, timeLimit: parseInt(formData.timeLimit, 10), memoryLimit: parseInt(formData.memoryLimit, 10), difficulty: formData.difficulty })
       });
       const json = await res.json();
       if (res.ok) {
         setSuccess('Problem created successfully!');
-        setFormData({ name: '', content: '', contest: '', timeLimit: '5000', memoryLimit: '256' });
+        setFormData({ name: '', content: '', contest: '', timeLimit: '5000', memoryLimit: '256', difficulty: 'Easy' });
         setGeneratorFile(null); setGeneratedInput(null); setGeneratedOutput(null); setGenError('');
         setTimeout(() => router.push('/admin/dashboard'), 2000);
       } else { setError(json.error || 'Failed to create problem'); }
@@ -115,6 +115,14 @@ export default function CreateProblemPage() {
                 <select id="contest" name="contest" value={formData.contest} onChange={handleChange} className={inputClass}>
                   <option value="">Standalone Problem</option>
                   {contests.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="difficulty" className="block text-sm font-medium text-foreground">Difficulty *</label>
+                <select id="difficulty" name="difficulty" value={formData.difficulty} onChange={handleChange} className={inputClass}>
+                  <option value="Easy">Easy</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Hard">Hard</option>
                 </select>
               </div>
               <div className="space-y-1.5">

@@ -3,7 +3,7 @@ import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseSer
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, content, contest, input, output, timeLimit, memoryLimit } = await request.json();
+    const { name, content, contest, input, output, timeLimit, memoryLimit, difficulty } = await request.json();
 
     if (!name || !content || !input || !output) {
       return NextResponse.json(
@@ -96,7 +96,8 @@ export async function POST(request: NextRequest) {
           input,
           output,
           time_limit: timeLimit || 5000,
-          memory_limit: memoryLimit || 256
+          memory_limit: memoryLimit || 256,
+          difficulty: difficulty || 'Easy'
         }
       ])
       .select()

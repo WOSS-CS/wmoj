@@ -65,7 +65,14 @@ export default function ProblemsPage() {
 
   const columns: Array<DataTableColumn<Problem>> = [
     { key: 'name', header: 'Problem', className: 'w-[50%]', sortable: true, sortAccessor: (r) => r.name.toLowerCase(), render: (r) => <span className="text-foreground font-medium text-sm">{r.name}</span> },
-    { key: 'difficulty', header: 'Difficulty', className: 'w-[15%]', render: () => <Badge variant="easy">Easy</Badge> },
+    {
+      key: 'difficulty', header: 'Difficulty', className: 'w-[15%]', render: (r) => {
+        const diffStr = r.difficulty || 'Easy';
+        const variant = diffStr.toLowerCase() === 'hard' ? 'error' :
+          diffStr.toLowerCase() === 'medium' ? 'warning' : 'success';
+        return <Badge variant={variant as any}>{diffStr}</Badge>;
+      }
+    },
     {
       key: 'status', header: 'Status', className: 'w-[15%]', render: (r) => {
         const st = statusByProblem[r.id] || 'not_attempted';
