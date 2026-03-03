@@ -12,12 +12,12 @@ import { LoadingState, SkeletonText } from '@/components/LoadingStates';
 
 interface ProblemRow {
   id: string; name: string; contest: string | null; contest_name?: string | null;
-  is_active: boolean | null; created_at: string; updated_at: string;
+  is_active: boolean | null; created_at: string; updated_at: string; difficulty?: string;
 }
 
 interface EditState {
   id: string; name: string; content: string; contest: string | null;
-  is_active: boolean; time_limit: number; memory_limit: number;
+  is_active: boolean; time_limit: number; memory_limit: number; difficulty: string;
 }
 
 const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(m => m.MarkdownEditor), { ssr: false });
@@ -76,7 +76,7 @@ export default function ManageProblemsPage() {
       const res = await fetch(`/api/admin/problems/${p.id}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load problem');
-      setEditing({ id: p.id, name: data.problem.name, content: data.problem.content || '', contest: data.problem.contest || null, is_active: !!(data.problem.is_active ?? p.is_active), time_limit: data.problem.time_limit || 5000, memory_limit: data.problem.memory_limit || 256 });
+      setEditing({ id: p.id, name: data.problem.name, content: data.problem.content || '', contest: data.problem.contest || null, is_active: !!(data.problem.is_active ?? p.is_active), time_limit: data.problem.time_limit || 5000, memory_limit: data.problem.memory_limit || 256, difficulty: data.problem.difficulty || 'Easy' });
     } catch (e: unknown) { setActionMessage(e instanceof Error ? e.message : 'Failed to open editor'); }
     finally { setFetchingEditContent(false); }
   };
@@ -89,7 +89,7 @@ export default function ManageProblemsPage() {
       const res = await fetch(`/api/admin/problems/${editing.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ name: editing.name, content: editing.content, contest: editing.contest, is_active: editing.is_active, time_limit: editing.time_limit, memory_limit: editing.memory_limit }),
+        body: JSON.stringify({ name: editing.name, content: editing.content, contest: editing.contest, is_active: editing.is_active, time_limit: editing.time_limit, memory_limit: editing.memory_limit, difficulty: editing.difficulty }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save');
@@ -203,11 +203,19 @@ export default function ManageProblemsPage() {
                           </label>
                         </div>
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5 mt-4">
                         <label className="block text-sm font-medium text-foreground">Contest</label>
                         <select className={inputClass} value={editing.contest || 'standalone'} onChange={e => setEditing(s => s ? { ...s, contest: e.target.value === 'standalone' ? null : e.target.value } : s)}>
                           <option value="standalone">Standalone (No Contest)</option>
                           {availableContests.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-sm font-medium text-foreground">Difficulty</label>
+                        <select className={inputClass} value={editing.difficulty || 'Easy'} onChange={e => setEditing(s => s ? { ...s, difficulty: e.target.value } : s)}>
+                          <option value="Easy">Easy</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Hard">Hard</option>
                         </select>
                       </div>
                       <div className="grid md:grid-cols-2 gap-4">
