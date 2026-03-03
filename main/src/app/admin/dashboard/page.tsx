@@ -4,33 +4,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
 import { LoadingState, SkeletonText } from '@/components/LoadingStates';
-// Link not used on this page
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
+import { Badge } from '@/components/ui/Badge';
 
 export default function AdminDashboardPage() {
-  const { user, signOut } = useAuth();
-
-  // Mouse position state removed
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { user } = useAuth();
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [submissions, setSubmissions] = useState<Array<{
-    id: string;
-    user: string;
-    problem: string;
-    passed: boolean;
-    timestamp: string;
+    id: string; user: string; problem: string; passed: boolean; timestamp: string;
   }>>([]);
   const hasLoadedActivitiesRef = useRef(false);
-
-  useEffect(() => {
-    setIsLoaded(true);
-  }, []);
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
@@ -38,11 +23,11 @@ export default function AdminDashboardPage() {
     const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
     if (seconds < 60) return 'just now';
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    if (hours < 24) return `${hours}h ago`;
     const days = Math.floor(hours / 24);
-    return `${days} day${days > 1 ? 's' : ''} ago`;
+    return `${days}d ago`;
   };
 
   const fetchRecentSubmissions = useCallback(async () => {
@@ -55,13 +40,9 @@ export default function AdminDashboardPage() {
         headers: { 'Authorization': `Bearer ${session.access_token}` }
       });
       if (res.ok) {
-        const json: { submissions?: Array<{ id: string; created_at: string; user: string; problem: string; passed: boolean }> } = await res.json();
-        setSubmissions((json.submissions || []).map((s) => ({
-          id: s.id,
-          user: s.user,
-          problem: s.problem,
-          passed: !!s.passed,
-          timestamp: s.created_at
+        const json = await res.json();
+        setSubmissions((json.submissions || []).map((s: { id: string; created_at: string; user: string; problem: string; passed: boolean }) => ({
+          id: s.id, user: s.user, problem: s.problem, passed: !!s.passed, timestamp: s.created_at
         })));
       }
     } catch (e) {
@@ -72,103 +53,34 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchRecentSubmissions();
-  }, [fetchRecentSubmissions]);
+  useEffect(() => { fetchRecentSubmissions(); }, [fetchRecentSubmissions]);
+
+  type Row = { id: string; user: string; problem: string; passed: boolean; timestamp: string };
+  const columns: Array<DataTableColumn<Row>> = [
+    { key: 'user', header: 'User', className: 'w-[25%]', sortable: true, sortAccessor: (r) => r.user.toLowerCase(), render: (r) => <span className="text-foreground font-medium">{r.user}</span> },
+    { key: 'problem', header: 'Problem', className: 'w-[35%]', sortable: true, sortAccessor: (r) => r.problem.toLowerCase(), render: (r) => <span className="text-text-muted">{r.problem}</span> },
+    { key: 'result', header: 'Result', className: 'w-[15%]', sortable: true, sortAccessor: (r) => (r.passed ? 1 : 0), render: (r) => <Badge variant={r.passed ? 'success' : 'warning'}>{r.passed ? 'Solved' : 'Attempted'}</Badge> },
+    { key: 'when', header: 'When', className: 'w-[25%]', sortable: true, sortAccessor: (r) => new Date(r.timestamp).getTime(), render: (r) => <span className="text-text-muted text-sm font-mono">{formatTimeAgo(r.timestamp)}</span> },
+  ];
 
   return (
-    <AuthGuard requireAuth={true} allowAuthenticated={true}>
+    <AuthGuard requireAuth allowAuthenticated>
       <AdminGuard>
-        <div className="w-full">
-          <LoadingState
-            isLoading={!isLoaded}
-            skeleton={
-              <div className="mb-8 space-y-4">
-                <SkeletonText lines={2} width="60%" />
-                <SkeletonText lines={1} width="40%" />
-              </div>
-            }
-          >
-            <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <h1 className="text-4xl font-bold text-foreground mb-4 relative">
-                Admin Dashboard
-                <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-red-400 to-red-600 rounded-full animate-pulse" />
-              </h1>
-              <p className="text-text-muted text-lg">
-                Manage contests and problems for the competitive programming platform
-              </p>
-            </div>
-          </LoadingState>
+        <div className="w-full space-y-6">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">Admin Dashboard</h1>
+            <p className="text-sm text-text-muted mt-1">Manage contests and problems for the competitive programming platform</p>
+          </div>
 
-          {/* Recent Activity (last 24 hours submissions) */}
-          <div className={`p-0 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '0.2s' }}>
-            <h2 className="text-2xl font-bold text-foreground mb-6 relative">
-              Recent Activity
-              <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-red-400 to-red-600 animate-pulse" />
-            </h2>
-            {activitiesLoading ? (
-              <div className="space-y-3">
-                <SkeletonText lines={3} />
-              </div>
-            ) : submissions.length > 0 ? (
-              <>
-                {(() => {
-                  type Row = { id: string; user: string; problem: string; passed: boolean; timestamp: string };
-                  const columns: Array<DataTableColumn<Row>> = [
-                    {
-                      key: 'user',
-                      header: 'User',
-                      className: 'w-[25%]',
-                      sortable: true,
-                      sortAccessor: (r) => r.user.toLowerCase(),
-                      render: (r) => <span className="text-foreground font-medium">{r.user}</span>,
-                    },
-                    {
-                      key: 'problem',
-                      header: 'Problem',
-                      className: 'w-[35%]',
-                      sortable: true,
-                      sortAccessor: (r) => r.problem.toLowerCase(),
-                      render: (r) => <span className="text-text-muted">{r.problem}</span>,
-                    },
-                    {
-                      key: 'result',
-                      header: 'Result',
-                      className: 'w-[15%]',
-                      sortable: true,
-                      sortAccessor: (r) => (r.passed ? 1 : 0),
-                      render: (r) => (
-                        <span className={`px-2 py-0.5 text-xs rounded-full border ${r.passed ? 'text-green-400 bg-green-900 border-green-900' : 'text-yellow-400 bg-yellow-900 border-yellow-900'}`}>
-                          {r.passed ? 'Solved' : 'Attempted'}
-                        </span>
-                      ),
-                    },
-                    {
-                      key: 'when',
-                      header: 'When',
-                      className: 'w-[25%]',
-                      sortable: true,
-                      sortAccessor: (r) => new Date(r.timestamp).getTime(),
-                      render: (r) => (
-                        <span className="text-text-muted text-sm">{formatTimeAgo(r.timestamp)}</span>
-                      ),
-                    },
-                  ];
-                  return (
-                    <DataTable<Row>
-                      columns={columns}
-                      rows={submissions}
-                      rowKey={(r) => r.id}
-                      headerVariant="red"
-                    />
-                  );
-                })()}
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-text-muted">No submissions in the last 24 hours.</p>
-              </div>
-            )}
+          <div>
+            <h2 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-4">Recent Activity</h2>
+            <LoadingState isLoading={activitiesLoading} skeleton={<SkeletonText lines={4} />}>
+              {submissions.length > 0 ? (
+                <DataTable<Row> columns={columns} rows={submissions} rowKey={(r) => r.id} />
+              ) : (
+                <p className="text-sm text-text-muted py-6 text-center">No submissions in the last 24 hours.</p>
+              )}
+            </LoadingState>
           </div>
         </div>
       </AdminGuard>

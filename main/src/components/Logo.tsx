@@ -41,7 +41,7 @@ export function Logo({
   const content = (
     <>
       <span
-        className="relative flex items-center justify-center rounded-full border border-border bg-surface-1 shadow-[0_0_18px_rgba(34,197,94,0.18)]"
+        className="relative flex items-center justify-center rounded-full border border-border bg-surface-1 shadow-sm"
         style={{ width: wrapperSize, height: wrapperSize }}
       >
         <span className="absolute inset-0 rounded-full bg-surface-2" aria-hidden />
@@ -55,15 +55,15 @@ export function Logo({
         />
       </span>
       {withText && (
-        <span className={`flex flex-col items-start leading-none ${textSizeClass} font-semibold tracking-wide text-foreground transition-colors duration-300 ${textClassName}`}>
+        <span className={`flex flex-col items-start leading-none ${textSizeClass} font-semibold tracking-wide text-foreground ${textClassName}`}>
           <span>
-            <span className="text-green-400 inline-block">
+            <span className="text-brand-primary inline-block">
               W
             </span>
             <span className="ml-0.5">MOJ</span>
           </span>
           {badge && (
-            <span className="mt-1 text-xs font-medium uppercase tracking-[0.2em] text-green-400/80">
+            <span className="mt-1 text-xs font-medium uppercase tracking-[0.2em] text-brand-primary/80">
               {badge}
             </span>
           )}

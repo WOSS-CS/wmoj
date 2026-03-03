@@ -46,11 +46,7 @@ export function AuthGuard({
     }
   }, [user, loading, requireAuth, allowAuthenticated, redirectTo, userDashboardPath, router]);
 
-  useEffect(() => {
-    // Mouse listener removed
-  }, []);
-
-  // Show enhanced loading state
+  // Show loading state
   if (loading) {
     return <PageLoading message="Loading..." />;
   }

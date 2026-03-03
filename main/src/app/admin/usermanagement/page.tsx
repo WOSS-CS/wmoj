@@ -7,6 +7,7 @@ import { AdminGuard } from '@/components/AdminGuard';
 import { LoadingState, SkeletonText } from '@/components/LoadingStates';
 import { supabase } from '@/lib/supabase';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
+import { Badge } from '@/components/ui/Badge';
 
 interface ManagedUser {
   id: string;
@@ -18,23 +19,16 @@ interface ManagedUser {
 }
 
 export default function AdminUserManagementPage() {
-  const { user, signOut } = useAuth();
-  const [isLoaded, setIsLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [filter, setFilter] = useState<'all' | 'active' | 'disabled'>('all');
   const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    setIsLoaded(true);
-  }, []);
 
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return;
-
       const res = await fetch('/api/admin/users/list', {
         headers: { 'Authorization': `Bearer ${session.access_token}` }
       });
@@ -42,14 +36,10 @@ export default function AdminUserManagementPage() {
         const json = await res.json();
         setUsers(json.users || []);
       }
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -57,146 +47,74 @@ export default function AdminUserManagementPage() {
       if (filter === 'active' && !u.is_active) return false;
       if (filter === 'disabled' && u.is_active) return false;
       if (!q) return true;
-      return (
-        u.username.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q)
-      );
+      return u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
     });
   }, [users, filter, search]);
 
   const handleToggle = async (userId: string, nextActive: boolean) => {
     const prev = users;
     setUsers(prev.map(u => u.id === userId ? { ...u, is_active: nextActive } : u));
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return;
-
       const resp = await fetch('/api/admin/users/toggle', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, is_active: nextActive })
       });
-      if (!resp.ok) {
-        // revert
-        setUsers(prev);
-      }
-    } catch {
-      setUsers(prev);
-    }
+      if (!resp.ok) setUsers(prev);
+    } catch { setUsers(prev); }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
+  const filterOptions = ['all', 'active', 'disabled'] as const;
+
+  type Row = ManagedUser;
+  const columns: Array<DataTableColumn<Row>> = [
+    { key: 'username', header: 'Username', className: 'w-[25%]', sortable: true, sortAccessor: (r) => r.username.toLowerCase(), render: (r) => <span className="text-foreground font-medium">{r.username}</span> },
+    { key: 'email', header: 'Email', className: 'w-[35%]', sortable: true, sortAccessor: (r) => r.email.toLowerCase(), render: (r) => <span className="text-text-muted">{r.email}</span> },
+    { key: 'status', header: 'Status', className: 'w-[15%]', sortable: true, sortAccessor: (r) => (r.is_active ? 1 : 0), render: (r) => <Badge variant={r.is_active ? 'success' : 'warning'}>{r.is_active ? 'Active' : 'Disabled'}</Badge> },
+    {
+      key: 'actions', header: 'Actions', className: 'w-[25%]', render: (r) => (
+        <button onClick={() => handleToggle(r.id, !r.is_active)} className={`px-3 py-1.5 rounded-md text-sm font-medium ${r.is_active ? 'bg-warning/10 text-warning hover:bg-warning/20' : 'bg-success/10 text-success hover:bg-success/20'}`}>
+          {r.is_active ? 'Disable' : 'Enable'}
+        </button>
+      )
+    },
+  ];
 
   return (
-    <AuthGuard requireAuth={true} allowAuthenticated={true}>
+    <AuthGuard requireAuth allowAuthenticated>
       <AdminGuard>
-        <div className="w-full">
-          <LoadingState
-            isLoading={!isLoaded}
-            skeleton={
-              <div className="mb-8 space-y-4">
-                <SkeletonText lines={2} width="60%" />
-                <SkeletonText lines={1} width="40%" />
-              </div>
-            }
-          >
-            <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <h1 className="text-4xl font-bold text-white mb-4 relative">
-                User Management
-                <div className="absolute -bottom-2 left-0 w-32 h-1 bg-gradient-to-r from-red-400 to-red-600 rounded-full animate-pulse" />
-              </h1>
-              <p className="text-gray-300 text-lg">View and disable/enable regular users.</p>
-            </div>
-          </LoadingState>
-
+        <div className="w-full space-y-6">
           <div>
-            <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search by username or email..."
-                className="flex-1 px-4 py-2 rounded-lg bg-[#111111] border border-[#262626] text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-red-400"
-              />
-              <div className="flex items-center gap-2">
-                <button onClick={() => setFilter('all')} className={`px-3 py-2 rounded-lg border ${filter === 'all' ? 'text-red-400 border-red-900 bg-[#450a0a]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>All</button>
-                <button onClick={() => setFilter('active')} className={`px-3 py-2 rounded-lg border ${filter === 'active' ? 'text-red-400 border-red-900 bg-[#450a0a]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>Active</button>
-                <button onClick={() => setFilter('disabled')} className={`px-3 py-2 rounded-lg border ${filter === 'disabled' ? 'text-red-400 border-red-900 bg-[#450a0a]' : 'text-gray-300 border-[#262626] hover:bg-[#262626]'}`}>Disabled</button>
-              </div>
-            </div>
-
-            <LoadingState isLoading={loading} skeleton={<SkeletonText lines={6} />}>
-              {filteredUsers.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">No users match your filters.</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  {(() => {
-                    type Row = ManagedUser;
-                    const columns: Array<DataTableColumn<Row>> = [
-                      {
-                        key: 'username',
-                        header: 'Username',
-                        className: 'w-[25%]',
-                        sortable: true,
-                        sortAccessor: (r) => r.username.toLowerCase(),
-                        render: (r) => <span className="text-white font-medium">{r.username}</span>,
-                      },
-                      {
-                        key: 'email',
-                        header: 'Email',
-                        className: 'w-[35%]',
-                        sortable: true,
-                        sortAccessor: (r) => r.email.toLowerCase(),
-                        render: (r) => <span className="text-gray-300">{r.email}</span>,
-                      },
-                      {
-                        key: 'status',
-                        header: 'Status',
-                        className: 'w-[15%]',
-                        sortable: true,
-                        sortAccessor: (r) => (r.is_active ? 1 : 0),
-                        render: (r) => (
-                          <span className={`px-2 py-1 rounded text-xs border ${r.is_active ? 'bg-[#064e3b] text-green-400 border-green-900' : 'bg-[#422006] text-yellow-400 border-yellow-900'}`}>
-                            {r.is_active ? 'Active' : 'Disabled'}
-                          </span>
-                        ),
-                      },
-                      {
-                        key: 'actions',
-                        header: 'Actions',
-                        className: 'w-[25%]',
-                        render: (r) => (
-                          <button
-                            onClick={() => handleToggle(r.id, !r.is_active)}
-                            className={`px-3 py-2 rounded-lg transition-colors duration-300 ${r.is_active ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white`}
-                          >
-                            {r.is_active ? 'Disable' : 'Enable'}
-                          </button>
-                        ),
-                      },
-                    ];
-                    return (
-                      <DataTable<Row>
-                        columns={columns}
-                        rows={filteredUsers}
-                        rowKey={(r) => r.id}
-                        headerVariant="red"
-                      />
-                    );
-                  })()}
-                </div>
-              )}
-            </LoadingState>
+            <h1 className="text-xl font-semibold text-foreground">User Management</h1>
+            <p className="text-sm text-text-muted mt-1">View and disable/enable regular users.</p>
           </div>
+
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search by username or email..."
+              className="flex-1 h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+            />
+            <div className="flex items-center gap-1.5">
+              {filterOptions.map(f => (
+                <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-md text-sm border capitalize ${filter === f ? 'text-brand-primary border-brand-primary/30 bg-brand-primary/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <LoadingState isLoading={loading} skeleton={<SkeletonText lines={6} />}>
+            {filteredUsers.length === 0 ? (
+              <p className="text-sm text-text-muted text-center py-8">No users match your filters.</p>
+            ) : (
+              <DataTable<Row> columns={columns} rows={filteredUsers} rowKey={(r) => r.id} />
+            )}
+          </LoadingState>
         </div>
       </AdminGuard>
     </AuthGuard>
   );
 }
-
-

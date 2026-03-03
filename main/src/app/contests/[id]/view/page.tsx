@@ -9,6 +9,8 @@ import { useCountdown } from '@/contexts/CountdownContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import { LoadingState, SkeletonText } from '@/components/LoadingStates';
+import { LoadingSpinner } from '@/components/AnimationWrapper';
+import { toast } from '@/components/ui/Toast';
 
 const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
 
@@ -22,19 +24,13 @@ interface ContestDetail {
 export default function ContestViewPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { user, session, signOut } = useAuth();
+  const { user, session } = useAuth();
   const { startCountdown } = useCountdown();
 
   const [contest, setContest] = useState<ContestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [joining, setJoining] = useState(false);
-  // Mouse position state removed
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    setIsLoaded(true);
-  }, []);
 
   useEffect(() => {
     (async () => {
@@ -53,8 +49,6 @@ export default function ContestViewPage() {
     })();
   }, [params?.id]);
 
-  const handleSignOut = async () => { await signOut(); };
-
   const handleJoin = async () => {
     if (!contest || joining) return;
     try {
@@ -72,7 +66,7 @@ export default function ContestViewPage() {
       startCountdown(contest.id, contest.name, contest.length);
       router.push(`/contests/${contest.id}`);
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to join contest');
+      toast.error('Error', e instanceof Error ? e.message : 'Failed to join contest');
     } finally {
       setJoining(false);
     }
@@ -81,89 +75,59 @@ export default function ContestViewPage() {
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
       <RegularOnlyGuard>
-        <div className="relative overflow-hidden min-h-full">
-          {/* Main Content */}
-          <main className="max-w-5xl mx-auto p-6 py-12">
-            <LoadingState
-              isLoading={loading}
-              skeleton={
-                <div className="space-y-6">
-                  <div className="h-8 bg-surface-2 rounded-lg w-1/4 mb-8"></div>
-                  <SkeletonText lines={2} width="60%" />
-                  <SkeletonText lines={4} />
-                </div>
-              }
-            >
-              {error ? (
-                <div className="bg-red-950/20 border border-red-500/20 rounded-lg p-6 mb-8">
-                  <p className="text-red-400">{error}</p>
-                  <Link href="/contests" className="text-sm text-red-300 hover:underline mt-2 inline-block">← Back to Contests</Link>
-                </div>
-              ) : contest ? (
-                <div className={`transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <LoadingState isLoading={loading} skeleton={<SkeletonText lines={4} width="60%" />}>
+            {error ? (
+              <div className="bg-error/10 border border-error/20 rounded-lg p-4">
+                <p className="text-sm text-error mb-2">{error}</p>
+                <Link href="/contests" className="text-sm text-error hover:underline">← Back to Contests</Link>
+              </div>
+            ) : contest ? (
+              <>
+                <Link href="/contests" className="text-sm text-text-muted hover:text-foreground inline-flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
+                  Back to Contests
+                </Link>
 
-                  <div className="mb-8 flex flex-col items-start gap-4">
-                    <Link href="/contests" className="flex items-center text-sm text-text-muted hover:text-foreground transition-colors group">
-                      <svg className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                      Back to Contests
-                    </Link>
-                    <h1 className="text-5xl font-bold text-foreground font-heading relative inline-block">
-                      {contest.name}
-                      <div className="absolute -bottom-2 left-0 w-1/2 h-1 bg-gradient-to-r from-brand-primary to-emerald-400 rounded-full" />
-                    </h1>
-                  </div>
+                <h1 className="text-xl font-semibold text-foreground">{contest.name}</h1>
 
-                  <div className="grid md:grid-cols-3 gap-8">
-                    <div className="md:col-span-2 space-y-8">
-                      {/* Description Panel */}
-                      <div className="glass-panel p-8">
-                        <h2 className="text-xl font-heading text-foreground mb-6 flex items-center gap-2">
-                          <span className="text-brand-primary">#</span> About this Contest
-                        </h2>
-                        <div className="prose prose-invert max-w-none">
-                          <MarkdownRenderer content={contest.description || '*No description provided*'} />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-6">
-                      {/* Action Panel */}
-                      <div className="glass-panel p-6 border-t-4 border-t-brand-primary">
-                        <div className="mb-6">
-                          <div className="text-sm text-text-muted uppercase tracking-wider font-bold mb-2">Duration</div>
-                          <div className="text-3xl font-mono text-foreground flex items-baseline gap-2">
-                            {contest.length} <span className="text-sm text-text-muted font-sans">minutes</span>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={handleJoin}
-                          disabled={joining}
-                          className="w-full py-4 bg-brand-primary text-black font-bold rounded-lg hover:bg-brand-secondary transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-primary/20"
-                        >
-                          {joining ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                              Joining...
-                            </span>
-                          ) : (
-                            'Join Contest Now'
-                          )}
-                        </button>
-                        <p className="text-xs text-text-muted mt-4 text-center">
-                          By joining, you agree to the contest rules.
-                        </p>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2">
+                    <div className="glass-panel p-6">
+                      <h2 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-4">About this Contest</h2>
+                      <div className="prose prose-invert max-w-none">
+                        <MarkdownRenderer content={contest.description || '*No description provided*'} />
                       </div>
                     </div>
                   </div>
+
+                  <div>
+                    <div className="glass-panel p-5">
+                      <div className="mb-5">
+                        <div className="text-xs text-text-muted uppercase tracking-wider font-medium mb-1">Duration</div>
+                        <div className="text-2xl font-semibold text-foreground font-mono">
+                          {contest.length} <span className="text-sm text-text-muted font-sans">min</span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={handleJoin}
+                        disabled={joining}
+                        className="w-full h-10 bg-brand-primary text-white text-sm font-medium rounded-lg hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {joining ? <><LoadingSpinner size="sm" /><span>Joining...</span></> : 'Join Contest'}
+                      </button>
+                      <p className="text-xs text-text-muted mt-3 text-center">
+                        By joining, you agree to the contest rules.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              ) : null}
-            </LoadingState>
-          </main>
+              </>
+            ) : null}
+          </LoadingState>
         </div>
       </RegularOnlyGuard>
     </AuthGuard>
   );
 }
-
-
