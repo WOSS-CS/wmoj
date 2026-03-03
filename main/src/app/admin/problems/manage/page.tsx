@@ -22,6 +22,7 @@ interface EditState {
   id: string;
   name: string;
   content: string;
+  contest: string | null;
   is_active: boolean;
   time_limit: number;
   memory_limit: number;
@@ -40,7 +41,23 @@ export default function ManageProblemsPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [availableContests, setAvailableContests] = useState<{ id: string, name: string }[]>([]);
   const token = session?.access_token;
+
+  const fetchContests = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/admin/contests/list', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAvailableContests(data.contests || []);
+      }
+    } catch (e) {
+      console.error('Failed to fetch contests for dropdown', e);
+    }
+  }, [token]);
 
   const fetchProblems = useCallback(async () => {
     if (!token) return; // wait for token to avoid unauthorized flicker
@@ -64,8 +81,9 @@ export default function ManageProblemsPage() {
     if (token) {
       setError(null);
       fetchProblems();
+      fetchContests();
     }
-  }, [token, fetchProblems]);
+  }, [token, fetchProblems, fetchContests]);
 
   const filteredProblems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -93,6 +111,7 @@ export default function ManageProblemsPage() {
         id: p.id,
         name: data.problem.name,
         content: data.problem.content || '',
+        contest: data.problem.contest || null,
         is_active: !!(data.problem.is_active ?? p.is_active),
         time_limit: data.problem.time_limit || 5000,
         memory_limit: data.problem.memory_limit || 256
@@ -118,6 +137,7 @@ export default function ManageProblemsPage() {
         body: JSON.stringify({
           name: editing.name,
           content: editing.content,
+          contest: editing.contest,
           is_active: editing.is_active,
           time_limit: editing.time_limit,
           memory_limit: editing.memory_limit
@@ -127,7 +147,15 @@ export default function ManageProblemsPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to save');
       setActionMessage('Problem updated');
       // Optimistic update
-      setProblems(prev => prev.map(p => p.id === editing.id ? { ...p, name: editing.name, is_active: editing.is_active, updated_at: new Date().toISOString() } : p));
+      const updatedContestInfo = availableContests.find(c => c.id === editing.contest);
+      setProblems(prev => prev.map(p => p.id === editing.id ? {
+        ...p,
+        name: editing.name,
+        contest: editing.contest,
+        contest_name: updatedContestInfo ? updatedContestInfo.name : null,
+        is_active: editing.is_active,
+        updated_at: new Date().toISOString()
+      } : p));
       closeEdit();
     } catch (e: unknown) {
       setActionMessage(e instanceof Error ? e.message : 'Failed to save edit');
@@ -320,6 +348,25 @@ export default function ManageProblemsPage() {
                             Save Now
                           </button>
                         </div>
+                      </div>
+
+                      {/* Contest Selection Row */}
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-foreground">Contest Association</label>
+                        <select
+                          className="w-full px-3 py-2 rounded-md bg-surface-2 border border-border text-foreground focus:outline-none focus:ring focus:ring-blue-500/20"
+                          value={editing.contest || 'standalone'}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setEditing(s => s ? { ...s, contest: val === 'standalone' ? null : val } : s);
+                          }}
+                        >
+                          <option value="standalone">Standalone (No Contest)</option>
+                          {availableContests.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-text-muted">Select a contest for this problem, or leave it standalone.</p>
                       </div>
 
                       {/* Time Limit and Memory Limit Row */}
