@@ -26,14 +26,14 @@ export function MarkdownEditor({
 
   return (
     <div className={`markdown-editor ${className}`}>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Problem Description</h3>
-        <div className="flex gap-2">
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-sm font-medium text-foreground">Problem Description</h3>
+        <div className="flex gap-1.5">
           <button
             type="button"
             onClick={() => setIsPreview(false)}
-            className={`px-3 py-1 rounded-lg text-sm transition-all duration-300 ${!isPreview
-              ? 'bg-brand-primary text-black font-bold'
+            className={`px-3 py-1 rounded-md text-sm ${!isPreview
+              ? 'bg-brand-primary text-white font-medium'
               : 'bg-surface-2 text-text-muted hover:bg-surface-3'
               }`}
           >
@@ -42,8 +42,8 @@ export function MarkdownEditor({
           <button
             type="button"
             onClick={() => setIsPreview(true)}
-            className={`px-3 py-1 rounded-lg text-sm transition-all duration-300 ${isPreview
-              ? 'bg-brand-primary text-black font-bold'
+            className={`px-3 py-1 rounded-md text-sm ${isPreview
+              ? 'bg-brand-primary text-white font-medium'
               : 'bg-surface-2 text-text-muted hover:bg-surface-3'
               }`}
           >
@@ -97,7 +97,7 @@ export function MarkdownEditor({
           />
         )}
         {isPreview && (
-          <div className="p-6 bg-surface-2/30 max-h-[600px] overflow-auto">
+          <div className="p-5 bg-surface-1 max-h-[600px] overflow-auto">
             <MarkdownRenderer content={value} />
           </div>
         )}

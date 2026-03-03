@@ -31,21 +31,11 @@ type SortState<Row> = {
 
 export function DataTable<Row extends object>(props: DataTableProps<Row>) {
   const {
-    columns,
-    rows,
-    rowKey,
-    emptyState,
-    headerVariant = 'gray',
-    className = '',
-    stickyHeader = true,
+    columns, rows, rowKey, emptyState,
+    headerVariant = 'gray', className = '', stickyHeader = true,
   } = props;
 
-  const [sort, setSort] = useState<SortState<Row>>({
-    key: null,
-    direction: 'asc',
-    column: null,
-  });
-
+  const [sort, setSort] = useState<SortState<Row>>({ key: null, direction: 'asc', column: null });
   const theme = getTableTheme(headerVariant);
 
   const sortedRows = useMemo(() => {
@@ -55,9 +45,7 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
       ((row: Row): SortValue => {
         const rec = row as unknown as Record<string, unknown>;
         const raw = rec[sort.key as string] as unknown;
-        if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean' || raw == null) {
-          return raw as SortValue;
-        }
+        if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean' || raw == null) return raw as SortValue;
         return String(raw);
       });
     const list = [...rows];
@@ -67,9 +55,7 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
       if (av == null && bv == null) return 0;
       if (av == null) return sort.direction === 'asc' ? -1 : 1;
       if (bv == null) return sort.direction === 'asc' ? 1 : -1;
-      if (typeof av === 'number' && typeof bv === 'number') {
-        return sort.direction === 'asc' ? av - bv : bv - av;
-      }
+      if (typeof av === 'number' && typeof bv === 'number') return sort.direction === 'asc' ? av - bv : bv - av;
       const as = String(av).toLowerCase();
       const bs = String(bv).toLowerCase();
       if (as < bs) return sort.direction === 'asc' ? -1 : 1;
@@ -82,9 +68,7 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
   const onSort = (col: DataTableColumn<Row>) => {
     if (!col.sortable) return;
     setSort((prev) => {
-      if (prev.key === col.key) {
-        return { key: col.key, direction: prev.direction === 'asc' ? 'desc' : 'asc', column: col };
-      }
+      if (prev.key === col.key) return { key: col.key, direction: prev.direction === 'asc' ? 'desc' : 'asc', column: col };
       return { key: col.key, direction: 'asc', column: col };
     });
   };
@@ -99,13 +83,13 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
               return (
                 <th
                   key={col.key}
-                  className={`px-6 py-4 ${theme.headerCell} ${col.className || ''} ${col.sortable ? 'cursor-pointer select-none group' : ''}`}
+                  className={`px-4 py-2.5 ${theme.headerCell} ${col.className || ''} ${col.sortable ? 'cursor-pointer select-none group' : ''}`}
                   onClick={() => onSort(col)}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <span>{col.header}</span>
                     {col.sortable && (
-                      <span className={`transition-opacity ${isSorted ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
+                      <span className={isSorted ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'}>
                         {isSorted ? (sort.direction === 'asc' ? '↑' : '↓') : '↕'}
                       </span>
                     )}
@@ -118,12 +102,8 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
         <tbody className="divide-y divide-border">
           {sortedRows.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-6 py-12 text-center text-text-muted">
-                {emptyState || (
-                  <div className="flex flex-col items-center justify-center">
-                    <p>No data found.</p>
-                  </div>
-                )}
+              <td colSpan={columns.length} className="px-4 py-10 text-center text-text-muted text-sm">
+                {emptyState || <p>No data found.</p>}
               </td>
             </tr>
           ) : (
@@ -138,10 +118,8 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
               return (
                 <tr key={key} className={`${theme.rowHover} group`}>
                   {columns.map((col) => (
-                    <td key={col.key} className={`px-6 py-4 align-middle text-sm text-foreground ${col.className || ''}`}>
-                      {col.render
-                        ? col.render(row)
-                        : ((row as unknown as Record<string, unknown>)[col.key] as ReactNode)}
+                    <td key={col.key} className={`px-4 py-3 align-middle text-sm text-foreground ${col.className || ''}`}>
+                      {col.render ? col.render(row) : ((row as unknown as Record<string, unknown>)[col.key] as ReactNode)}
                     </td>
                   ))}
                 </tr>
@@ -155,5 +133,3 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
 }
 
 export default DataTable;
-
-

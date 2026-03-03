@@ -11,7 +11,6 @@ export interface ToastMessage {
     message?: string;
 }
 
-// Simple Toast Manager (Event Emitter compatible)
 export const toast = {
     success: (title: string, message?: string) => dispatch("success", title, message),
     error: (title: string, message?: string) => dispatch("error", title, message),
@@ -23,6 +22,12 @@ const dispatch = (type: ToastType, title: string, message?: string) => {
         detail: { id: Math.random().toString(36).substr(2, 9), type, title, message },
     });
     window.dispatchEvent(event);
+};
+
+const borderColor: Record<ToastType, string> = {
+    success: "border-l-success",
+    error: "border-l-error",
+    info: "border-l-brand-primary",
 };
 
 export const ToastContainer = () => {
@@ -46,13 +51,7 @@ export const ToastContainer = () => {
             {toasts.map((t) => (
                 <div
                     key={t.id}
-                    className={`
-            pointer-events-auto min-w-[300px] glass-panel p-4 animate-slide-in-right
-            border-l-4 overflow-hidden relative
-            ${t.type === "success" ? "border-l-brand-primary" : ""}
-            ${t.type === "error" ? "border-l-red-500" : ""}
-            ${t.type === "info" ? "border-l-blue-500" : ""}
-          `}
+                    className={`pointer-events-auto min-w-[300px] bg-surface-1 border border-border border-l-4 ${borderColor[t.type]} rounded-lg p-4 shadow-lg`}
                 >
                     <div className="flex items-start gap-3">
                         <div className="flex-1">
@@ -61,7 +60,7 @@ export const ToastContainer = () => {
                         </div>
                         <button
                             onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
-                            className="text-text-muted hover:text-foreground"
+                            className="text-text-muted hover:text-foreground text-lg leading-none"
                         >
                             ×
                         </button>

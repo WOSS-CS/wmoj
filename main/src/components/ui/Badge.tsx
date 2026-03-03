@@ -10,34 +10,21 @@ interface BadgeProps {
     className?: string;
 }
 
-export const Badge = ({ children, variant = "neutral", className = "" }: BadgeProps) => {
-    const getVariantStyles = (v: BadgeVariant) => {
-        switch (v) {
-            case "success":
-                return "bg-[#2ea043]/15 text-[#2ea043] border border-[#2ea043]/20";
-            case "error":
-                return "bg-[#f85149]/15 text-[#f85149] border border-[#f85149]/20";
-            case "warning":
-                return "bg-[#d29922]/15 text-[#d29922] border border-[#d29922]/20";
-            case "info":
-                return "bg-blue-500/15 text-blue-400 border border-blue-500/20";
-            case "easy":
-                return "bg-[#3fb950]/15 text-[#3fb950] border border-[#3fb950]/20";
-            case "medium":
-                return "bg-[#d29922]/15 text-[#d29922] border border-[#d29922]/20";
-            case "hard":
-                return "bg-[#f85149]/15 text-[#f85149] border border-[#f85149]/20";
-            case "neutral":
-            default:
-                return "bg-surface-2 text-text-muted border border-border";
-        }
-    };
+const variantStyles: Record<BadgeVariant, string> = {
+    success: "bg-success/10 text-success",
+    error: "bg-error/10 text-error",
+    warning: "bg-warning/10 text-warning",
+    info: "bg-blue-500/10 text-blue-400",
+    easy: "bg-success/10 text-success",
+    medium: "bg-warning/10 text-warning",
+    hard: "bg-error/10 text-error",
+    neutral: "bg-surface-2 text-text-muted",
+};
 
+export const Badge = ({ children, variant = "neutral", className = "" }: BadgeProps) => {
     return (
         <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getVariantStyles(
-                variant
-            )} ${className}`}
+            className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${variantStyles[variant]} ${className}`}
         >
             {children}
         </span>

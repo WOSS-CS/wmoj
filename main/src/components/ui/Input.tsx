@@ -27,16 +27,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     <input
                         ref={ref}
                         className={`
-              block w-full rounded-lg bg-surface-2 border border-border
-              text-foreground placeholder-text-muted/50
-              focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/20 focus:outline-none
-              transition-all duration-200
-              disabled:opacity-50 disabled:cursor-not-allowed
-              ${leftIcon ? "pl-10" : "pl-4"}
-              ${rightIcon ? "pr-10" : "pr-4"}
-              ${error ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}
-              ${className}
-            `}
+                            block w-full h-10 rounded-lg bg-surface-2 border border-border
+                            text-foreground text-sm placeholder:text-text-muted/50
+                            focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:outline-none
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                            ${leftIcon ? "pl-10" : "px-3"}
+                            ${rightIcon ? "pr-10" : "px-3"}
+                            ${error ? "border-error focus:border-error focus:ring-error/20" : ""}
+                            ${className}
+                        `}
                         {...props}
                     />
                     {rightIcon && (
@@ -46,7 +45,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     )}
                 </div>
                 {error && (
-                    <p className="mt-1.5 text-sm text-[#f85149] animate-fade-in-up">
+                    <p className="mt-1.5 text-sm text-error">
                         {error}
                     </p>
                 )}
