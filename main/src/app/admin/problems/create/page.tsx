@@ -13,6 +13,7 @@ import { LoadingSpinner } from '@/components/AnimationWrapper';
 interface Contest { id: string; name: string; }
 
 const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(m => m.MarkdownEditor), { ssr: false });
+const CodeEditor = dynamic(() => import('@/components/CodeEditor'), { ssr: false, loading: () => <div className="h-[300px] bg-surface-2 rounded-md animate-pulse" /> });
 
 const inputClass = "w-full h-10 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20";
 
@@ -24,7 +25,7 @@ export default function CreateProblemPage() {
   const [success, setSuccess] = useState('');
   const [contests, setContests] = useState<Contest[]>([]);
   const [formData, setFormData] = useState({ name: '', content: '', contest: '', timeLimit: '5000', memoryLimit: '256', difficulty: 'Easy' });
-  const [generatorFile, setGeneratorFile] = useState<File | null>(null);
+  const [generatorCode, setGeneratorCode] = useState('');
   const [genLoading, setGenLoading] = useState(false);
   const [generatedInput, setGeneratedInput] = useState<string[] | null>(null);
   const [generatedOutput, setGeneratedOutput] = useState<string[] | null>(null);
@@ -48,20 +49,15 @@ export default function CreateProblemPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleGeneratorSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGenError(''); setGeneratedInput(null); setGeneratedOutput(null);
-    setGeneratorFile(e.target.files?.[0] || null);
-  };
+
 
   const handleGenerate = async () => {
-    if (!generatorFile) return;
+    if (!generatorCode.trim()) return;
     setGenLoading(true); setGenError(''); setError(''); setSuccess('');
     try {
-      const headers: Record<string, string> = {};
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const fd = new FormData();
-      fd.append('file', generatorFile);
-      const res = await fetch('/api/admin/problems/generator/generate', { method: 'POST', headers, body: fd });
+      const res = await fetch('/api/admin/problems/generator/generate', { method: 'POST', headers, body: JSON.stringify({ code: generatorCode }) });
       const json = await res.json();
       if (!res.ok) { setGenError(json.error || 'Failed to generate test cases'); setGeneratedInput(null); setGeneratedOutput(null); }
       else { setGeneratedInput(json.input || null); setGeneratedOutput(json.output || null); }
@@ -85,7 +81,7 @@ export default function CreateProblemPage() {
       if (res.ok) {
         setSuccess('Problem created successfully!');
         setFormData({ name: '', content: '', contest: '', timeLimit: '5000', memoryLimit: '256', difficulty: 'Easy' });
-        setGeneratorFile(null); setGeneratedInput(null); setGeneratedOutput(null); setGenError('');
+        setGeneratorCode(''); setGeneratedInput(null); setGeneratedOutput(null); setGenError('');
         setTimeout(() => router.push('/admin/dashboard'), 2000);
       } else { setError(json.error || 'Failed to create problem'); }
     } catch { setError('Unexpected error occurred'); }
@@ -135,15 +131,13 @@ export default function CreateProblemPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <label className="block text-sm font-medium text-foreground">Generator (C++) *</label>
-              <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                <input type="file" accept=".cpp" onChange={handleGeneratorSelect} className="block text-sm text-text-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-brand-primary file:text-white hover:file:bg-brand-secondary" />
-                <button type="button" onClick={handleGenerate} disabled={!generatorFile || genLoading} className="px-4 py-1.5 bg-success/10 text-success text-sm font-medium rounded-md hover:bg-success/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                  {genLoading ? 'Generating…' : 'Generate Test Cases'}
-                </button>
-              </div>
-              <p className="text-xs text-text-muted">Upload a C++ generator. It must print input JSON to stdout and output JSON to stderr.</p>
+              <p className="text-xs text-text-muted">Paste your C++ generator code below. It must print input JSON to stdout and output JSON to stderr.</p>
+              <CodeEditor language="cpp" value={generatorCode} onChange={setGeneratorCode} height="300px" />
+              <button type="button" onClick={handleGenerate} disabled={!generatorCode.trim() || genLoading} className="px-4 py-1.5 bg-success/10 text-success text-sm font-medium rounded-md hover:bg-success/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                {genLoading ? 'Generating…' : 'Generate Test Cases'}
+              </button>
 
               {genError && <div className="bg-error/10 border border-error/20 rounded-lg p-3"><p className="text-error text-sm whitespace-pre-wrap break-words">{genError}</p></div>}
 
