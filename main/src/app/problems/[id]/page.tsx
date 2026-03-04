@@ -4,11 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { AuthGuard } from '@/components/AuthGuard';
-import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import { LoadingState, SkeletonText, CodeEditorLoading } from '@/components/LoadingStates';
 import { LoadingSpinner } from '@/components/AnimationWrapper';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
+import { AuthPromptModal } from '@/components/AuthPromptModal';
 import { Problem } from '@/types/problem';
 import { supabase } from '@/lib/supabase';
 import { checkContestParticipation } from '@/utils/participationCheck';
@@ -31,6 +30,7 @@ export default function ProblemPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [accessChecked, setAccessChecked] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('python');
   const [codeText, setCodeText] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -45,9 +45,9 @@ export default function ProblemPage() {
   const fetchProblem = useCallback(async (id: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/problems/${id}`, {
-        headers: { ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-      });
+      const headers: Record<string, string> = {};
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+      const response = await fetch(`/api/problems/${id}`, { headers });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to fetch problem');
       setProblem(data.problem);
@@ -72,12 +72,14 @@ export default function ProblemPage() {
   }, []);
 
   useEffect(() => {
-    if (problemId && session?.access_token) fetchProblem(problemId);
-  }, [problemId, session?.access_token, fetchProblem]);
+    if (problemId) fetchProblem(problemId);
+  }, [problemId, fetchProblem]);
 
   useEffect(() => {
     (async () => {
-      if (!user || !problem) return;
+      if (!problem) return;
+      // If user is not logged in, skip contest checks and just show the problem
+      if (!user) { setAccessChecked(true); return; }
       if (problem.contest) {
         try {
           const hasAccess = await checkContestParticipation(user.id, problem.contest);
@@ -96,6 +98,12 @@ export default function ProblemPage() {
   }, [isActive, contestId, problem?.contest, router]);
 
   useEffect(() => { if (user?.id && problem?.id) fetchBestSubmission(user.id, problem.id); }, [user?.id, problem?.id, fetchBestSubmission]);
+
+  // Check if user is authenticated before submitting
+  const handleSubmitClick = () => {
+    if (!user) { setShowAuthPrompt(true); return; }
+    handleSubmit();
+  };
 
   const handleSubmit = async () => {
     if (!problem || !user || !codeText.trim()) return;
@@ -127,244 +135,243 @@ export default function ProblemPage() {
   ] as const;
 
   return (
-    <AuthGuard requireAuth={true} allowAuthenticated={true}>
-      <RegularOnlyGuard>
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Back */}
-          <button
-            type="button"
-            onClick={() => router.push(problem?.contest ? `/contests/${problem.contest}` : '/problems')}
-            className="text-sm text-text-muted hover:text-foreground inline-flex items-center gap-1.5"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
-            Back to {problem?.contest ? 'Contest' : 'Problems'}
-          </button>
+    <>
+      {showAuthPrompt && <AuthPromptModal message="Log in or sign up to submit your solution and track your progress." onClose={() => setShowAuthPrompt(false)} />}
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Back */}
+        <button
+          type="button"
+          onClick={() => router.push(problem?.contest ? `/contests/${problem.contest}` : '/problems')}
+          className="text-sm text-text-muted hover:text-foreground inline-flex items-center gap-1.5"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
+          Back to {problem?.contest ? 'Contest' : 'Problems'}
+        </button>
 
-          <LoadingState
-            isLoading={loading || !accessChecked}
-            skeleton={
-              <div className="grid lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-4"><SkeletonText lines={3} width="80%" /><SkeletonText lines={5} /></div>
-                <div className="space-y-4"><SkeletonText lines={2} width="60%" /><CodeEditorLoading lines={8} /></div>
-              </div>
-            }
-          >
-            {error ? (
-              <div className="bg-error/10 border border-error/20 rounded-lg p-4">
-                <p className="text-sm text-error mb-2">{error}</p>
-                <button type="button" onClick={() => router.push('/problems')} className="text-sm text-error hover:underline">Back to Problems</button>
-              </div>
-            ) : problem ? (
-              <div className="grid lg:grid-cols-3 gap-6">
-                {/* Main content */}
-                <div className="lg:col-span-2">
-                  <div className="glass-panel p-6">
-                    {/* Header */}
-                    <div className="flex flex-wrap items-center gap-3 mb-5">
-                      <h1 className="text-lg font-semibold text-foreground">{problem.name}</h1>
-                      <Badge variant={problem.contest ? 'info' : 'neutral'}>
-                        {problem.contest ? 'Contest' : 'Standalone'}
-                      </Badge>
-                    </div>
+        <LoadingState
+          isLoading={loading || !accessChecked}
+          skeleton={
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-4"><SkeletonText lines={3} width="80%" /><SkeletonText lines={5} /></div>
+              <div className="space-y-4"><SkeletonText lines={2} width="60%" /><CodeEditorLoading lines={8} /></div>
+            </div>
+          }
+        >
+          {error ? (
+            <div className="bg-error/10 border border-error/20 rounded-lg p-4">
+              <p className="text-sm text-error mb-2">{error}</p>
+              <button type="button" onClick={() => router.push('/problems')} className="text-sm text-error hover:underline">Back to Problems</button>
+            </div>
+          ) : problem ? (
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Main content */}
+              <div className="lg:col-span-2">
+                <div className="glass-panel p-6">
+                  {/* Header */}
+                  <div className="flex flex-wrap items-center gap-3 mb-5">
+                    <h1 className="text-lg font-semibold text-foreground">{problem.name}</h1>
+                    <Badge variant={problem.contest ? 'info' : 'neutral'}>
+                      {problem.contest ? 'Contest' : 'Standalone'}
+                    </Badge>
+                  </div>
 
-                    {/* Tabs */}
-                    <div className="flex gap-1 mb-5 border-b border-border pb-3">
-                      {tabs.map((tab) => (
-                        <button
-                          key={tab.id}
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium ${activeTab === tab.id
-                            ? 'bg-surface-2 text-foreground'
-                            : 'text-text-muted hover:text-foreground'
-                            }`}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
-                    </div>
+                  {/* Tabs */}
+                  <div className="flex gap-1 mb-5 border-b border-border pb-3">
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium ${activeTab === tab.id
+                          ? 'bg-surface-2 text-foreground'
+                          : 'text-text-muted hover:text-foreground'
+                          }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
 
-                    {/* Tab content */}
-                    <div className="min-h-[400px]">
-                      {activeTab === 'description' && (
-                        <div className="max-w-none">
-                          <MarkdownRenderer content={problem.content} />
-                        </div>
-                      )}
+                  {/* Tab content */}
+                  <div className="min-h-[400px]">
+                    {activeTab === 'description' && (
+                      <div className="max-w-none">
+                        <MarkdownRenderer content={problem.content} />
+                      </div>
+                    )}
 
-                      {activeTab === 'results' && (
-                        <div className="space-y-3">
-                          {summary && results ? (
-                            <>
-                              <div className="flex items-center gap-3 mb-4">
-                                <Badge variant={summary.failed === 0 ? 'success' : 'warning'}>
-                                  {summary.failed === 0 ? 'All Passed' : 'Some Failed'}
-                                </Badge>
-                                <span className="text-sm text-text-muted">
-                                  Score: <span className="text-foreground font-mono font-medium">{summary.passed}/{summary.total}</span>
-                                </span>
-                              </div>
-                              <div className="space-y-2">
-                                {results.map((r) => (
-                                  <div key={r.index} className="p-3 rounded-lg bg-surface-2">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        <span className={`w-1.5 h-1.5 rounded-full ${r.passed ? 'bg-success' : 'bg-error'}`} />
-                                        <span className="text-sm text-foreground font-mono">Test {r.index + 1}</span>
-                                      </div>
-                                      <span className="text-xs text-text-muted font-mono">exit {r.exitCode}{r.timedOut ? ' · TLE' : ''}</span>
-                                    </div>
-                                    {!r.passed && (
-                                      <div className="mt-2 grid md:grid-cols-2 gap-2 text-xs font-mono">
-                                        <div>
-                                          <div className="text-text-muted mb-1">Expected</div>
-                                          <pre className="p-2 rounded bg-surface-1 text-text-muted overflow-x-auto border border-border">{r.expected}</pre>
-                                        </div>
-                                        <div>
-                                          <div className="text-text-muted mb-1">Received</div>
-                                          <pre className="p-2 rounded bg-surface-1 text-error overflow-x-auto border border-border">{r.received}</pre>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </>
-                          ) : (
-                            <div className="text-center py-10">
-                              <p className="text-sm text-text-muted">No submission results yet. Write code and submit.</p>
+                    {activeTab === 'results' && (
+                      <div className="space-y-3">
+                        {summary && results ? (
+                          <>
+                            <div className="flex items-center gap-3 mb-4">
+                              <Badge variant={summary.failed === 0 ? 'success' : 'warning'}>
+                                {summary.failed === 0 ? 'All Passed' : 'Some Failed'}
+                              </Badge>
+                              <span className="text-sm text-text-muted">
+                                Score: <span className="text-foreground font-mono font-medium">{summary.passed}/{summary.total}</span>
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      )}
-
-                      {activeTab === 'editor' && (
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-3">
-                            <label className="text-sm text-text-muted">Language</label>
-                            <select
-                              value={selectedLanguage}
-                              onChange={(e) => setSelectedLanguage(e.target.value)}
-                              className="h-8 px-2 bg-surface-2 border border-border rounded-md text-sm text-foreground focus:outline-none focus:border-brand-primary"
-                            >
-                              {languages.map((lang) => (
-                                <option key={lang.value} value={lang.value}>{lang.label}</option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <CodeEditor language={selectedLanguage} value={codeText} onChange={setCodeText} height="500px" />
-
-                          {submitError && (
-                            <div className="bg-error/10 border border-error/20 text-error text-sm p-3 rounded-lg">{submitError}</div>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={handleSubmit}
-                            disabled={!codeText.trim() || submitting}
-                            className="w-full h-10 bg-brand-primary text-white text-sm font-medium rounded-lg hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                          >
-                            {submitting ? <><LoadingSpinner size="sm" /><span>Submitting...</span></> : 'Submit Solution'}
-                          </button>
-
-                          {/* Inline result summary */}
-                          {(submitting || summary) && (
-                            <div className="p-4 rounded-lg bg-surface-2">
-                              {submitting ? (
-                                <div className="flex items-center gap-2">
-                                  <LoadingSpinner size="sm" />
-                                  <span className="text-sm text-text-muted">Evaluating...</span>
-                                </div>
-                              ) : summary ? (
-                                <div className="space-y-3">
+                            <div className="space-y-2">
+                              {results.map((r) => (
+                                <div key={r.index} className="p-3 rounded-lg bg-surface-2">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                      <Badge variant={summary.failed === 0 ? 'success' : 'error'}>
-                                        {summary.failed === 0 ? 'Accepted' : 'Failed'}
-                                      </Badge>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${r.passed ? 'bg-success' : 'bg-error'}`} />
+                                      <span className="text-sm text-foreground font-mono">Test {r.index + 1}</span>
                                     </div>
-                                    <button onClick={() => setActiveTab('results')} className="text-xs text-brand-primary hover:text-brand-secondary font-medium">
-                                      View Details
-                                    </button>
+                                    <span className="text-xs text-text-muted font-mono">exit {r.exitCode}{r.timedOut ? ' · TLE' : ''}</span>
                                   </div>
-                                  <div className="flex items-end justify-between">
-                                    <div>
-                                      <div className="text-xs text-text-muted mb-0.5">Tests Passed</div>
-                                      <div className="text-lg font-semibold text-foreground font-mono">{summary.passed}<span className="text-text-muted mx-0.5">/</span>{summary.total}</div>
+                                  {!r.passed && (
+                                    <div className="mt-2 grid md:grid-cols-2 gap-2 text-xs font-mono">
+                                      <div>
+                                        <div className="text-text-muted mb-1">Expected</div>
+                                        <pre className="p-2 rounded bg-surface-1 text-text-muted overflow-x-auto border border-border">{r.expected}</pre>
+                                      </div>
+                                      <div>
+                                        <div className="text-text-muted mb-1">Received</div>
+                                        <pre className="p-2 rounded bg-surface-1 text-error overflow-x-auto border border-border">{r.received}</pre>
+                                      </div>
                                     </div>
-                                    <div className="text-right">
-                                      <div className="text-xs text-text-muted mb-0.5">Score</div>
-                                      <div className="text-base font-semibold text-brand-primary font-mono">{Math.round((summary.passed / summary.total) * 100)}%</div>
-                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center py-10">
+                            <p className="text-sm text-text-muted">No submission results yet. Write code and submit.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {activeTab === 'editor' && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <label className="text-sm text-text-muted">Language</label>
+                          <select
+                            value={selectedLanguage}
+                            onChange={(e) => setSelectedLanguage(e.target.value)}
+                            className="h-8 px-2 bg-surface-2 border border-border rounded-md text-sm text-foreground focus:outline-none focus:border-brand-primary"
+                          >
+                            {languages.map((lang) => (
+                              <option key={lang.value} value={lang.value}>{lang.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <CodeEditor language={selectedLanguage} value={codeText} onChange={setCodeText} height="500px" />
+
+                        {submitError && (
+                          <div className="bg-error/10 border border-error/20 text-error text-sm p-3 rounded-lg">{submitError}</div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={handleSubmitClick}
+                          disabled={!codeText.trim() || submitting}
+                          className="w-full h-10 bg-brand-primary text-white text-sm font-medium rounded-lg hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          {submitting ? <><LoadingSpinner size="sm" /><span>Submitting...</span></> : 'Submit Solution'}
+                        </button>
+
+                        {/* Inline result summary */}
+                        {(submitting || summary) && (
+                          <div className="p-4 rounded-lg bg-surface-2">
+                            {submitting ? (
+                              <div className="flex items-center gap-2">
+                                <LoadingSpinner size="sm" />
+                                <span className="text-sm text-text-muted">Evaluating...</span>
+                              </div>
+                            ) : summary ? (
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={summary.failed === 0 ? 'success' : 'error'}>
+                                      {summary.failed === 0 ? 'Accepted' : 'Failed'}
+                                    </Badge>
                                   </div>
-                                  <div className="w-full bg-surface-1 rounded h-1 overflow-hidden">
-                                    <div className={`h-full ${summary.failed === 0 ? 'bg-success' : 'bg-brand-primary'}`} style={{ width: `${(summary.passed / summary.total) * 100}%` }} />
+                                  <button onClick={() => setActiveTab('results')} className="text-xs text-brand-primary hover:text-brand-secondary font-medium">
+                                    View Details
+                                  </button>
+                                </div>
+                                <div className="flex items-end justify-between">
+                                  <div>
+                                    <div className="text-xs text-text-muted mb-0.5">Tests Passed</div>
+                                    <div className="text-lg font-semibold text-foreground font-mono">{summary.passed}<span className="text-text-muted mx-0.5">/</span>{summary.total}</div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-xs text-text-muted mb-0.5">Score</div>
+                                    <div className="text-base font-semibold text-brand-primary font-mono">{Math.round((summary.passed / summary.total) * 100)}%</div>
                                   </div>
                                 </div>
-                              ) : null}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sidebar */}
-                <div className="lg:col-span-1">
-                  <div className="glass-panel p-5 sticky top-20">
-                    <h2 className="text-sm font-medium text-foreground mb-4">Problem Details</h2>
-
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-text-muted">Test Cases</span>
-                        <span className="text-foreground font-mono">{problem.input.length}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-text-muted">Difficulty</span>
-                        <Badge variant={
-                          (problem.difficulty?.toLowerCase() === 'hard' ? 'error' :
-                            problem.difficulty?.toLowerCase() === 'medium' ? 'warning' : 'success') as any
-                        }>
-                          {problem.difficulty || 'Easy'}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-text-muted">Time Limit</span>
-                        <span className="text-foreground font-mono">{problem.time_limit || 5000}ms</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-text-muted">Memory</span>
-                        <span className="text-foreground font-mono">{problem.memory_limit || 256}MB</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-text-muted">Added</span>
-                        <span className="text-foreground font-mono">{new Date(problem.created_at).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-
-                    {bestSummary && (
-                      <div className="mt-5 pt-5 border-t border-border">
-                        <h3 className="text-sm font-medium text-foreground mb-2">Best Submission</h3>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge variant={bestSummary.failed === 0 ? 'success' : 'warning'}>
-                              {bestSummary.passed}/{bestSummary.total}
-                            </Badge>
+                                <div className="w-full bg-surface-1 rounded h-1 overflow-hidden">
+                                  <div className={`h-full ${summary.failed === 0 ? 'bg-success' : 'bg-brand-primary'}`} style={{ width: `${(summary.passed / summary.total) * 100}%` }} />
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
-                          <span className="text-sm text-brand-primary font-mono font-medium">
-                            {Math.round((bestSummary.passed / bestSummary.total) * 100)}%
-                          </span>
-                        </div>
+                        )}
                       </div>
                     )}
                   </div>
                 </div>
               </div>
-            ) : null}
-          </LoadingState>
-        </div>
-      </RegularOnlyGuard>
-    </AuthGuard>
+
+              {/* Sidebar */}
+              <div className="lg:col-span-1">
+                <div className="glass-panel p-5 sticky top-20">
+                  <h2 className="text-sm font-medium text-foreground mb-4">Problem Details</h2>
+
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-text-muted">Test Cases</span>
+                      <span className="text-foreground font-mono">{problem.input.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-text-muted">Difficulty</span>
+                      <Badge variant={
+                        (problem.difficulty?.toLowerCase() === 'hard' ? 'error' :
+                          problem.difficulty?.toLowerCase() === 'medium' ? 'warning' : 'success') as any
+                      }>
+                        {problem.difficulty || 'Easy'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-text-muted">Time Limit</span>
+                      <span className="text-foreground font-mono">{problem.time_limit || 5000}ms</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-text-muted">Memory</span>
+                      <span className="text-foreground font-mono">{problem.memory_limit || 256}MB</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-text-muted">Added</span>
+                      <span className="text-foreground font-mono">{new Date(problem.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  {user && bestSummary && (
+                    <div className="mt-5 pt-5 border-t border-border">
+                      <h3 className="text-sm font-medium text-foreground mb-2">Best Submission</h3>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={bestSummary.failed === 0 ? 'success' : 'warning'}>
+                            {bestSummary.passed}/{bestSummary.total}
+                          </Badge>
+                        </div>
+                        <span className="text-sm text-brand-primary font-mono font-medium">
+                          {Math.round((bestSummary.passed / bestSummary.total) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </LoadingState>
+      </div>
+    </>
   );
 }
