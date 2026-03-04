@@ -38,15 +38,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 });
     }
 
-    // Expect multipart/form-data with file (C++ source)
-    const form = await request.formData();
-    const file = form.get('file');
-    if (!(file instanceof File)) {
-      return NextResponse.json({ error: 'file field is required' }, { status: 400 });
-    }
-    const source = await file.text();
-    if (!source || source.trim().length === 0) {
-      return NextResponse.json({ error: 'Uploaded file is empty' }, { status: 400 });
+    // Expect JSON body with code string
+    const body = await request.json();
+    const source = body?.code;
+    if (!source || typeof source !== 'string' || source.trim().length === 0) {
+      return NextResponse.json({ error: 'code field is required' }, { status: 400 });
     }
 
     // Call judge service using existing env var pattern
