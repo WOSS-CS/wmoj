@@ -13,6 +13,7 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
     "@uiw/react-md-editor": "^4.0.8",
+    "@vercel/analytics": "^1.6.1",
     "katex": "^0.16.11",
     "next": "^16.0.10",
     "react": "19.1.0",

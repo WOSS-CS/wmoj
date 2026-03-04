@@ -8,6 +8,7 @@ import { CountdownOverlay } from "@/components/CountdownOverlay";
 import { ActiveContestRedirect } from "@/components/ActiveContestRedirect";
 import { AppShell } from "@/components/layout/AppShell";
 import { ToastContainer } from "@/components/ui/Toast";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   variable: "--font-body",
@@ -80,6 +81,7 @@ export default function RootLayout({
             </CountdownProvider>
           </AuthProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
