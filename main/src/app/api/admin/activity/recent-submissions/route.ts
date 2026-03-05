@@ -26,10 +26,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Fetch ALL submissions with user and problem info
+    // Fetch ALL submissions (no FK constraints exist, so we join manually)
     const { data: subs, error: subsErr } = await supabase
       .from('submissions')
-      .select('id, created_at, language, summary, status, problems(id,name), users:users(id,username,email)')
+      .select('id, created_at, language, summary, status, problem_id, user_id')
       .order('created_at', { ascending: false });
 
     if (subsErr) {
@@ -37,30 +37,42 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 });
     }
 
-    type ProblemRef = { id: string; name: string };
-    type UserRef = { id: string; username?: string | null; email?: string | null };
-    type SubRow = {
-      id: string;
-      created_at: string;
-      language: string;
-      summary: { total?: number; passed?: number; failed?: number } | null;
-      status: string | null;
-      problems: ProblemRef | ProblemRef[] | null;
-      users: UserRef | UserRef[] | null;
-    };
+    const rows = subs || [];
 
-    const rows = ((subs || []) as unknown as SubRow[]);
+    // Collect unique IDs for batch lookup
+    const problemIds = [...new Set(rows.map(s => s.problem_id).filter(Boolean))];
+    const userIds = [...new Set(rows.map(s => s.user_id).filter(Boolean))];
+
+    // Fetch problem names
+    const problemMap = new Map<string, string>();
+    if (problemIds.length > 0) {
+      const { data: problems } = await supabase
+        .from('problems')
+        .select('id, name')
+        .in('id', problemIds);
+      (problems || []).forEach(p => problemMap.set(p.id, p.name));
+    }
+
+    // Fetch user names
+    const userMap = new Map<string, string>();
+    if (userIds.length > 0) {
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, username, email')
+        .in('id', userIds);
+      (users || []).forEach(u => userMap.set(u.id, u.username || u.email || 'Unknown User'));
+    }
 
     const submissions = rows.map((s) => {
-      const summary = s.summary;
+      const summary = s.summary as { total?: number; passed?: number; failed?: number } | null;
       const total = Number(summary?.total ?? 0);
       const passed = Number(summary?.passed ?? 0);
 
       return {
         id: s.id,
         created_at: s.created_at,
-        user: (Array.isArray(s.users) ? s.users[0]?.username || s.users[0]?.email : s.users?.username || s.users?.email) || 'Unknown User',
-        problem: (Array.isArray(s.problems) ? s.problems[0]?.name : s.problems?.name) || 'Unknown Problem',
+        user: userMap.get(s.user_id) || 'Unknown User',
+        problem: problemMap.get(s.problem_id) || 'Unknown Problem',
         language: s.language,
         status: s.status || 'failed',
         score: total > 0 ? `${passed}/${total}` : '—',
