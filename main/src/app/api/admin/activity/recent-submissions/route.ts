@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     // Fetch ALL submissions (no FK constraints exist, so we join manually)
     const { data: subs, error: subsErr } = await supabase
       .from('submissions')
-      .select('id, created_at, language, summary, status, problem_id, user_id')
+      .select('id, created_at, language, code, results, summary, status, problem_id, user_id')
       .order('created_at', { ascending: false });
 
     if (subsErr) {
@@ -74,6 +74,8 @@ export async function GET(request: Request) {
         user: userMap.get(s.user_id) || 'Unknown User',
         problem: problemMap.get(s.problem_id) || 'Unknown Problem',
         language: s.language,
+        code: s.code,
+        results: s.results,
         status: s.status || 'failed',
         score: total > 0 ? `${passed}/${total}` : '—',
         passed: s.status === 'passed',
