@@ -12,6 +12,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
 
     const isLandingPage = pathname === "/";
     const isAuthPage = pathname.startsWith("/auth");
+    const isAboutPage = pathname === "/about";
     const isAdminPage = pathname.startsWith("/admin");
     const isPoopthrowerPage = pathname.startsWith("/poopthrower");
 
@@ -20,7 +21,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
         return <>{children}</>;
     }
 
-    const showNavigation = !isLandingPage && !isAuthPage && user;
+    const showNavigation = !isLandingPage && !isAuthPage && !isAboutPage && user;
 
     return (
         <div className="min-h-screen bg-background text-foreground">
