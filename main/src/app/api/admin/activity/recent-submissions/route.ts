@@ -26,14 +26,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Get submissions from last 24 hours, including username and problem name
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    // Fetch ALL submissions with user and problem info
     const { data: subs, error: subsErr } = await supabase
       .from('submissions')
-      .select('id, created_at, summary, problems(id,name), users:users(id,username,email)')
-      .gte('created_at', since)
-      .order('created_at', { ascending: false })
-      .limit(200);
+      .select('id, created_at, language, summary, status, problems(id,name), users:users(id,username,email)')
+      .order('created_at', { ascending: false });
 
     if (subsErr) {
       console.error('Admin recent submissions error:', subsErr);
@@ -45,20 +42,31 @@ export async function GET(request: Request) {
     type SubRow = {
       id: string;
       created_at: string;
-      summary: { allPassed?: boolean } | null;
+      language: string;
+      summary: { total?: number; passed?: number; failed?: number } | null;
+      status: string | null;
       problems: ProblemRef | ProblemRef[] | null;
       users: UserRef | UserRef[] | null;
     };
 
     const rows = ((subs || []) as unknown as SubRow[]);
 
-    const submissions = rows.map((s) => ({
-      id: s.id,
-      created_at: s.created_at,
-      user: (Array.isArray(s.users) ? s.users[0]?.username || s.users[0]?.email : s.users?.username || s.users?.email) || 'Unknown User',
-      problem: (Array.isArray(s.problems) ? s.problems[0]?.name : s.problems?.name) || 'Unknown Problem',
-      passed: !!s.summary?.allPassed,
-    }));
+    const submissions = rows.map((s) => {
+      const summary = s.summary;
+      const total = Number(summary?.total ?? 0);
+      const passed = Number(summary?.passed ?? 0);
+
+      return {
+        id: s.id,
+        created_at: s.created_at,
+        user: (Array.isArray(s.users) ? s.users[0]?.username || s.users[0]?.email : s.users?.username || s.users?.email) || 'Unknown User',
+        problem: (Array.isArray(s.problems) ? s.problems[0]?.name : s.problems?.name) || 'Unknown Problem',
+        language: s.language,
+        status: s.status || 'failed',
+        score: total > 0 ? `${passed}/${total}` : '—',
+        passed: s.status === 'passed',
+      };
+    });
 
     return NextResponse.json({ submissions });
   } catch (e) {
@@ -66,5 +74,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-
