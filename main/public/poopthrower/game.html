@@ -139,8 +139,8 @@
         dirLight.shadow.camera.bottom = -200;
         dirLight.shadow.camera.left = -200;
         dirLight.shadow.camera.right = 200;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
         scene.add(dirLight);
 
         // --- Materials ---
@@ -307,6 +307,9 @@
         const tpGroupGeom = new THREE.CylinderGeometry(1.5, 1.5, 3, 32);
         const tubeGeom = new THREE.CylinderGeometry(0.5, 0.5, 3.01, 16);
         const tubeMat = new THREE.MeshStandardMaterial({ color: 0xd2b48c });
+        
+        const tailGeom = new THREE.PlaneGeometry(3, 4);
+        const tailMat = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
 
         function createToiletPaper() {
             const group = new THREE.Group();
@@ -317,8 +320,6 @@
             const tube = new THREE.Mesh(tubeGeom, tubeMat);
             group.add(tube);
             
-            const tailGeom = new THREE.PlaneGeometry(3, 4);
-            const tailMat = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
             const tail = new THREE.Mesh(tailGeom, tailMat);
             tail.position.set(1.5, -2, 0);
             tail.rotation.z = Math.PI / 4;
@@ -353,24 +354,30 @@
 
         // --- Evil Toilets (Ground Enemies) ---
         const evilToilets = [];
+        
+        const baseGeom = new THREE.BoxGeometry(4, 2, 5);
+        const bowlGeom = new THREE.CylinderGeometry(2, 1.5, 2, 16);
+        const tankGeom = new THREE.BoxGeometry(4, 4, 2);
+        const hpBgGeom = new THREE.PlaneGeometry(4, 0.6);
+        const hpBgMat = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+        const hpFgGeom = new THREE.PlaneGeometry(4, 0.6);
+        hpFgGeom.translate(2, 0, 0);
+        const hpFgMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
 
         function createEvilToilet() {
             const group = new THREE.Group();
             
-            const baseGeom = new THREE.BoxGeometry(4, 2, 5);
             const base = new THREE.Mesh(baseGeom, whiteMat);
             base.position.y = 1;
             base.castShadow = true;
             base.receiveShadow = true;
             group.add(base);
 
-            const bowlGeom = new THREE.CylinderGeometry(2, 1.5, 2, 16);
             const bowl = new THREE.Mesh(bowlGeom, whiteMat);
             bowl.position.set(0, 3, 0.5);
             bowl.castShadow = true;
             group.add(bowl);
             
-            const tankGeom = new THREE.BoxGeometry(4, 4, 2);
             const tank = new THREE.Mesh(tankGeom, whiteMat);
             tank.position.set(0, 4, -2.5);
             tank.castShadow = true;
@@ -379,15 +386,10 @@
             // Health Bar Group (world space)
             const hpGroup = new THREE.Group();
             
-            const bgGeom = new THREE.PlaneGeometry(4, 0.6);
-            const bgMat = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
-            const bgBar = new THREE.Mesh(bgGeom, bgMat);
+            const bgBar = new THREE.Mesh(hpBgGeom, hpBgMat);
             hpGroup.add(bgBar);
 
-            const fgGeom = new THREE.PlaneGeometry(4, 0.6);
-            const fgMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
-            const fgBar = new THREE.Mesh(fgGeom, fgMat);
-            fgGeom.translate(2, 0, 0);
+            const fgBar = new THREE.Mesh(hpFgGeom, hpFgMat);
             fgBar.position.x = -2;
             fgBar.position.z = 0.05; 
             hpGroup.add(fgBar);
