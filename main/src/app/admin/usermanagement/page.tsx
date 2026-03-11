@@ -8,6 +8,7 @@ import { LoadingState, SkeletonText } from '@/components/LoadingStates';
 import { supabase } from '@/lib/supabase';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { Badge } from '@/components/ui/Badge';
+import Link from 'next/link';
 
 interface ManagedUser {
   id: string;
@@ -51,21 +52,6 @@ export default function AdminUserManagementPage() {
     });
   }, [users, filter, search]);
 
-  const handleToggle = async (userId: string, nextActive: boolean) => {
-    const prev = users;
-    setUsers(prev.map(u => u.id === userId ? { ...u, is_active: nextActive } : u));
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-      const resp = await fetch('/api/admin/users/toggle', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, is_active: nextActive })
-      });
-      if (!resp.ok) setUsers(prev);
-    } catch { setUsers(prev); }
-  };
-
   const filterOptions = ['all', 'active', 'disabled'] as const;
 
   type Row = ManagedUser;
@@ -74,10 +60,12 @@ export default function AdminUserManagementPage() {
     { key: 'email', header: 'Email', className: 'w-[35%]', sortable: true, sortAccessor: (r) => r.email.toLowerCase(), render: (r) => <span className="text-text-muted">{r.email}</span> },
     { key: 'status', header: 'Status', className: 'w-[15%]', sortable: true, sortAccessor: (r) => (r.is_active ? 1 : 0), render: (r) => <Badge variant={r.is_active ? 'success' : 'warning'}>{r.is_active ? 'Active' : 'Disabled'}</Badge> },
     {
-      key: 'actions', header: 'Actions', className: 'w-[25%]', render: (r) => (
-        <button onClick={() => handleToggle(r.id, !r.is_active)} className={`px-3 py-1.5 rounded-md text-sm font-medium ${r.is_active ? 'bg-warning/10 text-warning hover:bg-warning/20' : 'bg-success/10 text-success hover:bg-success/20'}`}>
-          {r.is_active ? 'Disable' : 'Enable'}
-        </button>
+      key: 'submissions', header: 'Submissions', className: 'w-[25%]', render: (r) => (
+        <Link href={`/admin/usermanagement/submissions/${r.id}`}>
+          <button className="px-3 py-1.5 rounded-md text-sm font-medium bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 transition-colors">
+            Submissions
+          </button>
+        </Link>
       )
     },
   ];
@@ -88,7 +76,7 @@ export default function AdminUserManagementPage() {
         <div className="w-full space-y-6">
           <div>
             <h1 className="text-xl font-semibold text-foreground">User Management</h1>
-            <p className="text-sm text-text-muted mt-1">View and disable/enable regular users.</p>
+            <p className="text-sm text-text-muted mt-1">View users and analyze their submissions.</p>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center gap-3">
