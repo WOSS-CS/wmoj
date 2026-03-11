@@ -1,377 +1,75 @@
-'use client';
+import { getServerSupabase } from '@/lib/supabaseServer';
+import ProblemDetailClient from './ProblemDetailClient';
+import { checkTimerExpiry } from '@/utils/timerCheck';
+import { redirect } from 'next/navigation';
 
-import { useState, useEffect, useCallback } from 'react';
-import dynamic from 'next/dynamic';
-import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { LoadingState, SkeletonText, CodeEditorLoading } from '@/components/LoadingStates';
-import { LoadingSpinner } from '@/components/AnimationWrapper';
-import { MarkdownRenderer } from '@/components/MarkdownRenderer';
-import { AuthPromptModal } from '@/components/AuthPromptModal';
-import { Problem } from '@/types/problem';
-import { supabase } from '@/lib/supabase';
-import { checkContestParticipation } from '@/utils/participationCheck';
-import { useCountdown } from '@/contexts/CountdownContext';
-import { Badge } from '@/components/ui/Badge';
+export default async function ProblemPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const supabase = await getServerSupabase();
+  
+  const { data: problem, error } = await supabase
+    .from('problems')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-const CodeEditor = dynamic(() => import('@/components/CodeEditor'), {
-  ssr: false,
-  loading: () => <CodeEditorLoading lines={12} />,
-});
+  if (error || !problem) {
+    return (
+      <div className="bg-error/10 border border-error/20 rounded-lg p-4 max-w-6xl mx-auto mt-8">
+        <p className="text-sm text-error mb-2">Failed to fetch problem or problem not found</p>
+      </div>
+    );
+  }
 
-export default function ProblemPage() {
-  const routeParams = useParams<{ id: string }>();
-  const problemId = Array.isArray(routeParams?.id) ? routeParams.id[0] : routeParams?.id;
-  const router = useRouter();
-  const { user, session } = useAuth();
-  const { isActive, contestId } = useCountdown();
-  const [activeTab, setActiveTab] = useState<'description' | 'results' | 'editor'>('description');
-  const [problem, setProblem] = useState<Problem | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [accessChecked, setAccessChecked] = useState(false);
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('python');
-  const [codeText, setCodeText] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-  const [results, setResults] = useState<Array<{
-    index: number; exitCode: number | null; timedOut: boolean;
-    stdout: string; stderr: string; passed: boolean; expected: string; received: string;
-  }> | null>(null);
-  const [summary, setSummary] = useState<{ total: number; passed: number; failed: number } | null>(null);
-  const [bestSummary, setBestSummary] = useState<{ total: number; passed: number; failed: number } | null>(null);
+  // Auth and participation check
+  const { data: authUser } = await supabase.auth.getUser();
+  const user = authUser?.user;
 
-  const fetchProblem = useCallback(async (id: string) => {
-    try {
-      setLoading(true);
-      const headers: Record<string, string> = {};
-      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
-      const response = await fetch(`/api/problems/${id}`, { headers });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to fetch problem');
-      setProblem(data.problem);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch problem');
-    } finally { setLoading(false); }
-  }, [session?.access_token]);
+  if (problem.contest) {
+    if (!user) {
+      redirect('/problems');
+    }
+    const { data: participant } = await supabase
+      .from('contest_participants')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .eq('contest_id', problem.contest)
+      .maybeSingle();
+      
+    if (!participant) {
+      redirect('/problems');
+    }
 
-  const fetchBestSubmission = useCallback(async (userId: string, problemId: string) => {
-    try {
-      const { data, error } = await supabase.from('submissions').select('summary').eq('user_id', userId).eq('problem_id', problemId);
-      if (error || !data || data.length === 0) { setBestSummary(null); return; }
-      let best: { total: number; passed: number; failed: number } | null = null;
-      for (const row of data) {
+    const { expired } = await checkTimerExpiry(supabase, user.id, problem.contest);
+    if (expired) {
+      return (
+        <div className="bg-error/10 border border-error/20 rounded-lg p-4 max-w-6xl mx-auto mt-8">
+          <p className="text-sm text-error mb-2">Contest time has expired</p>
+        </div>
+      );
+    }
+  }
+
+  // Fetch best submission
+  let bestSummary = null;
+  if (user) {
+    const { data: subs } = await supabase
+      .from('submissions')
+      .select('summary')
+      .eq('user_id', user.id)
+      .eq('problem_id', problem.id);
+      
+    if (subs && subs.length > 0) {
+      for (const row of subs) {
         const s = row.summary as { total?: number; passed?: number; failed?: number } | null;
         if (!s) continue;
         const current = { total: Number(s.total ?? 0), passed: Number(s.passed ?? 0), failed: Number(s.failed ?? 0) };
-        if (!best || current.passed > best.passed || (current.passed === best.passed && current.total > best.total)) best = current;
+        if (!bestSummary || current.passed > bestSummary.passed || (current.passed === bestSummary.passed && current.total > bestSummary.total)) {
+          bestSummary = current;
+        }
       }
-      setBestSummary(best);
-    } catch { /* no-op */ }
-  }, []);
+    }
+  }
 
-  useEffect(() => {
-    if (problemId) fetchProblem(problemId);
-  }, [problemId, fetchProblem]);
-
-  useEffect(() => {
-    (async () => {
-      if (!problem) return;
-      // If user is not logged in, skip contest checks and just show the problem
-      if (!user) { setAccessChecked(true); return; }
-      if (problem.contest) {
-        try {
-          const hasAccess = await checkContestParticipation(user.id, problem.contest);
-          if (!hasAccess) { router.push('/problems'); return; }
-        } catch { router.push('/problems'); return; }
-      }
-      setAccessChecked(true);
-    })();
-  }, [user, problem, router]);
-
-  useEffect(() => {
-    if (!problem?.contest) return;
-    const countdownResolved = isActive !== undefined && (contestId !== null || !isActive);
-    if (!countdownResolved) return;
-    if (!isActive || (contestId && contestId !== problem.contest)) router.replace('/contests');
-  }, [isActive, contestId, problem?.contest, router]);
-
-  useEffect(() => { if (user?.id && problem?.id) fetchBestSubmission(user.id, problem.id); }, [user?.id, problem?.id, fetchBestSubmission]);
-
-  // Check if user is authenticated before submitting
-  const handleSubmitClick = () => {
-    if (!user) { setShowAuthPrompt(true); return; }
-    handleSubmit();
-  };
-
-  const handleSubmit = async () => {
-    if (!problem || !user || !codeText.trim()) return;
-    setSubmitting(true); setSubmitError(''); setResults(null); setSummary(null);
-    try {
-      const resp = await fetch(`/api/problems/${problem.id}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-        body: JSON.stringify({ language: selectedLanguage, code: codeText }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data?.error || 'Submission failed');
-      setResults(data.results || []); setSummary(data.summary || null); setActiveTab('results');
-      await fetchBestSubmission(user.id, problem.id);
-    } catch (err) { setSubmitError(err instanceof Error ? err.message : 'Submission failed'); }
-    finally { setSubmitting(false); }
-  };
-
-  const languages = [
-    { value: 'python', label: 'Python' },
-    { value: 'cpp', label: 'C++' },
-    { value: 'java', label: 'Java' }
-  ];
-
-  const tabs = [
-    { id: 'description', label: 'Description' },
-    { id: 'results', label: 'Results' },
-    { id: 'editor', label: 'Editor' },
-  ] as const;
-
-  return (
-    <>
-      {showAuthPrompt && <AuthPromptModal message="Log in or sign up to submit your solution and track your progress." onClose={() => setShowAuthPrompt(false)} />}
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Back */}
-        <button
-          type="button"
-          onClick={() => router.push(problem?.contest ? `/contests/${problem.contest}` : '/problems')}
-          className="text-sm text-text-muted hover:text-foreground inline-flex items-center gap-1.5"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
-          Back to {problem?.contest ? 'Contest' : 'Problems'}
-        </button>
-
-        <LoadingState
-          isLoading={loading || !accessChecked}
-          skeleton={
-            <div className="grid lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-4"><SkeletonText lines={3} width="80%" /><SkeletonText lines={5} /></div>
-              <div className="space-y-4"><SkeletonText lines={2} width="60%" /><CodeEditorLoading lines={8} /></div>
-            </div>
-          }
-        >
-          {error ? (
-            <div className="bg-error/10 border border-error/20 rounded-lg p-4">
-              <p className="text-sm text-error mb-2">{error}</p>
-              <button type="button" onClick={() => router.push('/problems')} className="text-sm text-error hover:underline">Back to Problems</button>
-            </div>
-          ) : problem ? (
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Main content */}
-              <div className="lg:col-span-2">
-                <div className="glass-panel p-6">
-                  {/* Header */}
-                  <div className="flex flex-wrap items-center gap-3 mb-5">
-                    <h1 className="text-lg font-semibold text-foreground">{problem.name}</h1>
-                    <Badge variant={problem.contest ? 'info' : 'neutral'}>
-                      {problem.contest ? 'Contest' : 'Standalone'}
-                    </Badge>
-                  </div>
-
-                  {/* Tabs */}
-                  <div className="flex gap-1 mb-5 border-b border-border pb-3">
-                    {tabs.map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium ${activeTab === tab.id
-                          ? 'bg-surface-2 text-foreground'
-                          : 'text-text-muted hover:text-foreground'
-                          }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Tab content */}
-                  <div className="min-h-[400px]">
-                    {activeTab === 'description' && (
-                      <div className="max-w-none">
-                        <MarkdownRenderer content={problem.content} />
-                      </div>
-                    )}
-
-                    {activeTab === 'results' && (
-                      <div className="space-y-3">
-                        {summary && results ? (
-                          <>
-                            <div className="flex items-center gap-3 mb-4">
-                              <Badge variant={summary.failed === 0 ? 'success' : 'warning'}>
-                                {summary.failed === 0 ? 'All Passed' : 'Some Failed'}
-                              </Badge>
-                              <span className="text-sm text-text-muted">
-                                Score: <span className="text-foreground font-mono font-medium">{summary.passed}/{summary.total}</span>
-                              </span>
-                            </div>
-                            <div className="space-y-2">
-                              {results.map((r) => (
-                                <div key={r.index} className="p-3 rounded-lg bg-surface-2">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <span className={`w-1.5 h-1.5 rounded-full ${r.passed ? 'bg-success' : 'bg-error'}`} />
-                                      <span className="text-sm text-foreground font-mono">Test {r.index + 1}</span>
-                                    </div>
-                                    <span className="text-xs text-text-muted font-mono">exit {r.exitCode}{r.timedOut ? ' · TLE' : ''}</span>
-                                  </div>
-                                  {!r.passed && (
-                                    <div className="mt-2 grid md:grid-cols-2 gap-2 text-xs font-mono">
-                                      <div>
-                                        <div className="text-text-muted mb-1">Expected</div>
-                                        <pre className="p-2 rounded bg-surface-1 text-text-muted overflow-x-auto border border-border">{r.expected}</pre>
-                                      </div>
-                                      <div>
-                                        <div className="text-text-muted mb-1">Received</div>
-                                        <pre className="p-2 rounded bg-surface-1 text-error overflow-x-auto border border-border">{r.received}</pre>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-center py-10">
-                            <p className="text-sm text-text-muted">No submission results yet. Write code and submit.</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {activeTab === 'editor' && (
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                          <label className="text-sm text-text-muted">Language</label>
-                          <select
-                            value={selectedLanguage}
-                            onChange={(e) => setSelectedLanguage(e.target.value)}
-                            className="h-8 px-2 bg-surface-2 border border-border rounded-md text-sm text-foreground focus:outline-none focus:border-brand-primary"
-                          >
-                            {languages.map((lang) => (
-                              <option key={lang.value} value={lang.value}>{lang.label}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <CodeEditor language={selectedLanguage} value={codeText} onChange={setCodeText} height="500px" />
-
-                        {submitError && (
-                          <div className="bg-error/10 border border-error/20 text-error text-sm p-3 rounded-lg">{submitError}</div>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={handleSubmitClick}
-                          disabled={!codeText.trim() || submitting}
-                          className="w-full h-10 bg-brand-primary text-white text-sm font-medium rounded-lg hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                          {submitting ? <><LoadingSpinner size="sm" /><span>Submitting...</span></> : 'Submit Solution'}
-                        </button>
-
-                        {/* Inline result summary */}
-                        {(submitting || summary) && (
-                          <div className="p-4 rounded-lg bg-surface-2">
-                            {submitting ? (
-                              <div className="flex items-center gap-2">
-                                <LoadingSpinner size="sm" />
-                                <span className="text-sm text-text-muted">Evaluating...</span>
-                              </div>
-                            ) : summary ? (
-                              <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant={summary.failed === 0 ? 'success' : 'error'}>
-                                      {summary.failed === 0 ? 'Accepted' : 'Failed'}
-                                    </Badge>
-                                  </div>
-                                  <button onClick={() => setActiveTab('results')} className="text-xs text-brand-primary hover:text-brand-secondary font-medium">
-                                    View Details
-                                  </button>
-                                </div>
-                                <div className="flex items-end justify-between">
-                                  <div>
-                                    <div className="text-xs text-text-muted mb-0.5">Tests Passed</div>
-                                    <div className="text-lg font-semibold text-foreground font-mono">{summary.passed}<span className="text-text-muted mx-0.5">/</span>{summary.total}</div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-xs text-text-muted mb-0.5">Score</div>
-                                    <div className="text-base font-semibold text-brand-primary font-mono">{Math.round((summary.passed / summary.total) * 100)}%</div>
-                                  </div>
-                                </div>
-                                <div className="w-full bg-surface-1 rounded h-1 overflow-hidden">
-                                  <div className={`h-full ${summary.failed === 0 ? 'bg-success' : 'bg-brand-primary'}`} style={{ width: `${(summary.passed / summary.total) * 100}%` }} />
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Sidebar */}
-              <div className="lg:col-span-1">
-                <div className="glass-panel p-5 sticky top-20">
-                  <h2 className="text-sm font-medium text-foreground mb-4">Problem Details</h2>
-
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between items-center">
-                      <span className="text-text-muted">Test Cases</span>
-                      <span className="text-foreground font-mono">{problem.input.length}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-text-muted">Difficulty</span>
-                      <Badge variant={
-                        (problem.difficulty?.toLowerCase() === 'hard' ? 'error' :
-                          problem.difficulty?.toLowerCase() === 'medium' ? 'warning' : 'success') as any
-                      }>
-                        {problem.difficulty || 'Easy'}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-text-muted">Time Limit</span>
-                      <span className="text-foreground font-mono">{problem.time_limit || 5000}ms</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-text-muted">Memory</span>
-                      <span className="text-foreground font-mono">{problem.memory_limit || 256}MB</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-text-muted">Added</span>
-                      <span className="text-foreground font-mono">{new Date(problem.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  {user && bestSummary && (
-                    <div className="mt-5 pt-5 border-t border-border">
-                      <h3 className="text-sm font-medium text-foreground mb-2">Best Submission</h3>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={bestSummary.failed === 0 ? 'success' : 'warning'}>
-                            {bestSummary.passed}/{bestSummary.total}
-                          </Badge>
-                        </div>
-                        <span className="text-sm text-brand-primary font-mono font-medium">
-                          {Math.round((bestSummary.passed / bestSummary.total) * 100)}%
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </LoadingState>
-      </div>
-    </>
-  );
+  return <ProblemDetailClient problem={problem} initialBestSummary={bestSummary} />;
 }
