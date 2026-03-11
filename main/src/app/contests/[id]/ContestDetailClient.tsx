@@ -75,7 +75,10 @@ export default function ContestDetailClient({
         });
         const json = await res.json();
         if (res.ok) setLeaderboard(json.leaderboard || []);
-      } catch { } finally { setLeaderboardLoading(false); }
+        else throw new Error(json?.error || 'Failed to fetch leaderboard');
+      } catch (e: unknown) { 
+        toast.error('Error', e instanceof Error ? e.message : 'Failed to fetch leaderboard'); 
+      } finally { setLeaderboardLoading(false); }
     }
     setShowLeaderboard(!showLeaderboard);
   };

@@ -53,7 +53,9 @@ export default function ProblemDetailClient({ problem, initialBestSummary }: Pro
         if (!best || current.passed > best.passed || (current.passed === best.passed && current.total > best.total)) best = current;
       }
       setBestSummary(best);
-    } catch { /* no-op */ }
+    } catch (e) { 
+      console.error('Failed to fetch best submission', e); 
+    }
   }, []);
 
   useEffect(() => {

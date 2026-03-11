@@ -6,12 +6,17 @@ import remarkMath from 'remark-math';
 import rehypeSanitize from 'rehype-sanitize';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import dynamic from 'next/dynamic';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 // Import defaultSchema directly instead of using require, so we stay typesafe
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - rehype-sanitize types may not export defaultSchema formally
 import { defaultSchema } from 'hast-util-sanitize';
+
+const SyntaxHighlighter = dynamic(
+  () => import('react-syntax-highlighter').then((mod) => mod.Prism),
+  { ssr: false, loading: () => <div className="bg-surface-2 animate-pulse h-32 rounded-lg my-3" /> }
+);
 
 interface MarkdownRendererProps {
   content: string;

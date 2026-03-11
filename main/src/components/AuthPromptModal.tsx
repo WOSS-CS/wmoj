@@ -11,7 +11,14 @@ export function AuthPromptModal({ message, onClose }: AuthPromptModalProps) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+            <div 
+                role="button" 
+                tabIndex={0} 
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }} 
+                className="absolute inset-0 bg-black/60" 
+                onClick={onClose} 
+                aria-label="Close modal"
+            />
 
             {/* Modal */}
             <div className="relative bg-surface-1 border border-border rounded-xl p-6 max-w-sm w-full mx-4 shadow-lg">
