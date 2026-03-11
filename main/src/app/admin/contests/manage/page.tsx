@@ -101,7 +101,7 @@ export default function ManageContestsPage() {
   };
 
   const deleteContest = async (c: ContestRow) => {
-    if (!confirm('Delete this contest? This action cannot be undone.')) return;
+    if (!confirm('Delete this contest? All problems in this contest will become standalone problems. This action cannot be undone.')) return;
     try {
       const res = await fetch(`/api/admin/contests/${c.id}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
       const data = await res.json();

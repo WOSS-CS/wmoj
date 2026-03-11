@@ -69,10 +69,23 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const auth = await getAdminSupabase(request);
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const { supabase } = auth;
+
+  // First, decouple problems by setting their contest to null to make them standalone
+  const { error: problemUpdateError } = await supabase
+    .from('problems')
+    .update({ contest: null })
+    .eq('contest', id);
+
+  if (problemUpdateError) {
+    console.error('Decouple problems error:', problemUpdateError);
+    return NextResponse.json({ error: 'Failed to decouple problems from contest' }, { status: 500 });
+  }
+
   const { error } = await supabase
     .from('contests')
     .delete()
     .eq('id', id);
+
   if (error) {
     console.error('Delete contest error:', error);
     return NextResponse.json({ error: 'Failed to delete contest' }, { status: 500 });
