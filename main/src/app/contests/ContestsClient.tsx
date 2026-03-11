@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import useSWR from 'swr';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -21,13 +22,20 @@ export default function ContestsClient({ initialContests, fetchError }: Contests
   const [joinedHistory, setJoinedHistory] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
 
+  const fetcher = (url: string) => fetch(url, { headers: { 'Authorization': `Bearer ${session?.access_token}` } }).then(r => r.json());
+  
+  const { data: participation } = useSWR(session?.access_token ? '/api/contests/participation' : null, fetcher);
+  const { data: joinHistory } = useSWR(session?.access_token ? '/api/contests/join-history' : null, fetcher);
+
   useEffect(() => {
-    if (!session?.access_token) return;
-    fetch('/api/contests/participation', { headers: { 'Authorization': `Bearer ${session.access_token}` } })
-      .then(r => r.json()).then(j => { if (j.contest_id) setJoinedContestId(j.contest_id); }).catch(() => { });
-    fetch('/api/contests/join-history', { headers: { 'Authorization': `Bearer ${session.access_token}` } })
-      .then(r => r.json()).then(j => { if (Array.isArray(j.contest_ids)) setJoinedHistory(new Set<string>(j.contest_ids)); }).catch(() => { });
-  }, [session?.access_token]);
+    if (participation?.contest_id) setJoinedContestId(participation.contest_id);
+  }, [participation]);
+
+  useEffect(() => {
+    if (joinHistory?.contest_ids && Array.isArray(joinHistory.contest_ids)) {
+      setJoinedHistory(new Set(joinHistory.contest_ids));
+    }
+  }, [joinHistory]);
 
   const filteredContests = useMemo(() => {
     const q = search.trim().toLowerCase();

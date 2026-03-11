@@ -13,43 +13,46 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
     redirect('/contests');
   }
 
-  // Check participation
-  const { data: participationData } = await supabase
-    .from('contest_participants')
-    .select('user_id')
-    .eq('user_id', userId)
-    .eq('contest_id', id)
-    .maybeSingle();
+  // Check participation and load data concurrently
+  const [partResult, contestResult, problemsResult, problemsFullResult] = await Promise.all([
+    supabase
+      .from('contest_participants')
+      .select('user_id')
+      .eq('user_id', userId)
+      .eq('contest_id', id)
+      .maybeSingle(),
+    supabase
+      .from('contests')
+      .select('*')
+      .eq('id', id)
+      .eq('is_active', true)
+      .maybeSingle(),
+    supabase
+      .from('problems')
+      .select('id,name')
+      .eq('contest', id)
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('problems')
+      .select('id')
+      .eq('contest', id)
+  ]);
 
+  const { data: participationData } = partResult;
   if (!participationData) {
     redirect('/contests');
   }
 
-  // Load contest
-  const { data: contestData, error: contestError } = await supabase
-    .from('contests')
-    .select('*')
-    .eq('id', id)
-    .eq('is_active', true)
-    .maybeSingle();
-
+  const { data: contestData, error: contestError } = contestResult;
   if (contestError || !contestData) {
     return <ContestDetailClient id={id} error="Failed to load contest or inactive" />;
   }
 
   const contest = contestData as Contest;
-
-  // Load problems
-  const { data: problemsData } = await supabase
-    .from('problems')
-    .select('id,name')
-    .eq('contest', id)
-    .order('created_at', { ascending: true });
-
-  const problems = problemsData || [];
+  const problems = problemsResult.data || [];
 
   // Load leaderboard initially
-  const { data: problemsFullData } = await supabase.from('problems').select('id').eq('contest', id);
+  const { data: problemsFullData } = problemsFullResult;
   const problemIds = problemsFullData?.map(p => p.id) || [];
   
   let leaderboard: any[] = [];

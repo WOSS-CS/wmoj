@@ -5,17 +5,19 @@ export default async function ProblemSubmissionsPage({ params }: { params: Promi
     const { id } = await params;
     const supabase = await getServerSupabase();
 
-    // Fetch Problem Name
-    const { data: problem } = await supabase.from('problems').select('name').eq('id', id).single();
+    const [
+        { data: problem },
+        { data: submissions }
+    ] = await Promise.all([
+        supabase.from('problems').select('name').eq('id', id).single(),
+        supabase
+            .from('submissions')
+            .select('*')
+            .eq('problem_id', id)
+            .order('created_at', { ascending: false })
+    ]);
+
     const problemName = problem?.name || 'Problem';
-
-    // Fetch Submissions
-    const { data: submissions } = await supabase
-        .from('submissions')
-        .select('*')
-        .eq('problem_id', id)
-        .order('created_at', { ascending: false });
-
     const rawSubmissions = submissions || [];
 
     // Collect user IDs

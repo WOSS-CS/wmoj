@@ -12,31 +12,39 @@ export default async function ContestLeaderboardPage({ params }: { params: Promi
     redirect('/contests');
   }
 
-  // Check access
-  const { data: part } = await supabase
-    .from('contest_participants')
-    .select('contest_id')
-    .eq('user_id', userId)
-    .eq('contest_id', id)
-    .limit(1);
+  // Check access and load data concurrently
+  const [partResult, histResult, contestResult, problemsFullResult] = await Promise.all([
+    supabase
+      .from('contest_participants')
+      .select('contest_id')
+      .eq('user_id', userId)
+      .eq('contest_id', id)
+      .limit(1),
+    supabase
+      .from('join_history')
+      .select('contest_id')
+      .eq('user_id', userId)
+      .eq('contest_id', id)
+      .limit(1),
+    supabase
+      .from('contests')
+      .select('name')
+      .eq('id', id)
+      .maybeSingle(),
+    supabase
+      .from('problems')
+      .select('id')
+      .eq('contest', id)
+  ]);
 
-  const { data: hist } = await supabase
-    .from('join_history')
-    .select('contest_id')
-    .eq('user_id', userId)
-    .eq('contest_id', id)
-    .limit(1);
+  const { data: part } = partResult;
+  const { data: hist } = histResult;
 
   if ((!part || part.length === 0) && (!hist || hist.length === 0)) {
     redirect('/contests');
   }
 
-  const { data: contestData, error: contestError } = await supabase
-    .from('contests')
-    .select('name')
-    .eq('id', id)
-    .maybeSingle();
-
+  const { data: contestData, error: contestError } = contestResult;
   const contestName = contestData?.name || 'Contest';
   
   if (contestError) {
@@ -44,7 +52,7 @@ export default async function ContestLeaderboardPage({ params }: { params: Promi
   }
 
   // Load leaderboard
-  const { data: problemsFullData } = await supabase.from('problems').select('id').eq('contest', id);
+  const { data: problemsFullData } = problemsFullResult;
   const problemIds = problemsFullData?.map(p => p.id) || [];
   
   let leaderboard: any[] = [];

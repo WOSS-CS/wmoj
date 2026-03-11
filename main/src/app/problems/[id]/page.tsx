@@ -7,11 +7,16 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const supabase = await getServerSupabase();
   
-  const { data: problem, error } = await supabase
-    .from('problems')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const [problemResult, authResult] = await Promise.all([
+    supabase
+      .from('problems')
+      .select('*')
+      .eq('id', id)
+      .single(),
+    supabase.auth.getUser()
+  ]);
+
+  const { data: problem, error } = problemResult;
 
   if (error || !problem) {
     return (
@@ -22,25 +27,29 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
   }
 
   // Auth and participation check
-  const { data: authUser } = await supabase.auth.getUser();
+  const { data: authUser } = authResult;
   const user = authUser?.user;
 
   if (problem.contest) {
     if (!user) {
       redirect('/problems');
     }
-    const { data: participant } = await supabase
-      .from('contest_participants')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .eq('contest_id', problem.contest)
-      .maybeSingle();
+    const [participantResult, timerResult] = await Promise.all([
+      supabase
+        .from('contest_participants')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .eq('contest_id', problem.contest)
+        .maybeSingle(),
+      checkTimerExpiry(supabase, user.id, problem.contest)
+    ]);
       
+    const { data: participant } = participantResult;
     if (!participant) {
       redirect('/problems');
     }
 
-    const { expired } = await checkTimerExpiry(supabase, user.id, problem.contest);
+    const { expired } = timerResult;
     if (expired) {
       return (
         <div className="bg-error/10 border border-error/20 rounded-lg p-4 max-w-6xl mx-auto mt-8">

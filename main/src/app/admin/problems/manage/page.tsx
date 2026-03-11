@@ -4,18 +4,19 @@ import ManageProblemsClient from './ManageProblemsClient';
 export default async function ManageProblemsPage() {
   const supabase = await getServerSupabase();
   
-  // Fetch contests
-  const { data: contestsData } = await supabase
-    .from('contests')
-    .select('id,name');
+  const [
+    { data: contestsData },
+    { data: problemsData }
+  ] = await Promise.all([
+    supabase
+      .from('contests')
+      .select('id,name'),
+    supabase
+      .from('problems')
+      .select('id,name,contest,is_active,updated_at,created_at')
+  ]);
 
   const contests = contestsData || [];
-  
-  // Fetch problems
-  const { data: problemsData } = await supabase
-    .from('problems')
-    .select('id,name,contest,is_active,updated_at,created_at');
-
   const problems = problemsData || [];
 
   // Map contests to problems

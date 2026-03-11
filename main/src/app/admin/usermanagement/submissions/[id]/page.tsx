@@ -10,17 +10,21 @@ export default async function UserSubmissionsPage({ params }: { params: Promise<
   const { id: targetUserId } = await params;
   const supabase = await getServerSupabase();
 
-  const { data: targetUser } = await supabase
-    .from('users')
-    .select('id, username, email')
-    .eq('id', targetUserId)
-    .maybeSingle();
-
-  const { data: subs } = await supabase
-    .from('submissions')
-    .select('id, created_at, language, code, results, summary, status, problem_id')
-    .eq('user_id', targetUserId)
-    .order('created_at', { ascending: false });
+  const [
+    { data: targetUser },
+    { data: subs }
+  ] = await Promise.all([
+    supabase
+      .from('users')
+      .select('id, username, email')
+      .eq('id', targetUserId)
+      .maybeSingle(),
+    supabase
+      .from('submissions')
+      .select('id, created_at, language, code, results, summary, status, problem_id')
+      .eq('user_id', targetUserId)
+      .order('created_at', { ascending: false })
+  ]);
 
   const rows = subs || [];
   const problemIds = [...new Set(rows.map(s => s.problem_id).filter(Boolean))];

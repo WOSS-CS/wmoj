@@ -20,25 +20,20 @@ export default async function AdminDashboardPage() {
   const problemIds = [...new Set(rows.map((s: any) => s.problem_id).filter(Boolean))];
   const userIds = [...new Set(rows.map((s: any) => s.user_id).filter(Boolean))];
 
-  // Fetch problem names
   const problemMap = new Map<string, string>();
-  if (problemIds.length > 0) {
-    const { data: problems } = await supabase
-      .from('problems')
-      .select('id, name')
-      .in('id', problemIds);
-    (problems || []).forEach((p: any) => problemMap.set(p.id, p.name));
-  }
-
-  // Fetch user names
   const userMap = new Map<string, string>();
-  if (userIds.length > 0) {
-    const { data: users } = await supabase
-      .from('users')
-      .select('id, username, email')
-      .in('id', userIds);
-    (users || []).forEach((u: any) => userMap.set(u.id, u.username || u.email || 'Unknown User'));
-  }
+
+  const [problemsRes, usersRes] = await Promise.all([
+    problemIds.length > 0 
+      ? supabase.from('problems').select('id, name').in('id', problemIds)
+      : Promise.resolve({ data: [] }),
+    userIds.length > 0 
+      ? supabase.from('users').select('id, username, email').in('id', userIds)
+      : Promise.resolve({ data: [] })
+  ]);
+
+  (problemsRes.data || []).forEach((p: any) => problemMap.set(p.id, p.name));
+  (usersRes.data || []).forEach((u: any) => userMap.set(u.id, u.username || u.email || 'Unknown User'));
 
   const submissions = rows.map((s: any) => {
     const summary = s.summary as { total?: number; passed?: number; failed?: number } | null;

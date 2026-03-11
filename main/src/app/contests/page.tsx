@@ -24,12 +24,20 @@ export default async function ContestsPage() {
       let problemsCountMap: Record<string, number> = {};
 
       if (contestIds.length > 0) {
-        // Fetch participants
-        const { data: participantsRaw, error: participantsErr } = await supabase
-          .from('contest_participants')
-          .select('contest_id')
-          .in('contest_id', contestIds);
+        // Fetch participants and problems concurrently
+        const [participantsResult, problemsResult] = await Promise.all([
+          supabase
+            .from('contest_participants')
+            .select('contest_id')
+            .in('contest_id', contestIds),
+          supabase
+            .from('problems')
+            .select('id,contest')
+            .in('contest', contestIds)
+            .eq('is_active', true)
+        ]);
 
+        const { data: participantsRaw, error: participantsErr } = participantsResult;
         if (!participantsErr) {
           interface ParticipantRow { contest_id: string }
           (participantsRaw as ParticipantRow[] | null | undefined)?.forEach(({ contest_id }) => {
@@ -38,13 +46,7 @@ export default async function ContestsPage() {
           });
         }
 
-        // Fetch problems
-        const { data: problemsRaw, error: problemsErr } = await supabase
-          .from('problems')
-          .select('id,contest')
-          .in('contest', contestIds)
-          .eq('is_active', true);
-
+        const { data: problemsRaw, error: problemsErr } = problemsResult;
         if (!problemsErr) {
           interface ProblemRow { id: string; contest: string | null }
           (problemsRaw as ProblemRow[] | null | undefined)?.forEach(({ contest }) => {

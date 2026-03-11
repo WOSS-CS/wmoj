@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import useSWR from 'swr';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -13,31 +14,35 @@ import { Badge } from '@/components/ui/Badge';
 export default function ProblemsClient({ initialProblems }: { initialProblems: Problem[] }) {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
-  const [statusByProblem, setStatusByProblem] = useState<Record<string, 'solved' | 'attempted' | 'not_attempted'>>({});
 
-  useEffect(() => {
-    const loadStatuses = async () => {
-      if (!user?.id || initialProblems.length === 0) { setStatusByProblem({}); return; }
-      const problemIds = initialProblems.map(p => p.id);
-      const { data, error } = await supabase.from('submissions').select('problem_id, summary').eq('user_id', user.id).in('problem_id', problemIds);
-      if (error) { console.error('Status load error:', error); return; }
-      const map: Record<string, 'solved' | 'attempted' | 'not_attempted'> = {};
-      for (const id of problemIds) map[id] = 'not_attempted';
-      const perProblem: Record<string, { any: boolean; solved: boolean }> = {};
-      for (const row of data || []) {
-        const pid = row.problem_id as string;
-        const s = (row.summary || {}) as { total?: number; passed?: number; failed?: number };
-        const total = Number(s.total ?? 0); const passed = Number(s.passed ?? 0); const failed = Number(s.failed ?? 0);
-        const solved = total > 0 && failed === 0 && passed === total;
-        if (!perProblem[pid]) perProblem[pid] = { any: false, solved: false };
-        perProblem[pid].any = true;
-        perProblem[pid].solved = perProblem[pid].solved || solved;
-      }
-      for (const [pid, agg] of Object.entries(perProblem)) { map[pid] = agg.solved ? 'solved' : 'attempted'; }
-      setStatusByProblem(map);
-    };
-    loadStatuses();
-  }, [user?.id, initialProblems]);
+  const fetcher = async () => {
+    if (!user?.id || initialProblems.length === 0) return {};
+    const problemIds = initialProblems.map(p => p.id);
+    const { data, error } = await supabase.from('submissions').select('problem_id, summary').eq('user_id', user.id).in('problem_id', problemIds);
+    if (error) { console.error('Status load error:', error); return {}; }
+    
+    const map: Record<string, 'solved' | 'attempted' | 'not_attempted'> = {};
+    for (const id of problemIds) map[id] = 'not_attempted';
+    const perProblem: Record<string, { any: boolean; solved: boolean }> = {};
+    for (const row of data || []) {
+      const pid = row.problem_id as string;
+      const s = (row.summary || {}) as { total?: number; passed?: number; failed?: number };
+      const total = Number(s.total ?? 0); const passed = Number(s.passed ?? 0); const failed = Number(s.failed ?? 0);
+      const solved = total > 0 && failed === 0 && passed === total;
+      if (!perProblem[pid]) perProblem[pid] = { any: false, solved: false };
+      perProblem[pid].any = true;
+      perProblem[pid].solved = perProblem[pid].solved || solved;
+    }
+    for (const [pid, agg] of Object.entries(perProblem)) { map[pid] = agg.solved ? 'solved' : 'attempted'; }
+    return map;
+  };
+
+  const { data: statusMap } = useSWR(
+    user?.id && initialProblems.length > 0 ? `problems-status-${user.id}` : null,
+    fetcher
+  );
+  
+  const statusByProblem = statusMap || {};
 
   const filteredProblems = useMemo(() => {
     const q = search.trim().toLowerCase();
