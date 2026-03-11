@@ -1,8 +1,21 @@
+import { redirect } from 'next/navigation';
 import AdminDashboardClient from './AdminDashboardClient';
 import { getServerSupabase } from '@/lib/supabaseServer';
 
 export default async function AdminDashboardPage() {
   const supabase = await getServerSupabase();
+
+  const { data: authData } = await supabase.auth.getUser();
+  const userId = authData?.user?.id;
+  if (!userId) redirect('/auth/login');
+
+  const { data: adminRow } = await supabase
+    .from('admins')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (!adminRow) redirect('/dashboard');
 
   // Fetch ALL submissions (no FK constraints exist, so we join manually)
   const { data: subs, error: subsErr } = await supabase

@@ -1,9 +1,22 @@
+import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabaseServer';
 import ProblemSubmissionsClient from './ProblemSubmissionsClient';
 
 export default async function ProblemSubmissionsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const supabase = await getServerSupabase();
+
+    const { data: authData } = await supabase.auth.getUser();
+    const userId = authData?.user?.id;
+    if (!userId) redirect('/auth/login');
+
+    const { data: adminRow } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!adminRow) redirect('/dashboard');
 
     const [
         { data: problem },
