@@ -16,11 +16,32 @@ export default async function AdminUserManagementPage() {
     .maybeSingle();
 
   if (!adminRow) redirect('/dashboard');
-  const { data: users } = await supabase
-    .from('users')
-    .select('id, username, email, is_active, created_at, updated_at')
-    .order('created_at', { ascending: false })
-    .limit(1000);
 
-  return <UserManagementClient initialUsers={users || []} />;
+  const [usersRes, submissionsRes] = await Promise.all([
+    supabase
+      .from('users')
+      .select('id, username, email, is_active, created_at, updated_at')
+      .order('created_at', { ascending: false })
+      .limit(1000),
+    supabase
+      .from('submissions')
+      .select('user_id')
+  ]);
+
+  const users = usersRes.data || [];
+  const submissions = submissionsRes.data || [];
+
+  const submissionCounts = submissions.reduce((acc: Record<string, number>, sub: any) => {
+    if (sub.user_id) {
+      acc[sub.user_id] = (acc[sub.user_id] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  const usersWithCounts = users.map(user => ({
+    ...user,
+    submissionsCount: submissionCounts[user.id] || 0
+  }));
+
+  return <UserManagementClient initialUsers={usersWithCounts} />;
 }
