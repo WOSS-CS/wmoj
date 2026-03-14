@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { supabase } = auth;
   const { data, error } = await supabase
     .from('problems')
-    .select('id,name,content,contest,is_active,time_limit,memory_limit,difficulty,created_at,updated_at')
+    .select('id,name,content,contest,is_active,time_limit,memory_limit,difficulty,input,output,created_at,updated_at')
     .eq('id', id)
     .maybeSingle();
   if (error) {
@@ -34,7 +34,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Failed to fetch problem' }, { status: 500 });
   }
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json({ problem: data });
+  // Return test case count instead of full arrays to keep payload small
+  const { input: _input, output: _output, ...rest } = data;
+  const test_case_count = Array.isArray(_input) ? _input.length : 0;
+  return NextResponse.json({ problem: { ...rest, test_case_count } });
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -65,6 +68,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Contest must be a string ID or null' }, { status: 400 });
     }
     updates.contest = body.contest;
+  }
+  if (body.input !== undefined && body.output !== undefined) {
+    if (!Array.isArray(body.input) || !Array.isArray(body.output)) {
+      return NextResponse.json({ error: 'Input and output must be arrays' }, { status: 400 });
+    }
+    if (body.input.length === 0 || body.output.length === 0) {
+      return NextResponse.json({ error: 'Input and output arrays must not be empty' }, { status: 400 });
+    }
+    if (body.input.length !== body.output.length) {
+      return NextResponse.json({ error: 'Input and output arrays must have equal length' }, { status: 400 });
+    }
+    updates.input = body.input;
+    updates.output = body.output;
   }
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
