@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
 import { useRouter } from 'next/navigation';
-import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { LoadingSpinner } from '@/components/AnimationWrapper';
 
 interface Contest { id: string; name: string; }
@@ -129,19 +128,11 @@ export default function CreateProblemClient({ initialContests }: { initialContes
               {genError && <div className="bg-error/10 border border-error/20 rounded-lg p-3"><p className="text-error text-sm whitespace-pre-wrap break-words">{genError}</p></div>}
 
               {generatedInput && generatedOutput && (
-                <div className="p-4 border border-border rounded-lg bg-surface-2">
-                  <div className="mb-2 text-text-muted text-sm">Generated cases: {generatedInput.length}</div>
-                  {(() => {
-                    type Row = { idx: number; input: string; output: string };
-                    const columns: Array<DataTableColumn<Row>> = [
-                      { key: 'idx', header: '#', className: 'w-1/12', render: (r) => <span className="text-text-muted font-mono">{r.idx + 1}</span> },
-                      { key: 'input', header: 'Input', className: 'w-5/12', render: (r) => <pre className="text-foreground text-xs whitespace-pre-wrap break-words font-mono">{r.input}</pre> },
-                      { key: 'output', header: 'Output', className: 'w-5/12', render: (r) => <pre className="text-foreground text-xs whitespace-pre-wrap break-words font-mono">{r.output}</pre> },
-                    ];
-                    const rows: Row[] = generatedInput.slice(0, 10).map((inp, i) => ({ idx: i, input: String(inp), output: String(generatedOutput[i] ?? '') }));
-                    return <DataTable<Row> columns={columns} rows={rows} rowKey={(r) => String(r.idx)} />;
-                  })()}
-                  {generatedInput.length > 10 && <div className="mt-2 text-xs text-text-muted">Showing first 10 of {generatedInput.length} cases…</div>}
+                <div className="p-4 border border-success/20 rounded-lg bg-success/5 flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
+                  <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                  <p className="text-success text-sm font-medium">
+                    Successfully generated {generatedInput.length} test cases.
+                  </p>
                 </div>
               )}
             </div>
