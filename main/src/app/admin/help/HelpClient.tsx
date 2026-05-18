@@ -112,51 +112,10 @@ int main() {
           </div>
 
           <div className="space-y-8 text-sm">
-            <section id="add-problems-llm" className="space-y-3 glass-panel p-4">
-              <div>
-                <h2 className="text-base font-semibold text-foreground">Adding Problems via LLM</h2>
-                <p className="text-text-muted mt-1">The fastest way to add a problem: prompt an LLM with our two prepared prompts.</p>
-              </div>
-              <p className="text-text-muted">Head to <Link href="/admin/problems/create" className="text-brand-primary hover:underline">Create Problem</Link> to add a problem, or <Link href="/admin/contests/create" className="text-brand-primary hover:underline">Create Contest</Link> to add a contest.</p>
-              <p className="text-text-muted"><strong className="text-foreground">Approval note:</strong> as an admin, anything you create stays <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">pending</code> until a manager approves it. You do not have unilateral publish power — wait for manager approval before your problem or contest becomes active.</p>
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-foreground">Workflow</h3>
-                <ol className="list-decimal list-inside ml-4 space-y-1 text-text-muted">
-                  <li>Download a problem PDF from an external source (we recommend <a href="https://dmoj.ca" target="_blank" rel="noreferrer" className="text-brand-primary hover:underline">dmoj.ca</a>).</li>
-                  <li>Open a fresh chat with any LLM (Claude, ChatGPT, Gemini, etc.). Paste the <strong className="text-foreground">conversion prompt</strong> first, before uploading anything. It will then ask you to upload PDFs one at a time and convert each into the Markdown format expected by <Link href="/admin/problems/create" className="text-brand-primary hover:underline">Create Problem</Link>.</li>
-                  <li>Paste the produced <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> into the problem-description field on the Create Problem page.</li>
-                  <li>In a new chat (or the same one), paste the <strong className="text-foreground">generator prompt</strong>, then provide your problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code>. The LLM produces a <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">generator.cpp</code> you paste on the same Create Problem page to generate test cases.</li>
-                  <li>After test cases are generated, save the problem. It will go to managers for approval.</li>
-                </ol>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <PromptCopyButton label="Copy Conversion Prompt" url="/conversion.md" />
-                <PromptCopyButton label="Copy Generator Prompt" url="/generator.md" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-foreground">What each prompt does</h3>
-                <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
-                  <li><strong className="text-foreground">Conversion prompt:</strong> turns the LLM into a PDF-to-Markdown converter that outputs a <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> in the exact format this site expects (time/memory limits at top, description, input/output specs, sample cases, etc.). The LLM iterates: ask for a PDF → produce <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> → ask for changes or the next PDF.</li>
-                  <li><strong className="text-foreground">Generator prompt:</strong> turns the LLM into a <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">generator.cpp</code> author. It reads a problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> and outputs C++ that emits inputs on <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">stdout</code> and outputs on <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">stderr</code> as JSON arrays, respecting sub-task constraints (each mark = one test case grouping).</li>
-                </ul>
-              </div>
-              <div className="bg-surface-1 border border-border p-3 rounded-lg space-y-2">
-                <p className="text-foreground text-sm font-semibold">Test case size warning</p>
-                <p className="text-text-muted">The judge-api enforces limits on both <strong className="text-foreground">individual test case size</strong> and <strong className="text-foreground">total volume</strong>. If the generator produces too much data, you must:</p>
-                <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
-                  <li>reduce the size of individual test cases, OR</li>
-                  <li>reduce the total quantity (volume) of test cases, OR</li>
-                  <li>both.</li>
-                </ul>
-                <p className="text-text-muted"><strong className="text-foreground">Preserve the essential test cases</strong> so the problem still works as intended and remains solvable only as required — especially for problems transferred from another platform like DMOJ, where the test data is what enforces the intended difficulty.</p>
-              </div>
-            </section>
-
             <nav className="glass-panel p-4">
               <h2 className="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Contents</h2>
               <ul className="space-y-1">
                 {[
-                  { href: '#add-problems-llm', label: 'Adding Problems via LLM (Start Here)' },
                   { href: '#problems', label: 'Creating Problems' },
                   { href: '#generators', label: 'Test Case Generators (C++)' },
                   { href: '#generator-guide', label: 'Detailed Generator Guide' },
@@ -176,9 +135,21 @@ int main() {
 
             <section id="problems" className="space-y-2">
               <h2 className="text-base font-semibold text-foreground">Creating Problems</h2>
-              <p className="text-text-muted">Navigate to <Link href="/admin/problems/create" className="text-brand-primary hover:underline">Admin → Create Problem</Link>.</p>
-              <p className="text-text-muted">Fill in name, description (Markdown), and optionally choose a contest.</p>
-              <p className="text-text-muted">Test cases are generated via a C++ generator (see below). After successful generation, click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">Create Problem</code> to save.</p>
+              <p className="text-text-muted">Navigate to <Link href="/admin/problems/create" className="text-brand-primary hover:underline">Admin → Create Problem</Link>. Fill in name, description (Markdown), and optionally a contest, upload a C++ generator (see below) to produce test cases, then click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">Create Problem</code> to save.</p>
+              <p className="text-text-muted">The fastest way to author a problem is with our two prepared LLM prompts: one converts a problem PDF into the Markdown this site expects, the other writes the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">generator.cpp</code> for it. Paste either prompt into a fresh chat with any LLM (Claude, ChatGPT, Gemini, etc.) and follow its instructions. You can also write the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> and generator by hand if you prefer.</p>
+              <div className="flex flex-wrap gap-2">
+                <PromptCopyButton label="Copy Conversion Prompt" url="/conversion.md" />
+                <PromptCopyButton label="Copy Generator Prompt" url="/generator.md" />
+              </div>
+              <p className="text-text-muted"><strong className="text-foreground">Recommended workflow:</strong></p>
+              <ol className="list-decimal list-inside ml-4 space-y-1 text-text-muted">
+                <li>Download a problem PDF from an external source — we recommend <a href="https://dmoj.ca" target="_blank" rel="noreferrer" className="text-brand-primary hover:underline">dmoj.ca</a>.</li>
+                <li>Open a fresh chat with an LLM and paste the <strong className="text-foreground">conversion prompt</strong> first, before uploading anything. The prompt turns the LLM into a PDF-to-Markdown converter — it will ask for PDFs one at a time and produce a problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> in the required format (time and memory limits at the top, description, input/output specs, sample cases).</li>
+                <li>Paste the produced <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> into the problem-description field on the Create Problem page.</li>
+                <li>In a new chat (or the same one), paste the <strong className="text-foreground">generator prompt</strong> and provide your problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code>. The prompt turns the LLM into a <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">generator.cpp</code> author that emits inputs on <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">stdout</code> and outputs on <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">stderr</code> as JSON arrays, respecting sub-task constraints (each mark = one test case).</li>
+                <li>Upload the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">generator.cpp</code> on the same page and click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">Generate Test Cases</code>.</li>
+                <li>Once the generated cases look right, save the problem. It stays pending until a manager approves it before becoming publicly visible.</li>
+              </ol>
             </section>
 
             <section id="generators" className="space-y-2">
@@ -194,6 +165,7 @@ int main() {
               <pre className="bg-surface-1 border border-border text-text-muted p-3 rounded-lg overflow-x-auto text-xs font-mono"><code>{`stdout: ["6 7", "10 5", "3 3"]
 stderr: ["13", "15", "6"]`}</code></pre>
               <p className="text-text-muted">On failure (compile/runtime/JSON), errors appear on the page so you can fix and reupload.</p>
+              <p className="text-text-muted"><strong className="text-foreground">Size limits.</strong> The judge service caps both the size of each individual test case and the total volume of cases the generator emits. If the output is too large to upload, reduce the size of individual cases, reduce the total number of cases, or both — but preserve the essential cases (samples, edge cases, scaling cases) so the problem still enforces its intended difficulty. This matters most for problems imported from another platform like DMOJ, where the original test data is what made the problem hard.</p>
             </section>
 
             <section id="generator-guide" className="space-y-2">
@@ -212,68 +184,7 @@ stderr: ["13", "15", "6"]`}</code></pre>
                 <li>Print as valid JSON arrays using <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">std::cout</code> and <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">std::cerr</code>.</li>
               </ol>
               <p className="text-text-muted">Example generator:</p>
-              <pre className="bg-surface-1 border border-border text-text-muted p-3 rounded-lg overflow-x-auto text-xs font-mono"><code>{`// generator.cpp for a problem where you add two integers together.
-
-#include <bits/stdc++.h> 
-
-using namespace std;
-
-string json_escape(const string &s) {
-    string out;
-    out.reserve(s.size());
-    for (char c : s) {
-        if (c == '\\') out += "\\\\";
-        else if (c == '"') out += "\\\"";
-        else if (c == '\b') out += "\\b";
-        else if (c == '\f') out += "\\f";
-        else if (c == '\n') out += "\\n";
-        else if (c == '\r') out += "\\r";
-        else if (c == '\t') out += "\\t";
-        else out += c;
-    }
-    return out;
-}
-
-int main() {
-    const int N = 50;
-    std::mt19937_64 rng(123456789); // fixed seed for reproducibility
-    std::uniform_int_distribution<long long> dist(-1000000000LL, 1000000000LL);
-
-    vector<string> inputs;
-    vector<string> outputs;
-    inputs.reserve(N);
-    outputs.reserve(N);
-
-    for (int i = 0; i < N; ++i) {
-        long long a = dist(rng);
-        long long b = dist(rng);
-        long long s = a + b;
-
-        string in = to_string(a) + " " + to_string(b);
-        string out = to_string(s);
-
-        inputs.push_back(in);
-        outputs.push_back(out);
-    }
-
-    // Print input JSON array to stdout
-    cout << "[";
-    for (size_t i = 0; i < inputs.size(); ++i) {
-        if (i) cout << ", ";
-        cout << "\"" << json_escape(inputs[i]) << "\"";
-    }
-    cout << "]" << endl;
-
-    // Print output JSON array to stderr
-    cerr << "[";
-    for (size_t i = 0; i < outputs.size(); ++i) {
-        if (i) cerr << ", ";
-        cerr << "\"" << json_escape(outputs[i]) << "\"";
-    }
-    cerr << "]" << endl;
-
-    return 0;
-}`}</code></pre>
+              <pre className="bg-surface-1 border border-border text-text-muted p-3 rounded-lg overflow-x-auto text-xs font-mono"><code>{generatorExample}</code></pre>
             </section>
 
             <section id="subtasks" className="space-y-2">
@@ -287,11 +198,12 @@ int main() {
             <section id="manage-problems" className="space-y-2">
               <h2 className="text-base font-semibold text-foreground">Managing Problems</h2>
               <p className="text-text-muted">Go to <Link href="/admin/problems/manage" className="text-brand-primary hover:underline">Manage Problems</Link> to review, edit, or deactivate problems.</p>
+              <p className="text-text-muted">Problems you create land here as pending and are not visible publicly until a manager approves them. You can still edit them while they wait for approval.</p>
             </section>
 
             <section id="contests" className="space-y-2">
               <h2 className="text-base font-semibold text-foreground">Contests</h2>
-              <p className="text-text-muted">Create contests via <Link href="/admin/contests/create" className="text-brand-primary hover:underline">Create Contest</Link> and manage them in <Link href="/admin/contests/manage" className="text-brand-primary hover:underline">Manage Contests</Link>.</p>
+              <p className="text-text-muted">Create contests via <Link href="/admin/contests/create" className="text-brand-primary hover:underline">Create Contest</Link> and manage them in <Link href="/admin/contests/manage" className="text-brand-primary hover:underline">Manage Contests</Link>. Like problems, contests you create stay pending until a manager approves them.</p>
               <p className="text-text-muted">When a problem is linked to a contest, submissions are allowed only for participants and within the timer window.</p>
               <p className="text-text-muted">A problem can belong to multiple contests simultaneously, subject to the following rules:</p>
               <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
