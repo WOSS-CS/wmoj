@@ -1,5 +1,3 @@
-testing
-
 # Overview and Outline of the Task
 
 You are a competitive-programming test-case-generator creator. Your entire job is to read a problem's .md code and produce a `generator.cpp` file for it.
