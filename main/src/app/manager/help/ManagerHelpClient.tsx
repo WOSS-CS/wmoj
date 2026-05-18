@@ -31,7 +31,7 @@ function PromptCopyButton({ label, url }: { label: string; url: string }) {
     <button
       type="button"
       onClick={handleClick}
-      className="px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-surface-2 text-foreground hover:bg-surface-1 transition-colors"
+      className="px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface-2 text-foreground hover:bg-surface-1 transition-colors"
     >
       {display}
     </button>
@@ -107,11 +107,11 @@ int main() {
       <ManagerGuard>
         <div className="w-full space-y-6">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Manager Help & Operations Guide</h1>
-            <p className="text-sm text-text-muted mt-1">Everything you need to effectively manage WMOJ.</p>
+            <h1 className="text-2xl font-semibold text-foreground">Manager Help & Operations Guide</h1>
+            <p className="text-base text-text-muted mt-1">Everything you need to manage WMOJ.</p>
           </div>
 
-          <div className="space-y-8 text-sm">
+          <div className="space-y-8 text-base">
             <nav className="glass-panel p-4">
               <h2 className="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Contents</h2>
               <ul className="space-y-1">
@@ -133,100 +133,94 @@ int main() {
               </ul>
             </nav>
 
-            <section id="problems" className="space-y-2">
-              <h2 className="text-base font-semibold text-foreground">Creating Problems</h2>
-              <p className="text-text-muted">Navigate to <Link href="/manager/problems/create" className="text-brand-primary hover:underline">Manager → Create Problem</Link>. Fill in name, description (Markdown), and optionally a contest, upload a C++ generator (see below) to produce test cases, then click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">Create Problem</code> to save.</p>
-              <p className="text-text-muted">The fastest way to author a problem is with our two prepared LLM prompts: one converts a problem PDF into the Markdown this site expects, the other writes the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">generator.cpp</code> for it. Paste either prompt into a fresh chat with any LLM (Claude, ChatGPT, Gemini, etc.) and follow its instructions. You can also write the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> and generator by hand if you prefer.</p>
+            <section id="problems" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Creating Problems</h2>
+              <p className="text-text-muted">Go to <Link href="/manager/problems/create" className="text-brand-primary hover:underline">Manager → Create Problem</Link>. Fill in name, description (Markdown), optionally a contest, upload a C++ generator (see below), then click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">Create Problem</code>.</p>
+              <p className="text-text-muted">The fastest path is our two LLM prompts: one converts a problem PDF into the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">.md</code> this site expects, the other writes its <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">generator.cpp</code>. Paste either into a fresh chat with any LLM (Claude, ChatGPT, Gemini, etc.) and follow its instructions. You can also write both by hand.</p>
               <div className="flex flex-wrap gap-2">
                 <PromptCopyButton label="Copy Conversion Prompt" url="/conversion.md" />
                 <PromptCopyButton label="Copy Generator Prompt" url="/generator.md" />
               </div>
-              <p className="text-text-muted"><strong className="text-foreground">Recommended workflow:</strong></p>
-              <ol className="list-decimal list-inside ml-4 space-y-1 text-text-muted">
-                <li>Download a problem PDF from an external source — we recommend <a href="https://dmoj.ca" target="_blank" rel="noreferrer" className="text-brand-primary hover:underline">dmoj.ca</a>.</li>
-                <li>Open a fresh chat with an LLM and paste the <strong className="text-foreground">conversion prompt</strong> first, before uploading anything. The prompt turns the LLM into a PDF-to-Markdown converter — it will ask for PDFs one at a time and produce a problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> in the required format (time and memory limits at the top, description, input/output specs, sample cases).</li>
-                <li>Paste the produced <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> into the problem-description field on the Create Problem page.</li>
-                <li>In a new chat (or the same one), paste the <strong className="text-foreground">generator prompt</strong> and provide your problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code>. The prompt turns the LLM into a <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">generator.cpp</code> author that emits inputs on <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">stdout</code> and outputs on <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">stderr</code> as JSON arrays, respecting sub-task constraints (each mark = one test case).</li>
-                <li>Upload the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">generator.cpp</code> on the same page and click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">Generate Test Cases</code>.</li>
-                <li>Once the generated cases look right, click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">Create Problem</code> to save.</li>
+              <p className="text-text-muted"><strong className="text-foreground">Workflow:</strong></p>
+              <ol className="list-decimal list-inside ml-4 space-y-1.5 text-text-muted">
+                <li>Download a problem PDF (we recommend <a href="https://dmoj.ca" target="_blank" rel="noreferrer" className="text-brand-primary hover:underline">dmoj.ca</a>).</li>
+                <li>In a fresh LLM chat, paste the <strong className="text-foreground">conversion prompt</strong> before uploading anything. It will ask for PDFs one at a time and convert each into a problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">.md</code> in the required format (time/memory limits at top, description, I/O specs, samples).</li>
+                <li>Paste the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">.md</code> into the problem-description field.</li>
+                <li>In a new chat, paste the <strong className="text-foreground">generator prompt</strong> and give it your problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">.md</code>. It produces a <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">generator.cpp</code> that emits inputs on <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">stdout</code> and outputs on <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">stderr</code> as JSON arrays, respecting sub-task constraints (each mark = one test case).</li>
+                <li>Upload the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">generator.cpp</code> and click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">Generate Test Cases</code>.</li>
+                <li>Click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">Create Problem</code> to save.</li>
               </ol>
             </section>
 
-            <section id="generators" className="space-y-2">
-              <h2 className="text-base font-semibold text-foreground">Test Case Generators (C++)</h2>
-              <p className="text-text-muted">Upload a single <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.cpp</code> file on the Create Problem page and click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">Generate Test Cases</code>.</p>
-              <p className="text-text-muted">The generator is compiled and executed by the judge. It must:</p>
+            <section id="generators" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Test Case Generators (C++)</h2>
+              <p className="text-text-muted">Upload a single <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">.cpp</code> on the Create Problem page and click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">Generate Test Cases</code>. The judge compiles and runs it. It must:</p>
               <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
-                <li>Write the input JSON array to <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">stdout</code>.</li>
-                <li>Write the output JSON array to <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">stderr</code>.</li>
-                <li>Both arrays must be the same length and contain strings.</li>
+                <li>Write the input JSON array to <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">stdout</code>.</li>
+                <li>Write the output JSON array to <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">stderr</code>.</li>
+                <li>Both arrays must be the same length and contain only strings.</li>
               </ul>
               <p className="text-text-muted">Example outputs for an addition problem:</p>
-              <pre className="bg-surface-1 border border-border text-text-muted p-3 rounded-lg overflow-x-auto text-xs font-mono"><code>{`stdout: ["6 7", "10 5", "3 3"]
+              <pre className="bg-surface-1 border border-border text-text-muted p-3 rounded-lg overflow-x-auto text-sm font-mono"><code>{`stdout: ["6 7", "10 5", "3 3"]
 stderr: ["13", "15", "6"]`}</code></pre>
-              <p className="text-text-muted">On failure (compile/runtime/JSON), errors appear on the page so you can fix and reupload.</p>
-              <p className="text-text-muted"><strong className="text-foreground">Size limits.</strong> The judge service caps both the size of each individual test case and the total volume of cases the generator emits. If the output is too large to upload, reduce the size of individual cases, reduce the total number of cases, or both — but preserve the essential cases (samples, edge cases, scaling cases) so the problem still enforces its intended difficulty. This matters most for problems imported from another platform like DMOJ, where the original test data is what made the problem hard.</p>
+              <p className="text-text-muted">Compile, runtime, and JSON errors are reported on the page so you can fix and reupload.</p>
+              <p className="text-text-muted"><strong className="text-foreground">Size limits.</strong> The judge caps both individual case size and total volume. If the output is too large to upload, reduce individual case size, reduce the number of cases, or both, but keep the essentials (samples, edge cases, scaling cases) so the problem still functions correctly and admits only the intended solution. This especially matters for problems imported from DMOJ, where the original test data is what made the problem hard.</p>
             </section>
 
-            <section id="generator-guide" className="space-y-2">
-              <h2 className="text-base font-semibold text-foreground">Detailed Generator Guide</h2>
+            <section id="generator-guide" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Detailed Generator Guide</h2>
               <p className="text-text-muted">Every generator must emit <strong className="text-foreground">verbatim JSON arrays</strong>:</p>
               <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
-                <li><code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">stdout</code> → JSON array of input strings (one entry per test case).</li>
-                <li><code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">stderr</code> → JSON array of output strings in the same order.</li>
-                <li>The arrays must be the same length, contain only strings, and be valid JSON.</li>
+                <li><code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">stdout</code>: JSON array of input strings, one entry per test case.</li>
+                <li><code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">stderr</code>: JSON array of output strings in the same order.</li>
+                <li>Both must be the same length, contain only strings, and be valid JSON.</li>
               </ul>
               <p className="text-text-muted">Recommended structure:</p>
               <ol className="list-decimal list-inside ml-4 space-y-1 text-text-muted">
-                <li>Include headers and helper functions (e.g., <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">json_escape</code>) to escape quotes, newlines, and backslashes.</li>
-                <li>Seed a random number generator (fixed seed preferred) and produce deterministic inputs/outputs.</li>
-                <li>Store generated strings in two <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">std::vector&lt;std::string&gt;</code> containers.</li>
-                <li>Print as valid JSON arrays using <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">std::cout</code> and <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">std::cerr</code>.</li>
+                <li>Include headers and a helper like <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">json_escape</code> to escape quotes, newlines, and backslashes.</li>
+                <li>Seed an RNG (fixed seed preferred) for deterministic inputs/outputs.</li>
+                <li>Store generated strings in two <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">std::vector&lt;std::string&gt;</code> containers.</li>
+                <li>Print valid JSON arrays via <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">std::cout</code> and <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">std::cerr</code>.</li>
               </ol>
-              <p className="text-text-muted">Example generator:</p>
-              <pre className="bg-surface-1 border border-border text-text-muted p-3 rounded-lg overflow-x-auto text-xs font-mono"><code>{generatorExample}</code></pre>
+              <p className="text-text-muted">Example:</p>
+              <pre className="bg-surface-1 border border-border text-text-muted p-3 rounded-lg overflow-x-auto text-sm font-mono"><code>{generatorExample}</code></pre>
             </section>
 
-            <section id="subtasks" className="space-y-2">
-              <h2 className="text-base font-semibold text-foreground">Sub-tasks & Constraint Groups</h2>
-              <p className="text-text-muted">Some problems award partial credit through <strong className="text-foreground">sub-tasks</strong> — groups of test cases that each operate under a specific set of constraints. This is common in competitions like the CCC, where different sets of test cases correspond to different difficulty tiers and point values.</p>
-              <p className="text-text-muted">For example, an easy sub-task might restrict the input size to 0 ≤ N ≤ 100, while a harder sub-task allows 0 ≤ N ≤ 10<sup>9</sup>. Each sub-task is a family of test cases that all conform to the same constraint range.</p>
-              <p className="text-text-muted"><strong className="text-foreground">This is entirely controlled by your generator.</strong> The platform does not have a separate sub-task configuration — it is up to you, the problem author, to write your <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">generator.cpp</code> so that it produces the correct number of test cases for each sub-task, with inputs that respect the corresponding constraints.</p>
-              <p className="text-text-muted">In practice, this means structuring your generator to produce test cases in batches: for instance, the first 10 cases with small N for Sub-task 1, the next 10 with medium N for Sub-task 2, and so on. Make sure the problem description clearly states which test cases belong to which sub-task and what constraints apply.</p>
+            <section id="subtasks" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Sub-tasks & Constraint Groups</h2>
+              <p className="text-text-muted">Some problems award partial credit through <strong className="text-foreground">sub-tasks</strong>: groups of test cases that each operate under a specific set of constraints. Common in competitions like the CCC, where different groups correspond to different difficulty tiers and point values. An easy sub-task might restrict input to 0 ≤ N ≤ 100, while a harder one allows 0 ≤ N ≤ 10<sup>9</sup>.</p>
+              <p className="text-text-muted"><strong className="text-foreground">This is entirely controlled by your generator.</strong> The platform has no separate sub-task configuration. You write <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">generator.cpp</code> to produce the right number of cases for each sub-task with inputs that respect the corresponding constraints. In practice, produce them in batches: the first 10 with small N for Sub-task 1, the next 10 with medium N for Sub-task 2, and so on. State which cases belong to which sub-task in the problem description.</p>
             </section>
 
-            <section id="manage-problems" className="space-y-2">
-              <h2 className="text-base font-semibold text-foreground">Managing Problems</h2>
+            <section id="manage-problems" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Managing Problems</h2>
               <p className="text-text-muted">Go to <Link href="/manager/problems/manage" className="text-brand-primary hover:underline">Manage Problems</Link> to review, edit, or deactivate problems.</p>
-              <p className="text-text-muted"><strong className="text-foreground">Approval queue.</strong> Admin-created problems land here as pending and are not visible publicly until you approve them. Reviewing the pending queue and approving valid submissions is a manager responsibility — check it regularly.</p>
+              <p className="text-text-muted"><strong className="text-foreground">Approval queue.</strong> Admin-created problems land here as pending and are not visible publicly until you approve them. Reviewing the queue is a manager responsibility; check it regularly.</p>
             </section>
 
-            <section id="contests" className="space-y-2">
-              <h2 className="text-base font-semibold text-foreground">Contests</h2>
-              <p className="text-text-muted">Create contests via <Link href="/manager/contests/create" className="text-brand-primary hover:underline">Create Contest</Link> and manage them in <Link href="/manager/contests/manage" className="text-brand-primary hover:underline">Manage Contests</Link>. Manage Contests is also where you approve admin-submitted contests — those remain pending until you review them, so check the queue regularly.</p>
-              <p className="text-text-muted">When a problem is linked to a contest, submissions are allowed only for participants and within the timer window.</p>
-              <p className="text-text-muted">A problem can belong to multiple contests simultaneously, subject to the following rules:</p>
+            <section id="contests" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Contests</h2>
+              <p className="text-text-muted">Create contests via <Link href="/manager/contests/create" className="text-brand-primary hover:underline">Create Contest</Link> and manage them in <Link href="/manager/contests/manage" className="text-brand-primary hover:underline">Manage Contests</Link>. Manage Contests is also where you approve admin-submitted contests; those remain pending until you review them, so check the queue regularly.</p>
+              <p className="text-text-muted">When a problem is linked to a contest, submissions are restricted to participants within the timer window. A problem can belong to multiple contests at once, subject to these rules:</p>
               <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
-                <li><strong className="text-foreground">Rated ongoing/upcoming contests lock their problems.</strong> If a problem is in a rated contest that is currently ongoing or upcoming, it cannot be added to any other contest.</li>
-                <li><strong className="text-foreground">Rated contests require standalone problems.</strong> When creating or editing a rated contest, you can only add problems that are not already in any other contest.</li>
-                <li><strong className="text-foreground">Unrated contests can share problems freely.</strong> Problems in virtual, inactive, or other unrated contests can be added to any unrated contest without restriction.</li>
+                <li><strong className="text-foreground">Rated ongoing/upcoming contests lock their problems.</strong> A problem in such a contest cannot be added to any other contest.</li>
+                <li><strong className="text-foreground">Rated contests require standalone problems.</strong> When creating or editing a rated contest, you can only add problems not already in another contest.</li>
+                <li><strong className="text-foreground">Unrated contests share freely.</strong> Problems in virtual, inactive, or other unrated contests can be added to any unrated contest.</li>
               </ul>
             </section>
 
-            <section id="judge" className="space-y-2">
-              <h2 className="text-base font-semibold text-foreground">Judge Service</h2>
-              <p className="text-text-muted">Submissions are executed through the judge using the configured URL in the app.</p>
-              <p className="text-text-muted">Supported languages include C++, Python, and Java for submissions; generators are C++ only.</p>
+            <section id="judge" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Judge Service</h2>
+              <p className="text-text-muted">Submissions run through the judge at the configured URL. Submission languages: C++, Python, Java. Generators are C++ only.</p>
             </section>
 
-            <section id="timers" className="space-y-2">
-              <h2 className="text-base font-semibold text-foreground">Contest Timers & Participation</h2>
-              <p className="text-text-muted">Users must join a contest to submit linked problems.</p>
-              <p className="text-text-muted">Timer enforcement prevents submissions after expiry.</p>
+            <section id="timers" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Contest Timers & Participation</h2>
+              <p className="text-text-muted">Users must join a contest to submit its linked problems. Submissions after timer expiry are rejected.</p>
             </section>
 
-            <section id="troubleshooting" className="space-y-2">
-              <h2 className="text-base font-semibold text-foreground">Troubleshooting</h2>
+            <section id="troubleshooting" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Troubleshooting</h2>
               <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
                 <li>Generator compile error: verify C++17 compatibility and includes.</li>
                 <li>Invalid JSON: ensure stdout and stderr each contain a single JSON array of strings.</li>
