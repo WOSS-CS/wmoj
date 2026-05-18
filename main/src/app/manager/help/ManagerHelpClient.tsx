@@ -1,8 +1,41 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { AuthGuard } from '@/components/AuthGuard';
 import { ManagerGuard } from '@/components/ManagerGuard';
+
+type CopyState = 'idle' | 'copied' | 'error';
+
+function PromptCopyButton({ label, file }: { label: string; file: string }) {
+  const [state, setState] = useState<CopyState>('idle');
+
+  const handleCopy = async () => {
+    try {
+      const res = await fetch(file);
+      if (!res.ok) throw new Error('fetch failed');
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      setState('copied');
+      setTimeout(() => setState('idle'), 2000);
+    } catch {
+      setState('error');
+      setTimeout(() => setState('idle'), 2000);
+    }
+  };
+
+  const text = state === 'copied' ? 'Copied!' : state === 'error' ? 'Copy failed' : label;
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="px-3 py-1.5 rounded-lg border border-border bg-surface-2 text-xs font-medium text-foreground hover:bg-surface-1 transition-colors"
+    >
+      {text}
+    </button>
+  );
+}
 
 export default function ManagerHelpClient() {
   return (
@@ -15,10 +48,57 @@ export default function ManagerHelpClient() {
           </div>
 
           <div className="space-y-8 text-sm">
+            <section id="add-problems-llm" className="space-y-3 glass-panel p-4">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">Adding Problems via LLM</h2>
+                <p className="text-text-muted mt-1">The fastest way to add a problem: prompt an LLM with our two prepared prompts.</p>
+              </div>
+
+              <p className="text-text-muted">Problems are created at <Link href="/manager/problems/create" className="text-brand-primary hover:underline">Manager → Create Problem</Link>, and contests at <Link href="/manager/contests/create" className="text-brand-primary hover:underline">Create Contest</Link>.</p>
+
+              <p className="text-text-muted"><strong className="text-foreground">Manager responsibility:</strong> admins can also create problems and contests, but their submissions stay <strong className="text-foreground">pending</strong> until a manager approves them. You are expected to regularly review and approve admin-submitted items at <Link href="/manager/problems/manage" className="text-brand-primary hover:underline">Manage Problems</Link> and <Link href="/manager/contests/manage" className="text-brand-primary hover:underline">Manage Contests</Link>.</p>
+
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-1">Workflow</h3>
+                <ol className="list-decimal list-inside ml-4 space-y-1 text-text-muted">
+                  <li>Download a problem PDF from an external source (we recommend <a href="https://dmoj.ca" target="_blank" rel="noopener noreferrer" className="text-brand-primary hover:underline">dmoj.ca</a>).</li>
+                  <li>Open a fresh chat with any LLM (Claude, ChatGPT, Gemini, etc.). Paste the <strong className="text-foreground">conversion prompt</strong> first, before uploading anything. It will then ask you to upload PDFs one at a time and convert each into the Markdown format expected by <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">/manager/problems/create</code>.</li>
+                  <li>Paste the produced <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> into the problem-description field on the Create Problem page.</li>
+                  <li>In a new chat (or the same one), paste the <strong className="text-foreground">generator prompt</strong>, then provide your problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code>. The LLM produces a <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">generator.cpp</code> you paste on the same Create Problem page to generate test cases.</li>
+                  <li>After test cases are generated, save the problem. Manager-created problems can be published directly; admin-created problems require manager approval.</li>
+                </ol>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <PromptCopyButton label="Copy Conversion Prompt" file="/conversion.md" />
+                <PromptCopyButton label="Copy Generator Prompt" file="/generator.md" />
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-1">What each prompt does</h3>
+                <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
+                  <li><strong className="text-foreground">Conversion prompt:</strong> turns the LLM into a converter that takes a PDF problem and outputs a <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> file in the exact format this site expects (time/memory limits at top, description, input/output specs, sample cases). The LLM iterates: ask for a PDF → produce <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> → ask for changes or the next PDF.</li>
+                  <li><strong className="text-foreground">Generator prompt:</strong> turns the LLM into a <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">generator.cpp</code> author: it reads a problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-xs font-mono">.md</code> and outputs a C++ generator that emits inputs on stdout and outputs on stderr as JSON arrays, respecting sub-task constraints (each mark = one test case grouping).</li>
+                </ul>
+              </div>
+
+              <div className="bg-surface-1 border border-border p-3 rounded-lg space-y-1">
+                <p className="text-foreground font-semibold text-xs uppercase tracking-wider">Test case size warning</p>
+                <p className="text-text-muted">The judge-api has limits on how large test cases can be — both <strong className="text-foreground">individually</strong> and in <strong className="text-foreground">total volume</strong>. If the generator produces too much data, you must:</p>
+                <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
+                  <li>reduce the size of individual test cases,</li>
+                  <li>reduce the total quantity (volume) of test cases, or</li>
+                  <li>both.</li>
+                </ul>
+                <p className="text-text-muted">Be careful to <strong className="text-foreground">preserve the essential test cases</strong> so the problem still works as intended and remains solvable only as required — especially for problems transferred from another platform like DMOJ, where the test data is what enforces the intended difficulty.</p>
+              </div>
+            </section>
+
             <nav className="glass-panel p-4">
               <h2 className="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Contents</h2>
               <ul className="space-y-1">
                 {[
+                  { href: '#add-problems-llm', label: 'Adding Problems via LLM (Start Here)' },
                   { href: '#problems', label: 'Creating Problems' },
                   { href: '#generators', label: 'Test Case Generators (C++)' },
                   { href: '#generator-guide', label: 'Detailed Generator Guide' },
