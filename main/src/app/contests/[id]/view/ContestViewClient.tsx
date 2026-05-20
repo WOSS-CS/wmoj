@@ -59,7 +59,7 @@ export default function ContestViewClient({ error, initialContest, problems = []
   const { user, session, userRole } = useAuth();
   const { startCountdown } = useCountdown();
 
-  const isOwnContest = userRole === 'admin' && user?.id === initialContest?.created_by;
+  const isOwnContest = (userRole === 'admin' || userRole === 'manager') && user?.id === initialContest?.created_by;
   const isInactive = initialContest ? initialContest.is_active === false : false;
 
   const status: ContestStatus = initialContest
@@ -150,7 +150,7 @@ export default function ContestViewClient({ error, initialContest, problems = []
                         You created this contest
                       </div>
                       <p className="text-xs text-text-muted mt-3 text-center">
-                        Admins cannot join their own contests.
+                        Creators cannot join their own contests.
                       </p>
                     </>
                   ) : status === 'upcoming' ? (

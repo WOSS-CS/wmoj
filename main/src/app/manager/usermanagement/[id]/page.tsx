@@ -26,6 +26,7 @@ export default async function ManagerUserDetailPage({ params }: { params: Promis
   const [
     { data: targetUser },
     { data: adminRow },
+    { data: targetManagerRow },
     { data: subs },
   ] = await Promise.all([
     supabase
@@ -35,6 +36,11 @@ export default async function ManagerUserDetailPage({ params }: { params: Promis
       .maybeSingle(),
     supabase
       .from('admins')
+      .select('id')
+      .eq('id', targetUserId)
+      .maybeSingle(),
+    supabase
+      .from('managers')
       .select('id')
       .eq('id', targetUserId)
       .maybeSingle(),
@@ -86,6 +92,8 @@ export default async function ManagerUserDetailPage({ params }: { params: Promis
         created_at: targetUser.created_at,
       }}
       initialIsAdmin={!!adminRow}
+      initialIsManager={!!targetManagerRow}
+      currentUserId={userId}
       initialSubmissions={submissions}
     />
   );

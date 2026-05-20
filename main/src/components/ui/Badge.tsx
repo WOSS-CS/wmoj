@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 
-type BadgeVariant = "success" | "error" | "warning" | "info" | "easy" | "medium" | "hard" | "neutral";
+type BadgeVariant = "success" | "error" | "warning" | "info" | "easy" | "medium" | "hard" | "neutral" | "accent";
 
 interface BadgeProps {
     children: ReactNode;
@@ -19,6 +19,7 @@ const variantStyles: Record<BadgeVariant, string> = {
     medium: "bg-warning/10 text-warning",
     hard: "bg-error/10 text-error",
     neutral: "bg-surface-2 text-text-muted",
+    accent: "bg-purple-500/10 text-purple-400",
 };
 
 export const Badge = ({ children, variant = "neutral", className = "" }: BadgeProps) => {

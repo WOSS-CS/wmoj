@@ -71,7 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ]);
 
       // Derive role and path immediately from Round 1 — no extra queries needed.
-      const role: UserRole = adminResult.data ? 'admin' : managerResult.data ? 'manager' : 'regular';
+      // Manager is the higher tier and wins precedence over admin when a user
+      // is present in both tables.
+      const role: UserRole = managerResult.data ? 'manager' : adminResult.data ? 'admin' : 'regular';
       setUserRole(role);
       setUserDashboardPath(getUserDashboardPath(role));
 
@@ -85,13 +87,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Round 2 — fire background updates in parallel; don't block the UI.
       const updates: Promise<unknown>[] = [];
 
-      if (adminResult.data) {
-        updates.push(
-          Promise.resolve(supabase.from('admins').update({ last_login: now, updated_at: now }).eq('id', currentUser.id))
-        );
-      } else if (managerResult.data) {
+      if (managerResult.data) {
         updates.push(
           Promise.resolve(supabase.from('managers').update({ last_login: now, updated_at: now }).eq('id', currentUser.id))
+        );
+      } else if (adminResult.data) {
+        updates.push(
+          Promise.resolve(supabase.from('admins').update({ last_login: now, updated_at: now }).eq('id', currentUser.id))
         );
       }
 

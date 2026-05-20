@@ -16,6 +16,7 @@ interface ManagedUser {
   updated_at: string;
   submissionsCount?: number;
   isAdmin: boolean;
+  isManager: boolean;
 }
 
 export default function ManagerUserManagementClient({ initialUsers }: { initialUsers: ManagedUser[] }) {
@@ -39,7 +40,7 @@ export default function ManagerUserManagementClient({ initialUsers }: { initialU
     { key: 'username', header: 'Username', className: 'w-[22%]', sortable: true, sortAccessor: (r) => (r.username || '').toLowerCase(), render: (r) => <span className="text-foreground font-medium">{r.username || '-'}</span> },
     { key: 'email', header: 'Email', className: 'w-[28%]', sortable: true, sortAccessor: (r) => (r.email || '').toLowerCase(), render: (r) => <span className="text-text-muted">{r.email || '-'}</span> },
     { key: 'status', header: 'Status', className: 'w-[12%]', sortable: true, sortAccessor: (r) => (r.is_active ? 1 : 0), render: (r) => <Badge variant={r.is_active ? 'success' : 'warning'}>{r.is_active ? 'Active' : 'Disabled'}</Badge> },
-    { key: 'role', header: 'Role', className: 'w-[12%]', sortable: true, sortAccessor: (r) => (r.isAdmin ? 1 : 0), render: (r) => <Badge variant={r.isAdmin ? 'info' : 'neutral'}>{r.isAdmin ? 'Admin' : 'User'}</Badge> },
+    { key: 'role', header: 'Role', className: 'w-[12%]', sortable: true, sortAccessor: (r) => (r.isManager ? 2 : r.isAdmin ? 1 : 0), render: (r) => <Badge variant={r.isManager ? 'accent' : r.isAdmin ? 'info' : 'neutral'}>{r.isManager ? 'Manager' : r.isAdmin ? 'Admin' : 'User'}</Badge> },
     { key: 'submissions_count', header: 'Submissions', className: 'w-[10%]', sortable: true, sortAccessor: (r) => r.submissionsCount || 0, render: (r) => <span className="text-text-muted font-mono">{r.submissionsCount || 0}</span> },
     {
       key: 'actions', header: '', className: 'w-[16%] text-right', render: (r) => (

@@ -443,6 +443,21 @@ create policy "managers_update_own"
   to public
   using (auth.uid() = id);
 
+-- Active managers can promote/demote managers via the in-app flow on
+-- /manager/usermanagement/[id]/. is_manager() is SECURITY DEFINER, which
+-- avoids the RLS recursion that a raw EXISTS subquery would hit here.
+drop policy if exists "managers_insert_managers" on public.managers;
+create policy "managers_insert_managers"
+  on public.managers for insert
+  to authenticated
+  with check (public.is_manager());
+
+drop policy if exists "managers_delete_managers" on public.managers;
+create policy "managers_delete_managers"
+  on public.managers for delete
+  to authenticated
+  using (public.is_manager());
+
 -- ----- public.problems -----------------------------------------------------
 drop policy if exists "Allow all users to view problems" on public.problems;
 create policy "Allow all users to view problems"

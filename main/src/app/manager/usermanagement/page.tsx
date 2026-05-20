@@ -46,13 +46,12 @@ export default async function ManagerUserManagementPage() {
     return acc;
   }, {});
 
-  const usersWithCounts = users
-    .filter(user => !managerIds.has(user.id))
-    .map(user => ({
-      ...user,
-      submissionsCount: submissionCounts[user.id] || 0,
-      isAdmin: adminIds.has(user.id),
-    }));
+  const usersWithCounts = users.map(user => ({
+    ...user,
+    submissionsCount: submissionCounts[user.id] || 0,
+    isAdmin: adminIds.has(user.id),
+    isManager: managerIds.has(user.id),
+  }));
 
   return <ManagerUserManagementClient initialUsers={usersWithCounts} />;
 }

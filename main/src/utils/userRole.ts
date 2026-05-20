@@ -8,18 +8,8 @@ import { UserRole } from '@/types/user';
  */
 export async function getUserRole(userId: string): Promise<UserRole> {
   try {
-    // Check if user exists in admin table
-    const { data: adminUser, error: adminError } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (!adminError && adminUser) {
-      return 'admin';
-    }
-
-    // Check if user exists in managers table
+    // Manager is the higher tier — check first so a user in both tables
+    // resolves to 'manager'.
     const { data: managerUser, error: managerError } = await supabase
       .from('managers')
       .select('id')
@@ -30,7 +20,16 @@ export async function getUserRole(userId: string): Promise<UserRole> {
       return 'manager';
     }
 
-    // Check if user exists in users table (regular user)
+    const { data: adminUser, error: adminError } = await supabase
+      .from('admins')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!adminError && adminUser) {
+      return 'admin';
+    }
+
     const { data: regularUser, error: regularError } = await supabase
       .from('users')
       .select('id')
@@ -41,7 +40,6 @@ export async function getUserRole(userId: string): Promise<UserRole> {
       return 'regular';
     }
 
-    // Default to regular if user doesn't exist in any table
     return 'regular';
   } catch (error) {
     console.error('Error determining user role:', error);

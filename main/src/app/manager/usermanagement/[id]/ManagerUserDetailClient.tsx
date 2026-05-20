@@ -37,18 +37,25 @@ interface UserInfo {
 interface ManagerUserDetailClientProps {
   user: UserInfo;
   initialIsAdmin: boolean;
+  initialIsManager: boolean;
+  currentUserId: string;
   initialSubmissions: Row[];
 }
 
 export default function ManagerUserDetailClient({
   user,
   initialIsAdmin,
+  initialIsManager,
+  currentUserId,
   initialSubmissions,
 }: ManagerUserDetailClientProps) {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(initialIsAdmin);
+  const [isManager, setIsManager] = useState(initialIsManager);
   const [promoting, setPromoting] = useState(false);
+  const [promotingManager, setPromotingManager] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<Row | null>(null);
+  const isSelf = currentUserId === user.id;
 
   const totalSubmissions = initialSubmissions.length;
   const acceptedSubmissions = initialSubmissions.filter(s => s.passed).length;
@@ -75,6 +82,25 @@ export default function ManagerUserDetailClient({
       toast.error(e instanceof Error ? e.message : 'Something went wrong');
     } finally {
       setPromoting(false);
+    }
+  };
+
+  const handlePromoteManager = async (promote: boolean) => {
+    setPromotingManager(true);
+    try {
+      const res = await fetch(`/api/manager/users/${user.id}/promote-manager`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ promote }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setIsManager(data.isManager);
+      toast.success(promote ? 'User promoted to Manager' : 'User demoted from Manager');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Something went wrong');
+    } finally {
+      setPromotingManager(false);
     }
   };
 
@@ -210,7 +236,9 @@ export default function ManagerUserDetailClient({
               <p className="text-xl font-semibold text-foreground">{user.username || '—'}</p>
               <p className="text-sm text-text-muted mt-0.5">{user.email}</p>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <Badge variant={isAdmin ? 'info' : 'neutral'}>{isAdmin ? 'Admin' : 'User'}</Badge>
+                <Badge variant={isManager ? 'accent' : isAdmin ? 'info' : 'neutral'}>
+                  {isManager ? 'Manager' : isAdmin ? 'Admin' : 'User'}
+                </Badge>
                 <Badge variant={user.is_active ? 'success' : 'warning'}>
                   {user.is_active ? 'Active' : 'Disabled'}
                 </Badge>
@@ -220,24 +248,45 @@ export default function ManagerUserDetailClient({
               </div>
             </div>
 
-            {/* Promote / Demote action */}
-            <div className="flex-shrink-0">
-              {isAdmin ? (
-                <button
-                  onClick={() => handlePromote(false)}
-                  disabled={promoting}
-                  className="px-3 py-1.5 rounded-md text-sm font-medium bg-warning/10 text-warning hover:bg-warning/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {promoting ? 'Updating...' : 'Demote from Admin'}
-                </button>
+            {/* Promote / Demote actions */}
+            <div className="flex-shrink-0 flex items-center gap-2">
+              {isManager ? (
+                !isSelf && (
+                  <button
+                    onClick={() => handlePromoteManager(false)}
+                    disabled={promotingManager}
+                    className="px-3 py-1.5 rounded-md text-sm font-medium bg-warning/10 text-warning hover:bg-warning/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {promotingManager ? 'Updating...' : 'Demote from Manager'}
+                  </button>
+                )
               ) : (
-                <button
-                  onClick={() => handlePromote(true)}
-                  disabled={promoting}
-                  className="px-3 py-1.5 rounded-md text-sm font-medium bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {promoting ? 'Updating...' : 'Promote to Admin'}
-                </button>
+                <>
+                  {isAdmin ? (
+                    <button
+                      onClick={() => handlePromote(false)}
+                      disabled={promoting}
+                      className="px-3 py-1.5 rounded-md text-sm font-medium bg-warning/10 text-warning hover:bg-warning/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {promoting ? 'Updating...' : 'Demote from Admin'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handlePromote(true)}
+                      disabled={promoting}
+                      className="px-3 py-1.5 rounded-md text-sm font-medium bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {promoting ? 'Updating...' : 'Promote to Admin'}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handlePromoteManager(true)}
+                    disabled={promotingManager}
+                    className="px-3 py-1.5 rounded-md text-sm font-medium bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {promotingManager ? 'Updating...' : 'Promote to Manager'}
+                  </button>
+                </>
               )}
             </div>
           </div>
