@@ -27,6 +27,16 @@ export default function ManagerCreateProblemClient() {
   const [generatedInput, setGeneratedInput] = useState<string[] | null>(null);
   const [generatedOutput, setGeneratedOutput] = useState<string[] | null>(null);
   const [genError, setGenError] = useState('');
+  // Source string that produced the currently-held generatedInput/Output.
+  // Used to detect when the user has edited the generator after a successful
+  // generation but before saving — see isStale below.
+  const [generatedFor, setGeneratedFor] = useState<string | null>(null);
+
+  // Tests are stale when we have a successful generation on record but the
+  // editor's current source no longer matches what produced those tests.
+  // Blocks Create Problem so the stored generator_file is always the exact
+  // source that produced the stored input/output arrays.
+  const isStale = generatedFor !== null && generatorCode !== generatedFor;
 
   const token = session?.access_token;
 
@@ -43,8 +53,8 @@ export default function ManagerCreateProblemClient() {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch('/api/manager/problems/generator/generate', { method: 'POST', headers, body: JSON.stringify({ code: generatorCode }) });
       const json = await res.json();
-      if (!res.ok) { setGenError(json.error || 'Failed to generate test cases'); setGeneratedInput(null); setGeneratedOutput(null); }
-      else { setGeneratedInput(json.input || null); setGeneratedOutput(json.output || null); }
+      if (!res.ok) { setGenError(json.error || 'Failed to generate test cases'); setGeneratedInput(null); setGeneratedOutput(null); setGeneratedFor(null); }
+      else { setGeneratedInput(json.input || null); setGeneratedOutput(json.output || null); setGeneratedFor(generatorCode); }
     } catch { setGenError('Unexpected error running generator'); }
     finally { setGenLoading(false); }
   };
@@ -57,6 +67,7 @@ export default function ManagerCreateProblemClient() {
       if (!generatedInput || !generatedOutput) { setError('Please generate test cases first.'); setLoading(false); return; }
       if (generatedInput.length === 0 || generatedOutput.length === 0) { setError('Generated test cases are empty.'); setLoading(false); return; }
       if (generatedInput.length !== generatedOutput.length) { setError('Input and output arrays must match.'); setLoading(false); return; }
+      if (isStale) { setError('Generator code has changed since the last test generation. Regenerate before saving so the stored generator matches the stored tests.'); setLoading(false); return; }
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch('/api/manager/problems/create', {
@@ -67,7 +78,7 @@ export default function ManagerCreateProblemClient() {
       if (res.ok) {
         setSuccess('Problem created successfully!');
         setFormData({ id: '', name: '', content: '', timeLimit: '5000', memoryLimit: '256', points: '' });
-        setGeneratorCode(''); setGeneratedInput(null); setGeneratedOutput(null); setGenError('');
+        setGeneratorCode(''); setGeneratedInput(null); setGeneratedOutput(null); setGeneratedFor(null); setGenError('');
         setTimeout(() => router.push('/manager/dashboard'), 2000);
       } else { setError(json.error || 'Failed to create problem'); }
     } catch { setError('Unexpected error occurred'); }
@@ -122,11 +133,20 @@ export default function ManagerCreateProblemClient() {
 
               {genError && <div className="bg-error/10 border border-error/20 rounded-lg p-3"><p className="text-error text-sm whitespace-pre-wrap break-words">{genError}</p></div>}
 
-              {generatedInput && generatedOutput && (
+              {generatedInput && generatedOutput && !isStale && (
                 <div className="p-4 border border-success/20 rounded-lg bg-success/5 flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
                   <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
                   <p className="text-success text-sm font-medium">
                     Successfully generated {generatedInput.length} test cases.
+                  </p>
+                </div>
+              )}
+
+              {generatedInput && generatedOutput && isStale && (
+                <div className="p-4 border border-warning/20 rounded-lg bg-warning/5 flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
+                  <div className="w-2 h-2 rounded-full bg-warning mt-1.5 shrink-0" />
+                  <p className="text-warning text-sm font-medium">
+                    Generator code has changed since these {generatedInput.length} test cases were generated. Click <span className="font-semibold">Generate Test Cases</span> again before saving so the stored generator matches the stored tests.
                   </p>
                 </div>
               )}
@@ -136,7 +156,7 @@ export default function ManagerCreateProblemClient() {
             {success && <div className="bg-success/10 border border-success/20 rounded-lg p-3"><p className="text-success text-sm">{success}</p></div>}
 
             <div className="flex gap-3">
-              <button type="submit" disabled={loading} className="h-10 px-5 bg-brand-primary text-white text-sm font-medium rounded-md hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+              <button type="submit" disabled={loading || isStale} className="h-10 px-5 bg-brand-primary text-white text-sm font-medium rounded-md hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                 {loading ? <><LoadingSpinner size="sm" /><span>Creating...</span></> : 'Create Problem'}
               </button>
               <Link href="/manager/dashboard" className="h-10 px-5 bg-surface-2 text-foreground text-sm font-medium rounded-md hover:bg-surface-3 flex items-center">Cancel</Link>
