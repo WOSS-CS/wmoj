@@ -101,7 +101,7 @@ int main() {
             <section id="manage-problems" className="space-y-3">
               <h2 className="text-lg font-semibold text-foreground">Managing Problems</h2>
               <p className="text-text-muted">Go to <Link href="/manager/problems/manage" className="text-brand-primary hover:underline">Manage Problems</Link> to review, edit, or deactivate problems.</p>
-              <p className="text-text-muted"><strong className="text-foreground">Approval queue.</strong> Admin-created problems land here as pending and are not visible publicly until you approve them. Reviewing the queue is a manager responsibility; check it regularly.</p>
+              <p className="text-text-muted"><strong className="text-foreground">Approving Problems: </strong>When admins create problems (and contests), they are inactive by default until a manager activates it.</p>
             </section>
 
             <section id="contests" className="space-y-3">
