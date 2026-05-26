@@ -82,13 +82,13 @@ int main() {
               <h2 className="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Contents</h2>
               <ul className="space-y-1">
                 {[
-                  { href: '#generators', label: 'Test Case Generators (C++)' },
-                  { href: '#generator-guide', label: 'Detailed Generator Guide' },
-                  { href: '#subtasks', label: 'Sub-tasks & Constraint Groups' },
                   { href: '#manage-problems', label: 'Managing Problems' },
                   { href: '#contests', label: 'Contests (Create & Manage)' },
                   { href: '#judge', label: 'Judge Service' },
                   { href: '#timers', label: 'Contest Timers & Participation' },
+                  { href: '#generators', label: 'Test Case Generators (C++)' },
+                  { href: '#generator-guide', label: 'Detailed Generator Guide' },
+                  { href: '#subtasks', label: 'Sub-tasks & Constraint Groups' },
                   { href: '#troubleshooting', label: 'Troubleshooting' },
                 ].map(item => (
                   <li key={item.href}>
@@ -97,6 +97,32 @@ int main() {
                 ))}
               </ul>
             </nav>
+
+            <section id="manage-problems" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Managing Problems</h2>
+              <p className="text-text-muted">Go to <Link href="/admin/problems/manage" className="text-brand-primary hover:underline">Manage Problems</Link> to review, edit, or deactivate problems. Problems you create land here as pending and are not visible publicly until a manager approves them. You can still edit them while pending.</p>
+            </section>
+
+            <section id="contests" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Contests</h2>
+              <p className="text-text-muted">Create contests via <Link href="/admin/contests/create" className="text-brand-primary hover:underline">Create Contest</Link> and manage them in <Link href="/admin/contests/manage" className="text-brand-primary hover:underline">Manage Contests</Link>. Like problems, contests you create stay pending until a manager approves them.</p>
+              <p className="text-text-muted">When a problem is linked to a contest, submissions are restricted to participants within the timer window. A problem can belong to multiple contests at once, subject to these rules:</p>
+              <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
+                <li><strong className="text-foreground">Rated ongoing/upcoming contests lock their problems.</strong> A problem in such a contest cannot be added to any other contest.</li>
+                <li><strong className="text-foreground">Rated contests require standalone problems.</strong> When creating or editing a rated contest, you can only add problems not already in another contest.</li>
+                <li><strong className="text-foreground">Unrated contests share freely.</strong> Problems in virtual, inactive, or other unrated contests can be added to any unrated contest.</li>
+              </ul>
+            </section>
+
+            <section id="judge" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Judge Service</h2>
+              <p className="text-text-muted">Submissions run through the judge at the configured URL. Submission languages: C++, Python, Java. Generators are C++ only.</p>
+            </section>
+
+            <section id="timers" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Contest Timers & Participation</h2>
+              <p className="text-text-muted">Users must join a contest to submit its linked problems. Submissions after timer expiry are rejected.</p>
+            </section>
 
             <section id="generators" className="space-y-3">
               <h2 className="text-lg font-semibold text-foreground">Test Case Generators (C++)</h2>
@@ -136,32 +162,6 @@ stderr: ["13", "15", "6"]`}</code></pre>
               <h2 className="text-lg font-semibold text-foreground">Sub-tasks & Constraint Groups</h2>
               <p className="text-text-muted">Some problems award partial credit through <strong className="text-foreground">sub-tasks</strong>: groups of test cases that each operate under a specific set of constraints. Common in competitions like the CCC, where different groups correspond to different difficulty tiers and point values. An easy sub-task might restrict input to 0 ≤ N ≤ 100, while a harder one allows 0 ≤ N ≤ 10<sup>9</sup>.</p>
               <p className="text-text-muted"><strong className="text-foreground">This is entirely controlled by your generator.</strong> The platform has no separate sub-task configuration. You write <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">generator.cpp</code> to produce the right number of cases for each sub-task with inputs that respect the corresponding constraints. In practice, produce them in batches: the first 10 with small N for Sub-task 1, the next 10 with medium N for Sub-task 2, and so on. State which cases belong to which sub-task in the problem description.</p>
-            </section>
-
-            <section id="manage-problems" className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">Managing Problems</h2>
-              <p className="text-text-muted">Go to <Link href="/admin/problems/manage" className="text-brand-primary hover:underline">Manage Problems</Link> to review, edit, or deactivate problems. Problems you create land here as pending and are not visible publicly until a manager approves them. You can still edit them while pending.</p>
-            </section>
-
-            <section id="contests" className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">Contests</h2>
-              <p className="text-text-muted">Create contests via <Link href="/admin/contests/create" className="text-brand-primary hover:underline">Create Contest</Link> and manage them in <Link href="/admin/contests/manage" className="text-brand-primary hover:underline">Manage Contests</Link>. Like problems, contests you create stay pending until a manager approves them.</p>
-              <p className="text-text-muted">When a problem is linked to a contest, submissions are restricted to participants within the timer window. A problem can belong to multiple contests at once, subject to these rules:</p>
-              <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
-                <li><strong className="text-foreground">Rated ongoing/upcoming contests lock their problems.</strong> A problem in such a contest cannot be added to any other contest.</li>
-                <li><strong className="text-foreground">Rated contests require standalone problems.</strong> When creating or editing a rated contest, you can only add problems not already in another contest.</li>
-                <li><strong className="text-foreground">Unrated contests share freely.</strong> Problems in virtual, inactive, or other unrated contests can be added to any unrated contest.</li>
-              </ul>
-            </section>
-
-            <section id="judge" className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">Judge Service</h2>
-              <p className="text-text-muted">Submissions run through the judge at the configured URL. Submission languages: C++, Python, Java. Generators are C++ only.</p>
-            </section>
-
-            <section id="timers" className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">Contest Timers & Participation</h2>
-              <p className="text-text-muted">Users must join a contest to submit its linked problems. Submissions after timer expiry are rejected.</p>
             </section>
 
             <section id="troubleshooting" className="space-y-3">
