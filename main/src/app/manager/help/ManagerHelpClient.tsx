@@ -107,7 +107,7 @@ int main() {
             <section id="contests" className="space-y-3">
               <h2 className="text-lg font-semibold text-foreground">Contests</h2>
               <p className="text-text-muted">Create contests via <Link href="/manager/contests/create" className="text-brand-primary hover:underline">Create Contest</Link> and manage them in <Link href="/manager/contests/manage" className="text-brand-primary hover:underline">Manage Contests</Link>. Manage Contests is also where you approve admin-submitted contests; those remain pending until you review them, so check the queue regularly.</p>
-              <p className="text-text-muted">When a problem is linked to a contest, submissions are restricted to participants within the timer window. A problem can belong to multiple contests at once, subject to these rules:</p>
+              <p className="text-text-muted">When a problem is part of a contest, it is accessible as a standalone problem if the contest is virtual. Also, a problem can belong to multiple contests at once, subject to these rules:</p>
               <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
                 <li><strong className="text-foreground">Rated ongoing/upcoming contests lock their problems.</strong> A problem in such a contest cannot be added to any other contest.</li>
                 <li><strong className="text-foreground">Rated contests require standalone problems.</strong> When creating or editing a rated contest, you can only add problems not already in another contest.</li>
