@@ -50,22 +50,17 @@ function languageLabel(lang: string): string {
 }
 
 // ─── Submission detail (own-code modal) ────────────────────────────────────────
-
-type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RE' | 'CE' | 'IE';
+// Mirrors the submission-detail popup used on the admin/manager dashboards.
 
 interface TestResult {
   index: number;
   passed: boolean;
   stdout: string;
   stderr: string;
-  exitCode: number;
+  exitCode: number | null;
   timedOut: boolean;
   expected: string;
   received: string;
-  verdict?: Verdict;
-  timeMs?: number;
-  cpuMs?: number;
-  memKb?: number;
 }
 
 // Shape returned by GET /api/user/submissions/[id] (the caller's own submission).
@@ -77,52 +72,21 @@ interface SubmissionDetail {
   code: string;
   results: TestResult[] | null;
   summary: { total: number; passed: number; failed: number };
-  compileError?: string | null;
   created_at: string;
 }
 
-// Aggregate per-submission verdict: CE > TLE > MLE > RE > WA > AC. Mirrors the
-// admin/manager submission views so users see consistent verdict labels.
-function aggregateVerdict(sub: SubmissionDetail): Verdict {
-  if (sub.compileError) return 'CE';
-  const results = sub.results || [];
-  if (results.length === 0) {
-    const total = sub.summary?.total ?? 0;
-    if (total === 0) return 'CE';
-    return 'IE';
-  }
-  const rank: Verdict[] = ['TLE', 'MLE', 'RE', 'WA'];
-  for (const v of rank) {
-    if (results.some((r) => r.verdict === v)) return v;
-  }
-  for (const r of results) {
-    if (!r.passed) {
-      if (r.timedOut) return 'TLE';
-      return 'WA';
-    }
-  }
-  return 'AC';
+function isAccepted(sub: SubmissionDetail): boolean {
+  return sub.summary.total > 0 && sub.summary.failed === 0;
 }
 
-const VERDICT_STYLES: Record<Verdict, string> = {
-  AC: 'bg-success/10 text-success border border-success/20',
-  WA: 'bg-error/10 text-error border border-error/20',
-  TLE: 'bg-warning/10 text-warning border border-warning/20',
-  MLE: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
-  RE: 'bg-red-900/20 text-red-400 border border-red-900/30',
-  CE: 'bg-surface-2 text-text-muted border border-border',
-  IE: 'bg-black/30 text-foreground border border-border',
-};
-
-function VerdictBadge({ verdict }: { verdict: Verdict }) {
-  return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-semibold ${VERDICT_STYLES[verdict]}`}
-      title={verdict}
-    >
-      {verdict}
-    </span>
-  );
+function formatModalDate(timestamp: string): string {
+  return new Date(timestamp).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 // ─── Pie Chart ────────────────────────────────────────────────────────────────
@@ -350,7 +314,7 @@ export default function SubmissionsClient({
                     <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-text-muted">
                       Submission
                     </th>
-                    <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-text-muted w-24 text-right">
+                    <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-text-muted text-right whitespace-nowrap">
                       Language
                     </th>
                   </tr>
@@ -377,12 +341,7 @@ export default function SubmissionsClient({
                       const isLoading = loadingId === sub.id;
 
                       return (
-                        <tr
-                          key={sub.id}
-                          onClick={isOwn ? () => openSubmission(sub.id) : undefined}
-                          title={isOwn ? 'View your submitted code' : undefined}
-                          className={`transition-colors hover:bg-surface-2 ${isOwn ? 'cursor-pointer' : ''}`}
-                        >
+                        <tr key={sub.id} className="hover:bg-surface-2 transition-colors">
                           <td className="px-3 py-3 align-middle">
                             <div className={`rounded-md px-2 py-1.5 text-center ${scoreColorClass}`}>
                               <div className="text-xs font-mono font-semibold leading-tight">
@@ -400,31 +359,30 @@ export default function SubmissionsClient({
                               <span>{formatRelativeTime(sub.created_at)}</span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 align-middle text-right">
-                            <div className="flex flex-col items-end gap-1">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-2 text-text-muted border border-border">
+                          <td className="px-4 py-3 align-middle text-right whitespace-nowrap">
+                            <div className="flex flex-col items-end gap-1.5">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-2 text-text-muted border border-border whitespace-nowrap">
                                 {languageLabel(sub.language)}
                               </span>
                               {isOwn && (
-                                <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-primary">
+                                <button
+                                  type="button"
+                                  onClick={() => openSubmission(sub.id)}
+                                  disabled={isLoading}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 disabled:opacity-60 whitespace-nowrap"
+                                >
                                   {isLoading ? (
                                     <>
-                                      <svg className="animate-spin" width={11} height={11} viewBox="0 0 14 14" fill="none">
+                                      <svg className="animate-spin" width={12} height={12} viewBox="0 0 14 14" fill="none">
                                         <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
                                         <path d="M7 1.5A5.5 5.5 0 0 1 12.5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                                       </svg>
                                       Loading…
                                     </>
                                   ) : (
-                                    <>
-                                      <svg width={12} height={12} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                        <path d="M5.5 5 2.5 8l3 3" />
-                                        <path d="M10.5 5 13.5 8l-3 3" />
-                                      </svg>
-                                      View code
-                                    </>
+                                    'View Code'
                                   )}
-                                </span>
+                                </button>
                               )}
                             </div>
                           </td>
@@ -521,9 +479,9 @@ export default function SubmissionsClient({
           >
             <div className="flex items-center justify-between px-5 py-3 border-b border-border">
               <div>
-                <h2 className="text-base font-semibold text-foreground">{selected.problem_name}</h2>
+                <h2 className="text-base font-semibold text-foreground">Submission Details</h2>
                 <p className="text-xs text-text-muted">
-                  Your submission • {new Date(selected.created_at).toLocaleString()}
+                  {selected.problem_name} • {formatModalDate(selected.created_at)}
                 </p>
               </div>
               <button
@@ -539,9 +497,9 @@ export default function SubmissionsClient({
               {/* Stats */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-surface-2 p-3 rounded-md border border-border">
-                  <div className="text-text-muted text-xs uppercase tracking-wider">Verdict</div>
-                  <div className="mt-1">
-                    <VerdictBadge verdict={aggregateVerdict(selected)} />
+                  <div className="text-text-muted text-xs uppercase tracking-wider">Status</div>
+                  <div className={`text-sm font-semibold mt-1 ${isAccepted(selected) ? 'text-success' : 'text-error'}`}>
+                    {isAccepted(selected) ? 'Accepted' : 'Failed'}
                   </div>
                 </div>
                 <div className="bg-surface-2 p-3 rounded-md border border-border">
@@ -556,16 +514,6 @@ export default function SubmissionsClient({
                 </div>
               </div>
 
-              {/* Compile error (if any) */}
-              {selected.compileError && (
-                <div>
-                  <h3 className="text-sm font-medium text-foreground mb-1.5">Compile Error</h3>
-                  <pre className="bg-surface-1 p-2 rounded overflow-x-auto text-xs font-mono text-error border border-border whitespace-pre-wrap">
-                    {selected.compileError}
-                  </pre>
-                </div>
-              )}
-
               {/* Source Code */}
               <div>
                 <h3 className="text-sm font-medium text-foreground mb-1.5">Source Code</h3>
@@ -579,45 +527,39 @@ export default function SubmissionsClient({
                 <div>
                   <h3 className="text-sm font-medium text-foreground mb-1.5">Test Case Results</h3>
                   <div className="space-y-1.5">
-                    {selected.results.map((r, i) => {
-                      const v: Verdict = r.verdict ? r.verdict : r.passed ? 'AC' : r.timedOut ? 'TLE' : 'WA';
-                      return (
-                        <div
-                          key={i}
-                          className={`p-2.5 rounded-md border ${r.passed ? 'bg-success/5 border-success/20' : 'bg-error/5 border-error/20'}`}
-                        >
-                          <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
-                            <div className="flex items-center gap-2">
-                              <VerdictBadge verdict={v} />
-                              <span className="text-sm font-medium text-foreground">Case #{i + 1}</span>
-                            </div>
-                            <span className="text-xs text-text-muted font-mono flex items-center gap-2">
-                              {typeof r.timeMs === 'number' && <span>{r.timeMs}ms</span>}
-                              {typeof r.memKb === 'number' && <span>{Math.round(r.memKb / 1024)}MB</span>}
-                              <span>Exit: {r.exitCode ?? 'N/A'}</span>
-                            </span>
-                          </div>
-                          {!r.passed && (r.expected || r.received) && (
-                            <div className="grid grid-cols-2 gap-2 mt-1 text-xs font-mono">
-                              <div>
-                                <div className="text-text-muted mb-0.5">Expected:</div>
-                                <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-text-muted border border-border">{r.expected}</pre>
-                              </div>
-                              <div>
-                                <div className="text-text-muted mb-0.5">Received:</div>
-                                <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-error border border-border">{r.received}</pre>
-                              </div>
-                              {r.stderr && (
-                                <div className="col-span-2">
-                                  <div className="text-text-muted mb-0.5">Stderr:</div>
-                                  <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-warning border border-border">{r.stderr}</pre>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                    {selected.results.map((r, i) => (
+                      <div
+                        key={i}
+                        className={`p-2.5 rounded-md border ${r.passed ? 'bg-success/5 border-success/20' : 'bg-error/5 border-error/20'}`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`font-medium text-sm ${r.passed ? 'text-success' : 'text-error'}`}>
+                            Case #{i + 1}: {r.passed ? 'Passed' : 'Failed'}
+                          </span>
+                          <span className="text-xs text-text-muted font-mono">
+                            Exit: {r.exitCode ?? 'N/A'} {r.timedOut ? '(Timed Out)' : ''}
+                          </span>
                         </div>
-                      );
-                    })}
+                        {!r.passed && (r.expected || r.received) && (
+                          <div className="grid grid-cols-2 gap-2 mt-1 text-xs font-mono">
+                            <div>
+                              <div className="text-text-muted mb-0.5">Expected:</div>
+                              <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-text-muted border border-border">{r.expected}</pre>
+                            </div>
+                            <div>
+                              <div className="text-text-muted mb-0.5">Received:</div>
+                              <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-error border border-border">{r.received}</pre>
+                            </div>
+                            {r.stderr && (
+                              <div className="col-span-2">
+                                <div className="text-text-muted mb-0.5">Stderr:</div>
+                                <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-warning border border-border">{r.stderr}</pre>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
