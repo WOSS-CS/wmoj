@@ -680,6 +680,18 @@ create policy "Allow everyone to view submissions"
   to anon, authenticated
   using (true);
 
+-- Explicit ownership-scoped read guarantee: a signed-in user can ALWAYS view
+-- their own submissions (including the `code` column), which backs the
+-- user-facing "view my submission code" feature. RLS is row-level, so a matching
+-- row exposes all of its columns. This policy is evaluated independently of (and
+-- OR'd with) the broad public-read policy above, so users retain access to their
+-- own code even if that broad policy is ever tightened.
+drop policy if exists "Users can view their own submissions" on public.submissions;
+create policy "Users can view their own submissions"
+  on public.submissions for select
+  to authenticated
+  using (auth.uid() = user_id);
+
 drop policy if exists "Allow insert for authenticated" on public.submissions;
 create policy "Allow insert for authenticated"
   on public.submissions for insert

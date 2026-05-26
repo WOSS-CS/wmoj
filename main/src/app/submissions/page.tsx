@@ -3,6 +3,7 @@ import SubmissionsClient from './SubmissionsClient';
 
 export interface SubmissionRow {
   id: string;
+  user_id: string;
   username: string;
   problem_name: string;
   language: string;
@@ -135,6 +136,7 @@ export default async function SubmissionsPage({
           const cls = classify(s.status ?? 'failed', s.results as ResultItem[] | null, total);
           return {
             id: s.id,
+            user_id: s.user_id,
             username: userMap.get(s.user_id) ?? 'Unknown',
             problem_name: problemMap.get(s.problem_id) ?? 'Unknown Problem',
             language: s.language,

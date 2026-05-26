@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Pagination from '@/components/Pagination';
+import { useAuth } from '@/contexts/AuthContext';
+import { SubmissionCodeBlock } from '@/components/SubmissionCodeBlock';
+import { toast } from '@/components/ui/Toast';
 import type { SubmissionRow, SubmissionStats } from './page';
 
 interface Props {
@@ -44,6 +47,82 @@ function languageLabel(lang: string): string {
     case 'cpp23':        return 'C++23 (GCC)';
     default:             return lang.toUpperCase();
   }
+}
+
+// ─── Submission detail (own-code modal) ────────────────────────────────────────
+
+type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RE' | 'CE' | 'IE';
+
+interface TestResult {
+  index: number;
+  passed: boolean;
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  timedOut: boolean;
+  expected: string;
+  received: string;
+  verdict?: Verdict;
+  timeMs?: number;
+  cpuMs?: number;
+  memKb?: number;
+}
+
+// Shape returned by GET /api/user/submissions/[id] (the caller's own submission).
+interface SubmissionDetail {
+  id: string;
+  problem_id: string;
+  problem_name: string;
+  language: string;
+  code: string;
+  results: TestResult[] | null;
+  summary: { total: number; passed: number; failed: number };
+  compileError?: string | null;
+  created_at: string;
+}
+
+// Aggregate per-submission verdict: CE > TLE > MLE > RE > WA > AC. Mirrors the
+// admin/manager submission views so users see consistent verdict labels.
+function aggregateVerdict(sub: SubmissionDetail): Verdict {
+  if (sub.compileError) return 'CE';
+  const results = sub.results || [];
+  if (results.length === 0) {
+    const total = sub.summary?.total ?? 0;
+    if (total === 0) return 'CE';
+    return 'IE';
+  }
+  const rank: Verdict[] = ['TLE', 'MLE', 'RE', 'WA'];
+  for (const v of rank) {
+    if (results.some((r) => r.verdict === v)) return v;
+  }
+  for (const r of results) {
+    if (!r.passed) {
+      if (r.timedOut) return 'TLE';
+      return 'WA';
+    }
+  }
+  return 'AC';
+}
+
+const VERDICT_STYLES: Record<Verdict, string> = {
+  AC: 'bg-success/10 text-success border border-success/20',
+  WA: 'bg-error/10 text-error border border-error/20',
+  TLE: 'bg-warning/10 text-warning border border-warning/20',
+  MLE: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+  RE: 'bg-red-900/20 text-red-400 border border-red-900/30',
+  CE: 'bg-surface-2 text-text-muted border border-border',
+  IE: 'bg-black/30 text-foreground border border-border',
+};
+
+function VerdictBadge({ verdict }: { verdict: Verdict }) {
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-semibold ${VERDICT_STYLES[verdict]}`}
+      title={verdict}
+    >
+      {verdict}
+    </span>
+  );
 }
 
 // ─── Pie Chart ────────────────────────────────────────────────────────────────
@@ -161,6 +240,9 @@ export default function SubmissionsClient({
   const [problemInput, setProblemInput] = useState(currentProblemSearch);
   const [userInput, setUserInput] = useState(currentUserSearch);
   const [isStatusLoading, setIsStatusLoading] = useState(false);
+  const { user, session } = useAuth();
+  const [selected, setSelected] = useState<SubmissionDetail | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     setIsStatusLoading(false);
@@ -200,6 +282,30 @@ export default function SubmissionsClient({
   const handleStatusChange = (value: 'all' | 'passed' | 'failed') => {
     setIsStatusLoading(true);
     router.replace(`?${buildParams({ status: value })}`);
+  };
+
+  // Fetch and open the current user's own submission (code + results). The
+  // affordance that calls this is only rendered on the user's own rows, and the
+  // API enforces ownership regardless.
+  const openSubmission = async (id: string) => {
+    if (loadingId) return;
+    if (!session?.access_token) {
+      toast.error('Error', 'You must be signed in to view your code.');
+      return;
+    }
+    setLoadingId(id);
+    try {
+      const res = await fetch(`/api/user/submissions/${id}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load submission');
+      setSelected(data.submission as SubmissionDetail);
+    } catch (e: unknown) {
+      toast.error('Error', e instanceof Error ? e.message : 'Failed to load submission');
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   const buildHref = (page: number) => {
@@ -267,8 +373,16 @@ export default function SubmissionsClient({
                         ? 'bg-warning/10 text-warning border border-warning/20'
                         : 'bg-error/10 text-error border border-error/20';
 
+                      const isOwn = !!user && sub.user_id === user.id;
+                      const isLoading = loadingId === sub.id;
+
                       return (
-                        <tr key={sub.id} className="hover:bg-surface-2 transition-colors">
+                        <tr
+                          key={sub.id}
+                          onClick={isOwn ? () => openSubmission(sub.id) : undefined}
+                          title={isOwn ? 'View your submitted code' : undefined}
+                          className={`transition-colors hover:bg-surface-2 ${isOwn ? 'cursor-pointer' : ''}`}
+                        >
                           <td className="px-3 py-3 align-middle">
                             <div className={`rounded-md px-2 py-1.5 text-center ${scoreColorClass}`}>
                               <div className="text-xs font-mono font-semibold leading-tight">
@@ -287,9 +401,32 @@ export default function SubmissionsClient({
                             </div>
                           </td>
                           <td className="px-4 py-3 align-middle text-right">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-2 text-text-muted border border-border">
-                              {languageLabel(sub.language)}
-                            </span>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-2 text-text-muted border border-border">
+                                {languageLabel(sub.language)}
+                              </span>
+                              {isOwn && (
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-primary">
+                                  {isLoading ? (
+                                    <>
+                                      <svg className="animate-spin" width={11} height={11} viewBox="0 0 14 14" fill="none">
+                                        <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
+                                        <path d="M7 1.5A5.5 5.5 0 0 1 12.5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                      </svg>
+                                      Loading…
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg width={12} height={12} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <path d="M5.5 5 2.5 8l3 3" />
+                                        <path d="M10.5 5 13.5 8l-3 3" />
+                                      </svg>
+                                      View code
+                                    </>
+                                  )}
+                                </span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -371,6 +508,132 @@ export default function SubmissionsClient({
           </div>
         </div>
       </div>
+
+      {/* View Code Modal — only opens for the current user's own submissions */}
+      {selected && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="w-full max-w-4xl bg-surface-1 border border-border rounded-lg flex flex-col max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">{selected.problem_name}</h2>
+                <p className="text-xs text-text-muted">
+                  Your submission • {new Date(selected.created_at).toLocaleString()}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelected(null)}
+                className="text-text-muted hover:text-foreground text-lg"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-surface-2 p-3 rounded-md border border-border">
+                  <div className="text-text-muted text-xs uppercase tracking-wider">Verdict</div>
+                  <div className="mt-1">
+                    <VerdictBadge verdict={aggregateVerdict(selected)} />
+                  </div>
+                </div>
+                <div className="bg-surface-2 p-3 rounded-md border border-border">
+                  <div className="text-text-muted text-xs uppercase tracking-wider">Score</div>
+                  <div className="text-sm font-semibold text-foreground mt-1 font-mono">
+                    {selected.summary.passed}/{selected.summary.total}
+                  </div>
+                </div>
+                <div className="bg-surface-2 p-3 rounded-md border border-border">
+                  <div className="text-text-muted text-xs uppercase tracking-wider">Language</div>
+                  <div className="text-sm font-semibold text-foreground mt-1">{languageLabel(selected.language)}</div>
+                </div>
+              </div>
+
+              {/* Compile error (if any) */}
+              {selected.compileError && (
+                <div>
+                  <h3 className="text-sm font-medium text-foreground mb-1.5">Compile Error</h3>
+                  <pre className="bg-surface-1 p-2 rounded overflow-x-auto text-xs font-mono text-error border border-border whitespace-pre-wrap">
+                    {selected.compileError}
+                  </pre>
+                </div>
+              )}
+
+              {/* Source Code */}
+              <div>
+                <h3 className="text-sm font-medium text-foreground mb-1.5">Source Code</h3>
+                <div className="rounded-md overflow-hidden border border-border text-sm">
+                  <SubmissionCodeBlock language={selected.language} code={selected.code} />
+                </div>
+              </div>
+
+              {/* Test Case Results */}
+              {selected.results && selected.results.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-foreground mb-1.5">Test Case Results</h3>
+                  <div className="space-y-1.5">
+                    {selected.results.map((r, i) => {
+                      const v: Verdict = r.verdict ? r.verdict : r.passed ? 'AC' : r.timedOut ? 'TLE' : 'WA';
+                      return (
+                        <div
+                          key={i}
+                          className={`p-2.5 rounded-md border ${r.passed ? 'bg-success/5 border-success/20' : 'bg-error/5 border-error/20'}`}
+                        >
+                          <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <VerdictBadge verdict={v} />
+                              <span className="text-sm font-medium text-foreground">Case #{i + 1}</span>
+                            </div>
+                            <span className="text-xs text-text-muted font-mono flex items-center gap-2">
+                              {typeof r.timeMs === 'number' && <span>{r.timeMs}ms</span>}
+                              {typeof r.memKb === 'number' && <span>{Math.round(r.memKb / 1024)}MB</span>}
+                              <span>Exit: {r.exitCode ?? 'N/A'}</span>
+                            </span>
+                          </div>
+                          {!r.passed && (r.expected || r.received) && (
+                            <div className="grid grid-cols-2 gap-2 mt-1 text-xs font-mono">
+                              <div>
+                                <div className="text-text-muted mb-0.5">Expected:</div>
+                                <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-text-muted border border-border">{r.expected}</pre>
+                              </div>
+                              <div>
+                                <div className="text-text-muted mb-0.5">Received:</div>
+                                <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-error border border-border">{r.received}</pre>
+                              </div>
+                              {r.stderr && (
+                                <div className="col-span-2">
+                                  <div className="text-text-muted mb-0.5">Stderr:</div>
+                                  <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-warning border border-border">{r.stderr}</pre>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-5 py-3 border-t border-border flex justify-end">
+              <button
+                onClick={() => setSelected(null)}
+                className="px-4 py-1.5 rounded-md bg-surface-2 hover:bg-surface-3 text-sm font-medium text-foreground"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
