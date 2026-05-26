@@ -1,42 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
-
-type CopyState = 'idle' | 'copied' | 'error';
-
-function PromptCopyButton({ label, url }: { label: string; url: string }) {
-  const [state, setState] = useState<CopyState>('idle');
-
-  const handleClick = async () => {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('fetch failed');
-      const text = await res.text();
-      await navigator.clipboard.writeText(text);
-      setState('copied');
-      setTimeout(() => setState('idle'), 2000);
-    } catch {
-      setState('error');
-      setTimeout(() => setState('idle'), 2000);
-    }
-  };
-
-  const display =
-    state === 'copied' ? 'Copied!' : state === 'error' ? 'Copy failed' : label;
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface-2 text-foreground hover:bg-surface-1 transition-colors"
-    >
-      {display}
-    </button>
-  );
-}
 
 export default function HelpClient() {
   const generatorExample = String.raw`// generator.cpp for a problem where you add two integers together.
@@ -116,7 +82,6 @@ int main() {
               <h2 className="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Contents</h2>
               <ul className="space-y-1">
                 {[
-                  { href: '#problems', label: 'Creating Problems' },
                   { href: '#generators', label: 'Test Case Generators (C++)' },
                   { href: '#generator-guide', label: 'Detailed Generator Guide' },
                   { href: '#subtasks', label: 'Sub-tasks & Constraint Groups' },
@@ -132,25 +97,6 @@ int main() {
                 ))}
               </ul>
             </nav>
-
-            <section id="problems" className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">Creating Problems</h2>
-              <p className="text-text-muted">Go to <Link href="/admin/problems/create" className="text-brand-primary hover:underline">Admin → Create Problem</Link>. Fill in name, description (Markdown), optionally a contest, upload a C++ generator (see below), then click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">Create Problem</code>.</p>
-              <p className="text-text-muted">The fastest path is our two LLM prompts: one converts a problem PDF into the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">.md</code> this site expects, the other writes its <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">generator.cpp</code>. Paste either into a fresh chat with any LLM (Claude, ChatGPT, Gemini, etc.) and follow its instructions. You can also write both by hand.</p>
-              <div className="flex flex-wrap gap-2">
-                <PromptCopyButton label="Copy Conversion Prompt" url="/conversion.md" />
-                <PromptCopyButton label="Copy Generator Prompt" url="/generator.md" />
-              </div>
-              <p className="text-text-muted"><strong className="text-foreground">Workflow:</strong></p>
-              <ol className="list-decimal list-inside ml-4 space-y-1.5 text-text-muted">
-                <li>Download a problem PDF (we recommend <a href="https://dmoj.ca" target="_blank" rel="noreferrer" className="text-brand-primary hover:underline">dmoj.ca</a>).</li>
-                <li>In a fresh LLM chat, paste the <strong className="text-foreground">conversion prompt</strong> before uploading anything. It will ask for PDFs one at a time and convert each into a problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">.md</code> in the required format (time/memory limits at top, description, I/O specs, samples).</li>
-                <li>Paste the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">.md</code> into the problem-description field.</li>
-                <li>In a new chat, paste the <strong className="text-foreground">generator prompt</strong> and give it your problem <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">.md</code>. It produces a <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">generator.cpp</code> that emits inputs on <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">stdout</code> and outputs on <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">stderr</code> as JSON arrays, respecting sub-task constraints (each mark = one test case).</li>
-                <li>Upload the <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">generator.cpp</code> and click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">Generate Test Cases</code>.</li>
-                <li>Save the problem. It stays pending until a manager approves it.</li>
-              </ol>
-            </section>
 
             <section id="generators" className="space-y-3">
               <h2 className="text-lg font-semibold text-foreground">Test Case Generators (C++)</h2>

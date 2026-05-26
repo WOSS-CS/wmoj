@@ -14,6 +14,10 @@ Here is the crucial and very nuanced part: there are very specific, and granular
 
 Furthermore, this is not shown in the examples that i'm going to provide below, but I want you to place the timie limit and memory limit at the very top of the .md code for each problem. 
 
+Additionally, if the problem's title in the PDF includes a contest code/identifier prefix (e.g., `CCC '25 J2 - Donut Shop`), preserve that full prefixed title as the problem's title in the .md — do not shorten it to just the problem name (e.g., `Donut Shop`).
+
+Also, the PDF may contain images. Do not attempt to recreate or describe them; instead, insert a short bracketed placeholder where each image belongs (e.g., `[image goes here]`) so it can be added manually afterward.
+
 <example_1>
 # Spotify Shuffle
 You are curating a custom music playlist that starts with one specific track and ends with another. You have a list of songs, each associated with a set of genres. You must select a sequence of songs, starting from a given start song and ending at a given target song, such that any consecutive pair of songs in the sequence shares at least two genres. Your task is to find any valid path that satisfies these constraints. If multiple valid paths exist, any one is acceptable. If no such path exists, report that it is impossible.

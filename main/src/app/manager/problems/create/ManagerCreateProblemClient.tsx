@@ -9,6 +9,8 @@ import { ManagerGuard } from '@/components/ManagerGuard';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/AnimationWrapper';
 import { validateSlug } from '@/utils/validation';
+import { PromptCopyButton } from '@/components/PromptCopyButton';
+import { ProblemCreationGuideModal } from '@/components/ProblemCreationGuideModal';
 
 const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(m => m.MarkdownEditor), { ssr: false });
 const CodeEditor = dynamic(() => import('@/components/CodeEditor'), { ssr: false, loading: () => <div className="h-[300px] bg-surface-2 rounded-md animate-pulse" /> });
@@ -21,6 +23,7 @@ export default function ManagerCreateProblemClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showGuide, setShowGuide] = useState(false);
   const [formData, setFormData] = useState({ id: '', name: '', content: '', timeLimit: '5000', memoryLimit: '256', points: '' });
   const [generatorCode, setGeneratorCode] = useState('');
   const [genLoading, setGenLoading] = useState(false);
@@ -89,16 +92,28 @@ export default function ManagerCreateProblemClient() {
     <AuthGuard requireAuth allowAuthenticated>
       <ManagerGuard>
         <div className="w-full space-y-6">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Create New Problem</h1>
-            <p className="text-sm text-text-muted mt-1">Add a new problem. Assign it to contests from the contest editing page.</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">Create New Problem</h1>
+              <p className="text-sm text-text-muted mt-1">Add a new problem. Assign it to contests from the contest editing page.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowGuide(true)}
+              className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface-2 text-foreground hover:bg-surface-1 transition-colors flex items-center gap-1.5"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 1.875-2 3.272-2 2.04 0 3.5 1.343 3.5 3 0 1.5-1 2.25-2.5 3-.5.25-1 .75-1 1.5m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Problem Creation Guide
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 max-w-4xl">
             <div className="space-y-1.5">
               <label htmlFor="id" className="block text-sm font-medium text-foreground">Problem ID (Slug) *</label>
               <input type="text" id="id" name="id" value={formData.id} onChange={handleChange} required className={inputClass} placeholder="e.g. two-sum" />
-              <p className="text-xs text-text-muted">URL-friendly identifier (letters, numbers, hyphens, underscores). Cannot be changed later.</p>
+              <p className="text-xs text-text-muted">The id / path in the URL to this problem (e.g. /problems/two-sum). Letters, numbers, hyphens, underscores. Cannot be changed later.</p>
             </div>
 
             <div className="space-y-1.5">
@@ -106,7 +121,14 @@ export default function ManagerCreateProblemClient() {
               <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className={inputClass} placeholder="Enter problem name" />
             </div>
 
-            <MarkdownEditor value={formData.content} onChange={(value) => setFormData(prev => ({ ...prev, content: value }))} placeholder="Enter problem description..." height={500} />
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <label className="block text-sm font-medium text-foreground">Problem Description</label>
+                <PromptCopyButton label="Copy Conversion Prompt" url="/conversion.md" />
+              </div>
+              <p className="text-xs text-text-muted">Pasting LLM-generated markdown? Delete the title heading at the very top and enter it in the <strong className="text-foreground">Problem Name</strong> field above instead (otherwise the title shows twice), and delete the time and memory limits listed at the top — enter those in the <strong className="text-foreground">Time Limit</strong> and <strong className="text-foreground">Memory Limit</strong> fields below.</p>
+              <MarkdownEditor value={formData.content} onChange={(value) => setFormData(prev => ({ ...prev, content: value }))} placeholder="Enter problem description..." height={500} />
+            </div>
 
             <div className="grid md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
@@ -124,7 +146,10 @@ export default function ManagerCreateProblemClient() {
             </div>
 
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-foreground">Generator (C++) *</label>
+              <div className="flex items-center justify-between gap-3">
+                <label className="block text-sm font-medium text-foreground">Generator (C++) *</label>
+                <PromptCopyButton label="Copy Generator Prompt" url="/generator.md" />
+              </div>
               <p className="text-xs text-text-muted">Paste your C++ generator code below. It must print input JSON to stdout and output JSON to stderr.</p>
               <CodeEditor language="cpp" value={generatorCode} onChange={setGeneratorCode} height="300px" />
               <button type="button" onClick={handleGenerate} disabled={!generatorCode.trim() || genLoading} className="px-4 py-1.5 bg-success/10 text-success text-sm font-medium rounded-md hover:bg-success/20 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -162,6 +187,8 @@ export default function ManagerCreateProblemClient() {
               <Link href="/manager/dashboard" className="h-10 px-5 bg-surface-2 text-foreground text-sm font-medium rounded-md hover:bg-surface-3 flex items-center">Cancel</Link>
             </div>
           </form>
+
+          <ProblemCreationGuideModal open={showGuide} onClose={() => setShowGuide(false)} role="manager" />
         </div>
       </ManagerGuard>
     </AuthGuard>
