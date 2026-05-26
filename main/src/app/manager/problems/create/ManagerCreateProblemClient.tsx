@@ -92,21 +92,21 @@ export default function ManagerCreateProblemClient() {
     <AuthGuard requireAuth allowAuthenticated>
       <ManagerGuard>
         <div className="w-full space-y-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-semibold text-foreground">Create New Problem</h1>
-              <p className="text-sm text-text-muted mt-1">Add a new problem. Assign it to contests from the contest editing page.</p>
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">Create New Problem</h1>
+            <div className="flex items-center gap-3 mt-1">
+              <p className="text-sm text-text-muted">Add a new problem. Assign it to contests from the contest editing page.</p>
+              <button
+                type="button"
+                onClick={() => setShowGuide(true)}
+                className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface-2 text-foreground hover:bg-surface-1 transition-colors flex items-center gap-1.5"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 1.875-2 3.272-2 2.04 0 3.5 1.343 3.5 3 0 1.5-1 2.25-2.5 3-.5.25-1 .75-1 1.5m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Problem Creation Guide
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowGuide(true)}
-              className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface-2 text-foreground hover:bg-surface-1 transition-colors flex items-center gap-1.5"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 1.875-2 3.272-2 2.04 0 3.5 1.343 3.5 3 0 1.5-1 2.25-2.5 3-.5.25-1 .75-1 1.5m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Problem Creation Guide
-            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 max-w-4xl">
