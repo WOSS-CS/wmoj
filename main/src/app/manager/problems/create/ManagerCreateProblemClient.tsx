@@ -126,7 +126,7 @@ export default function ManagerCreateProblemClient() {
                 <label className="block text-sm font-medium text-foreground">Problem Description</label>
                 <PromptCopyButton label="Copy Conversion Prompt" url="/conversion.md" />
               </div>
-              <p className="text-xs text-text-muted">Pasting LLM-generated markdown? Delete the title heading at the very top and enter it in the <strong className="text-foreground">Problem Name</strong> field above instead (otherwise the title shows twice), and delete the time and memory limits listed at the top — enter those in the <strong className="text-foreground">Time Limit</strong> and <strong className="text-foreground">Memory Limit</strong> fields below.</p>
+              <p className="text-xs text-text-muted">Pasting LLM-generated markdown? Delete the title heading at the very top and enter it in the <strong className="text-foreground">Problem Name</strong> field above instead (otherwise the title shows twice), and delete the time and memory limits listed at the top; enter those in the <strong className="text-foreground">Time Limit</strong> and <strong className="text-foreground">Memory Limit</strong> fields below.</p>
               <MarkdownEditor value={formData.content} onChange={(value) => setFormData(prev => ({ ...prev, content: value }))} placeholder="Enter problem description..." height={500} />
             </div>
 
