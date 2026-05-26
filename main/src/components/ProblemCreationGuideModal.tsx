@@ -42,7 +42,7 @@ export function ProblemCreationGuideModal({ open, onClose, role }: ProblemCreati
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4 text-sm">
-          <p className="text-text-muted">Fill in the fields on this page — name, description (Markdown), points, and time/memory limits — then upload a C++ generator and click <Code>Create Problem</Code>.</p>
+          <p className="text-text-muted">Fill in the fields on this page: name, description (Markdown), points, and time/memory limits. Then upload a C++ generator and click <Code>Create Problem</Code>.</p>
           <p className="text-text-muted">The fastest path is our two LLM prompts: one converts a problem PDF into the <Code>.md</Code> this site expects, the other writes its <Code>generator.cpp</Code>. Paste either into a fresh chat with any LLM (Claude, ChatGPT, Gemini, etc.) and follow its instructions. You can also write both by hand.</p>
 
           <div className="flex flex-wrap gap-2">
@@ -69,7 +69,7 @@ export function ProblemCreationGuideModal({ open, onClose, role }: ProblemCreati
           <div className="space-y-2">
             <h3 className="text-base font-semibold text-foreground">Markdown formatting quirks</h3>
             <ul className="list-disc list-inside ml-4 space-y-1.5 text-text-muted">
-              <li>The generated <Code>.md</Code> starts with the problem title as a <Code>#</Code> heading. Delete that line and enter the title in the <strong className="text-foreground">Problem Name</strong> field instead — otherwise the title appears twice.</li>
+              <li>The generated <Code>.md</Code> starts with the problem title as a <Code>#</Code> heading. Delete that line and enter the title in the <strong className="text-foreground">Problem Name</strong> field instead; otherwise the title appears twice.</li>
               <li>The generated <Code>.md</Code> also lists the <strong className="text-foreground">time and memory limits</strong> at the very top, for your reference only. Delete them from the <Code>.md</Code> and enter them in the <strong className="text-foreground">Time Limit (ms)</strong> and <strong className="text-foreground">Memory Limit (MB)</strong> fields instead.</li>
             </ul>
           </div>
