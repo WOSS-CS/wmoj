@@ -87,7 +87,7 @@ export default function UsersClient({
 
       <div className="glass-panel overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full text-left border-collapse">
+          <table className="min-w-full text-left border-collapse whitespace-nowrap">
             <thead className="sticky top-0 z-10 bg-surface-2">
               <tr>
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-text-muted w-12 text-center">

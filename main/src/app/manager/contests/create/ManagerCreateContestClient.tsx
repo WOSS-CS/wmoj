@@ -171,7 +171,7 @@ export default function ManagerCreateContestClient() {
                 type Row = { name: string; description: string; length: number; active: boolean };
                 const columns: Array<DataTableColumn<Row>> = [
                   { key: 'name', header: 'Name', className: 'w-[25%]', render: (r) => <span className="text-foreground font-medium">{r.name || '-'}</span> },
-                  { key: 'description', header: 'Description', className: 'w-[50%]', render: (r) => <div className="text-text-muted text-sm line-clamp-2 break-words">{r.description || '-'}</div> },
+                  { key: 'description', header: 'Description', className: 'w-[50%] whitespace-normal', render: (r) => <div className="text-text-muted text-sm line-clamp-2 break-words whitespace-normal">{r.description || '-'}</div> },
                   { key: 'length', header: 'Length', className: 'w-[15%]', render: (r) => <span className="text-text-muted font-mono">{r.length || 0} min</span> },
                   { key: 'active', header: 'Active', className: 'w-[10%]', render: () => <span className="text-success text-xs font-medium">Yes</span> },
                 ];

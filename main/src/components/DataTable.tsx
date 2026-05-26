@@ -99,7 +99,11 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
         </div>
       )}
       <div className="overflow-x-auto">
-        <table className="min-w-full text-left border-collapse">
+        {/* whitespace-nowrap (inherited by every th/td) makes cell text expand
+            the column instead of wrapping; the overflow-x-auto wrapper scrolls
+            when content is wider than the container. Columns that should wrap
+            (e.g. descriptions) re-assert whitespace-normal on their own cell. */}
+        <table className="min-w-full text-left border-collapse whitespace-nowrap">
           <thead className={`${stickyHeader ? 'sticky top-0 z-10' : ''} ${theme.headerRow}`}>
             <tr>
               {columns.map((col) => {
