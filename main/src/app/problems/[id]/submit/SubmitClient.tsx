@@ -173,6 +173,7 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
             value={codeText}
             onChange={setCodeText}
             height="calc(100vh - 160px)"
+            autoFocus
           />
         </div>
 

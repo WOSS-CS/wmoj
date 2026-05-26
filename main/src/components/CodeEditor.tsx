@@ -9,6 +9,7 @@ interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
   height?: string;
+  autoFocus?: boolean;
 }
 
 // Map app-side language codes (including legacy 'python' and 'cpp') to the
@@ -25,14 +26,18 @@ const LANGUAGE_MAP: Record<string, string> = {
   cpp23: 'cpp',
 };
 
-export default function CodeEditor({ language, value, onChange, height = '400px' }: CodeEditorProps) {
+export default function CodeEditor({ language, value, onChange, height = '400px', autoFocus = false }: CodeEditorProps) {
   const { theme } = useTheme();
   const monacoLanguage = LANGUAGE_MAP[language] || 'plaintext';
   const monacoTheme = theme === 'light' ? 'light' : 'vs-dark';
 
+  // Only grab focus on mount when the caller opts in (e.g. the submit page,
+  // where the editor is the primary input and sits at the top). Focusing
+  // scrolls the editor into view, so leave it off for form pages where the
+  // editor sits below the fold — otherwise the page jumps down on load.
   const handleMount: OnMount = useCallback((editor) => {
-    editor.focus();
-  }, []);
+    if (autoFocus) editor.focus();
+  }, [autoFocus]);
 
   return (
     <div className="code-editor-container">
