@@ -141,7 +141,7 @@ stderr: ["13", "15", "6"]`}</code></pre>
             </section>
 
             <section id="generator-guide" className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">Detailed Generator Guide</h2>
+              <h2 className="text-lg font-semibold text-foreground">Test Case Generator Guidelines</h2>
               <p className="text-text-muted">Every generator must emit <strong className="text-foreground">verbatim JSON arrays</strong>:</p>
               <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
                 <li><code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">stdout</code>: JSON array of input strings, one entry per test case.</li>
