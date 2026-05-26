@@ -115,16 +115,6 @@ int main() {
               </ul>
             </section>
 
-            <section id="judge" className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">Judge Service</h2>
-              <p className="text-text-muted">Submissions run through the judge at the configured URL. Submission languages: C++, Python, Java. Generators are C++ only.</p>
-            </section>
-
-            <section id="timers" className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">Contest Timers & Participation</h2>
-              <p className="text-text-muted">Users must join a contest to submit its linked problems. Submissions after timer expiry are rejected.</p>
-            </section>
-
             <section id="generators" className="space-y-3">
               <h2 className="text-lg font-semibold text-foreground">Test Case Generators (C++)</h2>
               <p className="text-text-muted">Upload a single <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">.cpp</code> on the Create Problem page and click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">Generate Test Cases</code>. The judge compiles and runs it. It must:</p>
@@ -137,12 +127,12 @@ int main() {
               <pre className="bg-surface-1 border border-border text-text-muted p-3 rounded-lg overflow-x-auto text-sm font-mono"><code>{`stdout: ["6 7", "10 5", "3 3"]
 stderr: ["13", "15", "6"]`}</code></pre>
               <p className="text-text-muted">Compile, runtime, and JSON errors are reported on the page so you can fix and reupload.</p>
-              <p className="text-text-muted"><strong className="text-foreground">Size limits.</strong> The judge caps both individual case size and total volume. If the output is too large to upload, reduce individual case size, reduce the number of cases, or both, but keep the essentials (samples, edge cases, scaling cases) so the problem still functions correctly and admits only the intended solution. This especially matters for problems imported from DMOJ, where the original test data is what made the problem hard.</p>
+              <p className="text-text-muted">The judge caps both individual case size and total volume. If the output is too large to upload, reduce individual case size, reduce the number of cases, or both, but keep the essentials (samples, edge cases, scaling cases) so the problem still functions correctly and admits only the intended solution. This especially matters for problems imported from DMOJ, where the original test data is what made the problem hard.</p>
             </section>
 
             <section id="generator-guide" className="space-y-3">
               <h2 className="text-lg font-semibold text-foreground">Test Case Generator Guidelines</h2>
-              <p className="text-text-muted">Every generator must emit <strong className="text-foreground">verbatim JSON arrays</strong>:</p>
+              <p className="text-text-muted">Every generator must output <strong className="text-foreground">verbatim JSON arrays</strong>:</p>
               <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
                 <li><code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">stdout</code>: JSON array of input strings, one entry per test case.</li>
                 <li><code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">stderr</code>: JSON array of output strings in the same order.</li>
@@ -172,6 +162,7 @@ stderr: ["13", "15", "6"]`}</code></pre>
                 <li>Invalid JSON: ensure stdout and stderr each contain a single JSON array of strings.</li>
                 <li>Judge unavailable: check judge service health and URL configuration.</li>
                 <li>Forbidden manager pages: confirm your account is in the managers table.</li>
+                <li>The judge caps both individual case size and total volume. If the output is too large to upload, reduce individual case size, reduce the number of cases, or both, but keep the essentials (samples, edge cases, scaling cases) so the problem still functions correctly and admits only the intended solution. This especially matters for problems imported from DMOJ, where the original test data is what made the problem hard.</li>
               </ul>
             </section>
           </div>
