@@ -7,6 +7,7 @@ import { useState } from 'react';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { Badge } from '@/components/ui/Badge';
 import { SubmissionCodeBlock } from '@/components/SubmissionCodeBlock';
+import { toast } from '@/components/ui/Toast';
 
 type TestResult = {
   index: number; passed: boolean; stdout: string; stderr: string;
@@ -27,8 +28,22 @@ type Row = {
 };
 
 export default function ManagerDashboardClient({ initialSubmissions }: { initialSubmissions: Row[] }) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+  const token = session?.access_token;
+  const [submissions, setSubmissions] = useState<Row[]>(initialSubmissions);
   const [selectedSubmission, setSelectedSubmission] = useState<Row | null>(null);
+
+  const deleteSubmission = async (submissionId: string) => {
+    if (!confirm('Delete this submission?')) return;
+    try {
+      const res = await fetch(`/api/manager/submissions/${submissionId}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete');
+      setSubmissions(prev => prev.filter(s => s.id !== submissionId));
+      if (selectedSubmission?.id === submissionId) setSelectedSubmission(null);
+      toast.success('Submission deleted successfully');
+    } catch (e: unknown) { toast.error('Error', e instanceof Error ? e.message : 'Failed to delete'); }
+  };
 
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
@@ -130,12 +145,20 @@ export default function ManagerDashboardClient({ initialSubmissions }: { initial
       header: '',
       className: 'w-[15%]',
       render: (r) => (
-        <button
-          onClick={() => setSelectedSubmission(r)}
-          className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20"
-        >
-          View Code
-        </button>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setSelectedSubmission(r)}
+            className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20"
+          >
+            View Code
+          </button>
+          <button
+            onClick={() => deleteSubmission(r.id)}
+            className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-error/10 text-error hover:bg-error/20"
+          >
+            Delete
+          </button>
+        </div>
       ),
     },
   ];
@@ -152,10 +175,10 @@ export default function ManagerDashboardClient({ initialSubmissions }: { initial
           <div className="glass-panel overflow-hidden">
             <div className="bg-surface-2 px-4 py-3 border-b border-border flex items-center justify-between">
               <h2 className="text-sm font-semibold text-foreground">Recent Submissions</h2>
-              <span className="text-xs text-text-muted font-mono">{initialSubmissions.length} total</span>
+              <span className="text-xs text-text-muted font-mono">{submissions.length} total</span>
             </div>
-            {initialSubmissions.length > 0 ? (
-              <DataTable<Row> columns={columns} rows={initialSubmissions} rowKey={(r) => r.id} pageSize={20} />
+            {submissions.length > 0 ? (
+              <DataTable<Row> columns={columns} rows={submissions} rowKey={(r) => r.id} pageSize={20} />
             ) : (
               <p className="text-sm text-text-muted py-8 text-center">No submissions found.</p>
             )}
