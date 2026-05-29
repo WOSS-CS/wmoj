@@ -2,12 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { SubmissionCodeBlock } from '@/components/SubmissionCodeBlock';
-import { toast } from '@/components/ui/Toast';
 
 type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RE' | 'CE' | 'IE';
 
@@ -104,23 +102,9 @@ export default function ProblemSubmissionsClient({
     initialSubmissions: Submission[]; 
     initialProblemName: string;
 }) {
-    const { session } = useAuth();
-    const [submissions, setSubmissions] = useState<Submission[]>(initialSubmissions);
+    const [submissions] = useState<Submission[]>(initialSubmissions);
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
     const problemName = initialProblemName;
-    const token = session?.access_token;
-
-    const deleteSubmission = async (submissionId: string) => {
-        if (!confirm('Delete this submission?')) return;
-        try {
-            const res = await fetch(`/api/admin/submissions/${submissionId}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to delete');
-            setSubmissions(prev => prev.filter(s => s.id !== submissionId));
-            if (selectedSubmission?.id === submissionId) setSelectedSubmission(null);
-            toast.success('Submission deleted successfully');
-        } catch (e: unknown) { toast.error('Error', e instanceof Error ? e.message : 'Failed to delete'); }
-    };
 
     type Row = Submission;
     const columns: Array<DataTableColumn<Row>> = [
@@ -143,10 +127,7 @@ export default function ProblemSubmissionsClient({
         { key: 'created_at', header: 'Date', className: 'w-2/12', sortable: true, sortAccessor: (r) => new Date(r.created_at).getTime(), render: (r) => <span className="text-text-muted text-sm font-mono">{new Date(r.created_at).toLocaleString()}</span> },
         {
             key: 'actions', header: 'Actions', className: 'w-3/12', render: (r) => (
-                <div className="flex gap-1.5">
-                    <button onClick={() => setSelectedSubmission(r)} className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20">View Code</button>
-                    <button onClick={() => deleteSubmission(r.id)} className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-error/10 text-error hover:bg-error/20">Delete</button>
-                </div>
+                <button onClick={() => setSelectedSubmission(r)} className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20">View Code</button>
             )
         },
     ];
