@@ -2,7 +2,7 @@
 
 export default function AboutClient() {
   return (
-    <div className="space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-foreground">About</h1>
         <hr className="mt-3 border-border" />
