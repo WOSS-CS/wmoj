@@ -3,10 +3,16 @@
 export default function CsClubClient() {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">White Oaks Computer Science Club</h1>
+      <div className="flex flex-col items-center text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/csclub/logo.png"
+          alt="White Oaks Computer Science Club logo"
+          className="h-32 w-auto"
+        />
+        <h1 className="mt-4 text-xl font-semibold text-foreground">White Oaks Computer Science Club</h1>
         <p className="text-sm text-text-muted mt-1">White Oaks Secondary School, Oakville, Ontario</p>
-        <hr className="mt-3 border-border" />
+        <hr className="mt-4 w-full border-border" />
       </div>
 
       <div className="text-sm text-text-muted leading-relaxed space-y-3">

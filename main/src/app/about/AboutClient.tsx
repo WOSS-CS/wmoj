@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 export default function AboutClient() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -11,7 +13,7 @@ export default function AboutClient() {
       <div className="text-sm text-text-muted leading-relaxed space-y-3">
         <p>
           WMOJ is a modern online judge and competitive programming platform. Founded by the{' '}
-          <span className="text-foreground font-medium">White Oaks Computer Science Club</span>,
+          <Link href="/csclub" className="text-brand-primary hover:text-brand-secondary transition-colors">White Oaks Computer Science Club</Link>,
           it has grown into a major competitive programming platform open to everyone around the world.
         </p>
         <p>
