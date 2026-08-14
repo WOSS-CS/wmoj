@@ -19,7 +19,7 @@ We welcome any and all open-source contributions to help make WMOJ better for ev
 5. [Detailed setup](#detailed-setup)
    1. [Clone the repo and install dependencies](#1-clone-the-repo-and-install-dependencies)
    2. [Create a Supabase project](#2-create-a-supabase-project)
-   3. [Apply the database schema (`schema.sql`)](#3-apply-the-database-schema-schemasql)
+   3. [Apply the database schema (baseline migration)](#3-apply-the-database-schema-baseline-migration)
    4. [Configure Supabase Auth](#4-configure-supabase-auth)
    5. [Verify storage buckets](#5-verify-storage-buckets)
    6. [Run the judge backend (`wmoj-judge`)](#6-run-the-judge-backend-wmoj-judge)
@@ -73,7 +73,8 @@ You can run the front-end without the judge (most pages still work), but you won
 ```
 wmoj-app/
 ├── README.md              ← you are here
-├── schema.sql             ← full DB schema dump — paste into Supabase SQL editor
+├── supabase/
+│   └── migrations/        ← DB history; first file is the full baseline schema
 ├── package.json           ← outer (Vercel analytics shim only)
 └── main/                  ← the actual Next.js app
     ├── src/
@@ -123,7 +124,8 @@ cd wmoj-app/main
 npm install
 
 # 3. Create a Supabase project at https://supabase.com/dashboard
-#    Then in the SQL editor, paste the contents of  ../schema.sql  and run it.
+#    Then in the SQL editor, paste the contents of the baseline migration
+#    ../supabase/migrations/20260814152742_initial_schema.sql  and run it.
 
 # 4. Copy env vars (see "Wire up environment variables" below)
 cp .env.local.example .env.local   # if the example exists; otherwise create from scratch
@@ -161,11 +163,11 @@ npm install
 
    > WMOJ uses the *publishable* key (the new replacement for the legacy `anon` key). The legacy `anon` key still works if your project is older.
 
-### 3. Apply the database schema (`schema.sql`)
+### 3. Apply the database schema (baseline migration)
 
 This is the **most important step** — without it, every page that hits the database will return RLS errors or "relation does not exist".
 
-The file [`schema.sql`](./schema.sql) at the root of this repo is a complete dump of WMOJ's production database structure:
+The database lives in [`supabase/migrations/`](./supabase/migrations/). The first file, [`20260814152742_initial_schema.sql`](./supabase/migrations/20260814152742_initial_schema.sql), is the baseline: a complete dump of WMOJ's production database structure as of 2026-08-14.
 
 - **13 tables** (`users`, `admins`, `managers`, `problems`, `contests`, `contest_problems`, `contest_participants`, `join_history`, `countdown_timers`, `submissions`, `comments`, `comment_votes`, `news_posts`)
 - **57 Row Level Security policies** across `public.*` and `storage.objects`
@@ -179,11 +181,12 @@ The whole file is **idempotent** — every `create` is guarded by `if not exists
 **To apply it:**
 
 1. In your Supabase project, open **SQL Editor → + New query**.
-2. Paste the entire contents of `schema.sql` into the editor.
+2. Paste the entire contents of the baseline migration into the editor.
 3. Click **Run**.
 4. You should see "Success. No rows returned." If you see errors, see [Troubleshooting](#troubleshooting).
+5. If `supabase/migrations/` contains further migrations, run them too, **in filename order** — the timestamp prefix is the ordering.
 
-> **Why a SQL dump and not Supabase migrations?** The migration directory style (`supabase/migrations/*.sql`) requires the contributor to install the Supabase CLI and link a project. A single dump is faster and works for everyone, including people who only want to spin up a local copy to test a single PR. If WMOJ ever migrates to the CLI workflow, this file will become the baseline.
+> **Migrations.** Every schema change after the baseline is recorded as its own timestamped file in `supabase/migrations/`, so the database's history stays traceable and reversible. Existing migrations are never edited — corrections go in a new file on top. You don't need the Supabase CLI to contribute: applying the files in order through the SQL editor works fine.
 
 ### 4. Configure Supabase Auth
 
@@ -200,9 +203,9 @@ WMOJ uses email-and-password authentication with email verification.
 
 ### 5. Verify storage buckets
 
-`schema.sql` already creates the `avatars` and `problem_images` buckets, but it's worth a quick sanity check. In **Storage**, you should see both buckets listed and both should be **public** (the schema sets them that way).
+The baseline migration already creates the `avatars` and `problem_images` buckets, but it's worth a quick sanity check. In **Storage**, you should see both buckets listed and both should be **public** (the schema sets them that way).
 
-If they're missing, run `schema.sql` again — or recreate the buckets manually:
+If they're missing, re-run the baseline migration — or recreate the buckets manually:
 
 ```sql
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -344,12 +347,12 @@ For Vercel, the project is set up to deploy `main/` directly. The outer `package
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `permission denied for table <x>` from PostgREST | RLS is on but no policy matches your role | Re-run `schema.sql`. If a single statement failed, it usually leaves things half-applied. |
-| `relation "public.<table>" does not exist` | `schema.sql` never ran, or only some sections ran | Re-run `schema.sql`. The script is idempotent. |
+| `permission denied for table <x>` from PostgREST | RLS is on but no policy matches your role | Re-run the baseline migration. If a single statement failed, it usually leaves things half-applied. |
+| `relation "public.<table>" does not exist` | The migrations never ran, or only some sections ran | Re-run the migrations in filename order. They are idempotent. |
 | Sign-up succeeds but login fails | Email confirmation is on but the email is sitting in spam | Disable "Confirm email" under **Auth → Settings** for local dev, or check spam. |
 | Submission returns `Judge unreachable` | `wmoj-judge` is not running, or `NEXT_PUBLIC_JUDGE_URL` is wrong | Verify `curl http://localhost:4001/health` returns `{"status":"ok"}`. |
 | Submission returns `unauthorized` from judge | `JUDGE_SHARED_SECRET` mismatch between app and judge | Both services must have the **exact same** secret string. |
-| `rls policy ... already exists` when running schema.sql | You ran an older schema by hand first | Drop conflicting policies manually, then re-run. The dump uses `drop policy if exists` so this should be rare. |
+| `rls policy ... already exists` when running a migration | You ran an older schema by hand first | Drop conflicting policies manually, then re-run. The baseline uses `drop policy if exists` so this should be rare. |
 
 ---
 
@@ -361,6 +364,6 @@ For Vercel, the project is set up to deploy `main/` directly. The outer `package
 4. Run `npm run lint` before pushing.
 5. Open a PR against `main` describing what changed and how to test it.
 
-If you're touching the database schema, please **also update `schema.sql`** so other contributors can pick up the change without you. The cleanest way is to run your `alter table` / `create policy` / `create function` against your dev project, then re-dump the relevant section into `schema.sql`.
+If you're touching the database schema, please **add a new migration file** to `supabase/migrations/` in the same PR, so other contributors can pick up the change without you and the history stays reversible. Name it `YYYYMMDDHHMMSS_short_description.sql` using the current timestamp, put one logical change in it, and **never edit an existing migration** — corrections go in a new file on top.
 
 Questions or stuck on setup? Open a GitHub issue or reach out via the WOSS CS Club channels.

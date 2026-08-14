@@ -10,7 +10,8 @@ Code execution and grading live in a separate repo/service, **`wmoj-judge`**, ca
 
 ```
 wmoj-app/          ← repo root. NOT the Next.js project.
-├── schema.sql     ← DB contract (mirror of the live Supabase schema)
+├── supabase/
+│   └── migrations/ ← DB history; the first file is the full baseline schema
 ├── package.json   ← Vercel shim; exists only to ship @vercel/analytics
 └── main/          ← the Next.js app. Run every npm command from here.
     ├── .env.local
@@ -48,15 +49,41 @@ manage users, or edit an already-activated contest.
 ## Database
 
 Live Supabase project **`WMOJ`** (ref `usltyqkrptaaktnmjeyf`, us-east-2, Postgres 17). Inspect it
-with the Supabase MCP (`list_tables`, `execute_sql`). `schema.sql` at the repo root mirrors it and
-is idempotent — **there are no migrations**, so apply SQL in the Supabase editor and hand-update
-`schema.sql` in the same change.
+with the Supabase MCP (`list_tables`, `execute_sql`).
 
 13 tables, RLS enabled on all: `users`, `admins`, `managers`, `problems`, `contests`,
 `contest_problems`, `contest_participants`, `join_history`, `countdown_timers`, `submissions`,
 `comments`, `comment_votes`, `news_posts`.
 
-Easy to get wrong:
+### Every schema change must be a new migration file
+
+`supabase/migrations/` is the traceable history of this database. The first file,
+`20260814152742_initial_schema.sql`, is the full baseline (formerly the repo-root `schema.sql`).
+
+**If you change anything in Supabase that alters its structure or behaviour — no matter how small —
+you must record it as a NEW migration file in `supabase/migrations/`.** That covers `create`/`alter`
+/`drop` on tables, columns, constraints, or indexes; any RLS policy change; any function, trigger,
+RPC, or enum change; extensions; and storage bucket or storage-policy changes. It applies whether you
+made the change through the Supabase MCP, the dashboard, or the SQL editor.
+
+Read-only work needs no migration: selects, data inspection, `explain`, and one-off content edits
+that only touch rows.
+
+Rules:
+
+- **Never edit an existing migration**, including the baseline. History must stay append-only so
+  changes remain traceable and reversible. Correct a mistake with a new migration on top.
+- Name files `YYYYMMDDHHMMSS_short_snake_case_description.sql` — e.g.
+  `20260901093000_add_problem_difficulty.sql`. Use the real current timestamp so ordering holds.
+- One logical change per file. Open with a comment saying what it does and why.
+- Make it idempotent where practical (`if not exists`, `or replace`, `drop ... if exists`), matching
+  the baseline's style.
+- Include the matching rollback as a commented-out block at the bottom when the change is
+  destructive.
+- Apply the SQL to the live project **and** commit the migration file in the same change — never one
+  without the other, or the history silently drifts from reality.
+
+### Easy to get wrong
 
 - **`problems` has NO `contest` column.** The relationship is the `contest_problems` junction.
   Several existing routes query `problems.contest` and silently 500 — don't copy that.
