@@ -19,9 +19,9 @@ cd wmoj-app/main
 npm install
 ```
 
-**1. Set up the database.** In your Supabase project, open **SQL Editor → New query**, paste the
-contents of `supabase/migrations/20260814152742_initial_schema.sql`, and run it. If there are more
-files in `supabase/migrations/`, run them too, in filename order.
+**1. Set up the database.** In your Supabase project, open **SQL Editor → New query**, then paste
+and run the contents of each file in `supabase/migrations/`, in filename order — the timestamp
+prefix is the order. The earliest one creates the schema; the rest build on it.
 
 **2. Configure auth.** Under **Authentication → Providers**, enable **Email**. Under **URL
 Configuration**, set the Site URL to `http://localhost:3000` and add `http://localhost:3000/**` as a
