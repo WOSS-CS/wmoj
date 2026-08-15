@@ -10,6 +10,8 @@ Code execution and grading live in a separate repo/service, **`wmoj-judge`**, ca
 
 ```
 wmoj-app/          ← repo root. NOT the Next.js project.
+├── .claude/
+│   └── skills/    ← agent skills; `add-problem` publishes problems end-to-end
 ├── supabase/
 │   └── migrations/ ← DB history; the first file is the full baseline schema
 ├── package.json   ← Vercel shim; exists only to ship @vercel/analytics
@@ -17,6 +19,9 @@ wmoj-app/          ← repo root. NOT the Next.js project.
     ├── .env.local
     └── src/       ← `@/*` → `main/src/*`
 ```
+
+**Adding problems?** Use the `add-problem` skill — it covers the statement format, the
+`generator.cpp` house style, the live-judge verification loop, and the direct database insert.
 
 ## Commands
 
@@ -68,6 +73,12 @@ made the change through the Supabase MCP, the dashboard, or the SQL editor.
 
 Read-only work needs no migration: selects, data inspection, `explain`, and one-off content edits
 that only touch rows.
+
+**Row-level content is not a migration.** Publishing problems (see the `add-problem` skill in
+`.claude/skills/`), news posts, or contests writes rows into existing tables — it changes no
+structure and no behaviour, so it gets **no file in `supabase/migrations/`**, even though it goes
+through the Supabase MCP. Same for flipping `is_active`, editing a statement, or deleting a row.
+Logging those here would bury the schema changes that actually need to be traceable.
 
 Rules:
 
