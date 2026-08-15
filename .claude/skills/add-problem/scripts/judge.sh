@@ -14,6 +14,10 @@
 #   judge.sh check    <tests.json>
 #   judge.sh submit   <solution-file> <language> <tests.json> <timeLimitMs> <memLimitMb> [results.json]
 #
+# For a problem whose answer is not unique, grade with a checker program instead
+# of byte comparison:
+#   JUDGE_CHECKER=checker.cpp judge.sh submit sol.cpp cpp17 tests.json 2000 256
+#
 # generate  compiles and runs a generator on the live judge and writes
 #           {"input": [...], "output": [...]} to <tests.json>.
 # check     validates <tests.json> against the judge's hard caps locally, so a
@@ -155,10 +159,23 @@ cmd_submit() {
   req=$(mktemp)
   if [ -n "$dest" ]; then resp="$dest"; keep=1; else resp=$(mktemp); keep=0; fi
 
-  jq -n --rawfile code "$sol" --slurpfile t "$tests" \
-        --arg lang "$lang" --argjson tl "$tl" --argjson ml "$ml" \
-    '{language: $lang, code: $code, input: $t[0].input, output: $t[0].output,
-      timeLimit: $tl, memoryLimit: $ml}' >"$req"
+  # A problem whose answer is not unique is graded by a checker program instead of
+  # by comparing bytes. Pass one with JUDGE_CHECKER=path/to/checker.cpp — an env var
+  # rather than an argument so it also flows through judge-lock.sh untouched.
+  if [ -n "${JUDGE_CHECKER:-}" ]; then
+    [ -f "$JUDGE_CHECKER" ] || die "JUDGE_CHECKER is set but no such file: $JUDGE_CHECKER"
+    local cbytes; cbytes=$(wc -c <"$JUDGE_CHECKER" | tr -d ' ')
+    [ "$cbytes" -le "$MAX_CODE_BYTES" ] || die "checker is ${cbytes}B, over the ${MAX_CODE_BYTES}B cap"
+    jq -n --rawfile code "$sol" --slurpfile t "$tests" --rawfile chk "$JUDGE_CHECKER" \
+          --arg lang "$lang" --argjson tl "$tl" --argjson ml "$ml" \
+      '{language: $lang, code: $code, input: $t[0].input, output: $t[0].output,
+        timeLimit: $tl, memoryLimit: $ml, checker: $chk}' >"$req"
+  else
+    jq -n --rawfile code "$sol" --slurpfile t "$tests" \
+          --arg lang "$lang" --argjson tl "$tl" --argjson ml "$ml" \
+      '{language: $lang, code: $code, input: $t[0].input, output: $t[0].output,
+        timeLimit: $tl, memoryLimit: $ml}' >"$req"
+  fi
 
   # Cases run serially on one shared vCPU, so a 200-case set at a 3s limit can
   # legitimately take minutes. Be patient rather than reporting a false failure.
@@ -176,6 +193,15 @@ cmd_submit() {
     exit 1
   fi
 
+  # A broken checker is also HTTP 200, and it is OUR bug, not the solution's —
+  # check it before compileError so the two are never confused.
+  if jq -e '.checkerError != null' "$resp" >/dev/null; then
+    printf 'CHECKER FAILED TO COMPILE (the problem is misconfigured, not the solution):\n' >&2
+    jq -r '.checkerError' "$resp" >&2
+    [ "$keep" = 1 ] || rm -f "$resp"
+    exit 1
+  fi
+
   # A compile error is HTTP 200 with an empty summary — check it first.
   if jq -e '.compileError != null' "$resp" >/dev/null; then
     printf 'COMPILE ERROR:\n' >&2
@@ -187,7 +213,12 @@ cmd_submit() {
   jq -r '"\(.summary.passed)/\(.summary.total) passed"' "$resp"
   jq -r '[.results[] | select(.passed | not)]
          | .[0:5][]
-         | "  case \(.index): \(.verdict)  expected=\(.expected[0:60] | @json)  got=\(.stdout[0:60] | @json)"' "$resp"
+         | "  case \(.index): \(.verdict)  expected=\(.expected[0:60] | @json)  got=\(.stdout[0:60] | @json)"
+           + (if .checkerMessage then "  checker=\(.checkerMessage[0:80] | @json)" else "" end)' "$resp"
+  # The judge caps memory at what the host can actually back; say so when it bit.
+  jq -r 'if .effectiveMemoryLimitMb and .effectiveMemoryLimitMb < '"$ml"'
+         then "note: memory limit clamped to \(.effectiveMemoryLimitMb)MB by the judge host (asked for '"$ml"'MB)"
+         else empty end' "$resp"
   # Headroom matters more than the verdict: a solution that only just fits is a
   # TLE waiting to happen the next time Render gives us a busier neighbour.
   jq -r --argjson tl "$tl" \
