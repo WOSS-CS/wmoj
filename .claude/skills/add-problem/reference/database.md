@@ -18,9 +18,10 @@ are on it before writing anything — see the preflight gate in SKILL.md.
 | `output` | `jsonb` | Array of strings, same length as `input` |
 | `is_active` | `boolean` | Default `false`. `true` = visible and solvable |
 | `time_limit` | `integer` | **Milliseconds.** Default 5000 |
-| `memory_limit` | `integer` | **Megabytes.** Default 256. Never above 512 |
+| `memory_limit` | `integer` | **Megabytes.** Default 256; the judge enforces `min(declared, 512)` |
 | `points` | `integer` | Required, no default |
 | `generator_file` | `text` | The `generator.cpp` source |
+| `checker` | `text` | Optional C++ checker source. `NULL`/empty ⇒ byte comparison |
 | `created_by` | `uuid` | FK to `auth.users(id)`, nullable |
 | `created_at` / `updated_at` | `timestamptz` | Default `now()` |
 
@@ -66,6 +67,8 @@ $gen$,
   the same bytes you just verified. Do not reformat, re-indent, or regenerate them in between.
 - `is_active` is `true` because the ask is a visible, active problem. Leave it `false` only if the
   user asked for a draft.
+- Add a `checker` column to the insert (dollar-quoted like `generator_file`) only for a problem whose
+  answer is not unique. Omit it otherwise; `NULL` means the judge compares bytes.
 - `created_by` may be left `null` if you have no user to attribute it to; it is nullable and only
   used for display. Never invent a UUID — the foreign key to `auth.users` will reject it.
 - The `id` must not already exist. Check first; the insert will fail on the primary key otherwise.

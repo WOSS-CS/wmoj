@@ -30,11 +30,14 @@ cd main
 npm install
 npm run dev      # next dev --turbopack → :3000
 npm run build    # next build --turbopack
-npm run lint     # eslint — has pre-existing `any` failures; leave files you touch clean
+npm run lint     # eslint — 74 pre-existing problems; leave files you touch clean
 ```
 
 **No tests, no CI.** Don't invent `npm test`; verify by running the app. Next 16 doesn't run ESLint
-during `build`, so lint breakage is invisible unless you run it.
+during `build`, so lint breakage is invisible unless you run it. `main/eslint.config.mjs` imports
+`eslint-config-next`'s flat configs directly; the old `FlatCompat` bridge threw `Converting circular
+structure to JSON` against the locked v16 and made `npm run lint` unrunnable — don't reintroduce it.
+Its 74 problems (50 errors, 24 warnings) are mostly `@typescript-eslint/no-explicit-any`.
 
 ## Architecture
 
@@ -62,34 +65,24 @@ with the Supabase MCP (`list_tables`, `execute_sql`).
 
 ### Every schema change must be a new migration file
 
-`supabase/migrations/` is the traceable history of this database. The first file,
+`supabase/migrations/` is the traceable history of this database; the first file,
 `20260814152742_initial_schema.sql`, is the full baseline (formerly the repo-root `schema.sql`).
 
 **If you change anything in Supabase that alters its structure or behaviour — no matter how small —
-you must record it as a NEW migration file in `supabase/migrations/`.** That covers `create`/`alter`
-/`drop` on tables, columns, constraints, or indexes; any RLS policy change; any function, trigger,
-RPC, or enum change; extensions; and storage bucket or storage-policy changes. It applies whether you
-made the change through the Supabase MCP, the dashboard, or the SQL editor.
+you must record it as a NEW migration file there.** That covers `create`/`alter`/`drop` on tables,
+columns, constraints, or indexes; any RLS policy; any function, trigger, RPC, or enum; extensions;
+and storage buckets or their policies — whether you went through the Supabase MCP, the dashboard, or
+the SQL editor. Read-only work (selects, data inspection, `explain`) needs no migration.
 
-Read-only work needs no migration: selects, data inspection, and `explain`.
-
-**Changing rows is not a migration.** Adding, editing, or removing the *data* the tables hold —
-as opposed to the tables themselves — gets **no file in `supabase/migrations/`**, no matter how
-many rows it touches or that it went through the Supabase MCP. That includes, and is not limited
-to:
-
-- **Problems** — publishing one (see the `add-problem` skill in `.claude/skills/`), editing a
-  statement or test data, flipping `is_active`, deleting one.
-- **Contests** — creating, editing, activating, or deleting them, and their `contest_problems` /
-  `contest_participants` rows.
-- **Users** — creating accounts, updating profile fields, granting or revoking `admins` /
-  `managers`, recalculating points.
-- Anything comparable in `news_posts`, `comments`, `submissions`, or `countdown_timers`.
-
-None of that alters the database — only what is stored in it. The schema, the policies, and the
-functions are identical before and after, so there is nothing to reverse or trace at the migration
-level. Logging content edits here would bury the structural changes that genuinely need to be
-traceable, which is the only thing this directory is for.
+**Changing rows is not a migration.** Adding, editing, or removing the *data* the tables hold gets
+**no file in `supabase/migrations/`**, however many rows it touches and even though it went through
+the Supabase MCP: publishing a problem (see the `add-problem` skill), editing a statement, test
+data, or a checker, flipping `is_active`, creating/activating/deleting contests and their
+`contest_problems` / `contest_participants` rows, creating users, granting or revoking
+`admins`/`managers`, recalculating points, and anything comparable in `news_posts`, `comments`,
+`submissions`, or `countdown_timers`. The schema, policies, and functions are identical before and
+after, so there is nothing to reverse or trace, and logging content edits here would bury the
+structural changes this directory exists for.
 
 The test is simply whether the *shape* changed. If publishing content ever seems to require a
 column, a policy, or a function that does not exist yet, that part is a real schema change and does
@@ -97,22 +90,23 @@ need its own migration — the content edit still does not.
 
 Rules:
 
-- **Never edit an existing migration**, including the baseline. History must stay append-only so
-  changes remain traceable and reversible. Correct a mistake with a new migration on top.
-- Name files `YYYYMMDDHHMMSS_short_snake_case_description.sql` — e.g.
-  `20260901093000_add_problem_difficulty.sql`. Use the real current timestamp so ordering holds.
-- One logical change per file. Open with a comment saying what it does and why.
-- Make it idempotent where practical (`if not exists`, `or replace`, `drop ... if exists`), matching
-  the baseline's style.
-- Include the matching rollback as a commented-out block at the bottom when the change is
-  destructive.
+- **Never edit an existing migration**, including the baseline — history stays append-only so changes
+  remain traceable and reversible. Correct a mistake with a new migration on top.
+- Name files `YYYYMMDDHHMMSS_short_snake_case_description.sql` (e.g.
+  `20260901093000_add_problem_difficulty.sql`), using the real current timestamp so ordering holds.
+- One logical change per file, opening with a comment saying what it does and why. Make it idempotent
+  where practical (`if not exists`, `or replace`, `drop ... if exists`), matching the baseline's
+  style, and include the matching rollback as a commented-out block when the change is destructive.
 - Apply the SQL to the live project **and** commit the migration file in the same change — never one
   without the other, or the history silently drifts from reality.
 
 ### Easy to get wrong
 
 - **`problems` has NO `contest` column.** The relationship is the `contest_problems` junction.
-  Several existing routes query `problems.contest` and silently 500 — don't copy that.
+  `api/admin/problems/[id]/route.ts` and `api/manager/problems/[id]/route.ts` still select it, so
+  **both GETs 500 unconditionally**; they're superseded by server components. Don't copy that.
+- **`problems.checker`** is nullable `text` holding optional C++ checker source; `NULL`/empty means
+  byte comparison, which is what every live problem currently uses.
 - **`submissions.status` is GENERATED STORED** from `summary->>'failed'`/`'total'`. Never write it.
 - **`submissions.problem_id`/`user_id` have no FKs.** Orphans are possible.
 - **Contest status is never stored** — always compute with `getContestStatus()`. Both timestamps
@@ -139,13 +133,22 @@ queue. The browser's submit blocks until every test case has run. Auth header is
 | `api/{admin,manager}/problems/generator/generate` | `POST /generate-tests` |
 | `api/status/health` | `GET /health` |
 
-`POST /submit` sends `{language, code, input, output, timeLimit, memoryLimit}` (`input`/`output` are
-the problem's equal-length jsonb arrays) and returns
-`{summary:{total,passed,failed}, results[], compileError?}`.
+`POST /submit` sends `{language, code, input, output, timeLimit, memoryLimit, checker?}`
+(`input`/`output` are the problem's equal-length jsonb arrays) and returns
+`{summary:{total,passed,failed}, results[], effectiveMemoryLimitMb, compileError?, checkerError?}`.
 
 **A compile error is HTTP 200**, with `summary = {0,0,0}`, `results = []`, and `compileError`. Branch
 on `compileError` before reading `summary`. A 4xx/5xx means the request or the judge is wrong, never
-the user's code. The judge never emits `CE`/`IE` verdicts — this app synthesizes `CE` itself.
+the user's code. The judge never emits `CE` — this app synthesizes it.
+
+**Custom checkers.** For problems whose answer isn't unique, `problems.checker` holds C++ source and
+the route sends `checker` **only when non-empty**, so a no-checker problem's payload is unchanged and
+still graded byte-for-byte. The judge compiles it once per submission, runs it per case as
+`checker <input> <expected> <contestant_output>` (testlib exit codes: `0` accept, `1` WA, `2` PE →
+graded WA, `3` checker internal error ⇒ the problem's own data is broken), and returns its stderr as
+`results[].checkerMessage`, shown to the student. **A checker that fails to compile is HTTP 200 with
+`checkerError`** — a *problem-configuration* fault, not the student's: branch on it **before**
+`compileError` and store no submission row, so it can never surface as someone's compile error.
 
 `NEXT_PUBLIC_JUDGE_URL` carries the public prefix but is only read server-side; the browser must not
 learn the judge URL (hence `/status` proxying through `api/status/health`). Never add
@@ -153,32 +156,41 @@ learn the judge URL (hence `/status` proxying through `api/status/health`). Neve
 
 ## Test-case budget — read before authoring problems
 
-The judge runs on a **free Render instance: 512 MB RAM, ~0.1 CPU**, inside a container with limited
-privileges. Problems must be sized for that host, so WMOJ deliberately ships **far fewer and smaller
-test cases than other sites hosting the same problems**. Aim to cover the core edge cases well
-rather than exhaustively.
+The judge runs on a **free Render instance: 512 MB RAM, ~0.1 CPU**, in a limited container, running
+cases serially. Problems are sized for that host, so WMOJ deliberately ships **far fewer and smaller
+test cases than other sites hosting the same problems** — cover the core edge cases, not everything.
 
-Hard caps enforced by the judge (`src/middleware/requestCaps.ts`, 413 on violation):
+Hard caps enforced by the judge (`src/middleware/requestCaps.ts`, 413 on violation): **200 cases**
+per problem, **1 MB** per single input, **1 MB** per single expected output, 100 KB of submitted
+source, 100 KB of checker source. What the 74 live problems look like — copy the CCC cohort, which
+was authored against these caps:
 
-| Limit | Value |
-|---|---|
-| Test cases per problem | **200** |
-| Bytes per single input | **1 MB** |
-| Bytes per single expected output | **1 MB** |
-| Submitted source | 100 KB |
+| | Cases (min–max, avg) | Largest single case | Largest total in+out |
+|---|---|---|---|
+| CCC 2021–26, via the skill (50) | 15–55, ~25 | 122 KB | 597 KB |
+| Legacy (24) | 8–65, ~35 | 1,477,908 B | 3.0 MB |
 
-What the live data actually looks like (32 problems): **8–65 cases, averaging ~33**; most inputs are
-tens of bytes to a few KB; the heaviest realistic cases peak around **50–120 KB each**. Total
-input+output per problem stays under ~3 MB.
+Two legacy problems exceed the 1 MB per-case cap and are **permanently unsubmittable** (413 before
+anything compiles), which is why both have zero submissions: `WOSS TriOlympiad: S2` (1,477,908 B)
+and `WOSS TriOlympiad: J3` (1,001,009 B, over by ~1 KB). **24 legacy problems also have no
+`generator_file`**, so their data can't be regenerated or audited; the skill always stores one.
 
-Two live problems already violate this and are **unsubmittable** — the judge 413s before running
-anything, which is why both have zero submissions:
+**Memory limits.** A problem may declare its source contest's real limit, values above 512 included:
+the judge enforces `min(declared, HOST_MEMORY_CEILING_MB)` (ceiling **512**) and reports
+`effectiveMemoryLimitMb`. But when a problem is genuinely solvable in 512 MB or less — nearly always
+— store 512 or lower rather than an inflated number. **256 is the sensible default**, and no live
+problem currently exceeds 512.
 
-- `WOSS TriOlympiad: S2` — largest case 1,477,908 bytes
-- `WOSS TriOlympiad: J3` — largest case 1,001,009 bytes (over by ~1 KB)
+Limits use `RLIMIT_AS`, which caps **virtual address space, not resident memory**, so hitting one
+makes `malloc` fail instead of triggering a kill: the program exits non-zero with low RSS, which is
+why older submissions can show `RE` where `MLE` was meant. The judge now also derives MLE from
+RSS ≥ 98% of the limit and from allocation-failure signatures (`std::bad_alloc`, `MemoryError`, …),
+in verdict order TLE → MLE → RE → WA/AC. A plain SIGSEGV with low RSS correctly stays `RE`.
 
-Also note **6 live problems declare `memory_limit = 1024` MB**, double the host's entire RAM, so
-that limit can never actually be enforced. Prefer limits that fit inside 512 MB.
+**Never let two agents share the judge.** Concurrent jobs on this serial box corrupt each other's
+verdicts — spurious TLE off the 3× wall-clock backstop, an OOM-killed `g++` reported as a compile
+error. `.claude/skills/add-problem/scripts/judge-lock.sh` takes the same arguments as `judge.sh` and
+serializes `generate`/`submit` (`health`/`check` pass through), at no cost in throughput.
 
 ## Invariants
 

@@ -91,7 +91,8 @@ The primary key is a text slug you choose, constrained by `problems_id_format` t
 official limits when they exist. Otherwise 1000–2000 ms covers almost everything; 3000 ms is the
 top of what is in use.
 
-**Never set `memory_limit` above 512.** The judge host has 512 MB of RAM in total, so a larger
-limit can never be enforced — it is a promise the machine cannot keep. Six existing problems
-declare 1024 MB; that is a mistake to avoid, not a precedent. 256 MB is the default and is right
-for nearly everything.
+`memory_limit` may name the source contest's real limit, values above 512 included: the judge
+enforces `min(declared, 512)` — the host's whole RAM — and reports `effectiveMemoryLimitMb`. But
+when the problem is genuinely solvable in 512 MB or less, which is nearly always, store 512 or lower
+rather than an inflated number. 256 MB is the default and is right for nearly everything, and no
+live problem exceeds 512 today.
