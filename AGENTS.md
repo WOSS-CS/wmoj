@@ -71,14 +71,29 @@ you must record it as a NEW migration file in `supabase/migrations/`.** That cov
 RPC, or enum change; extensions; and storage bucket or storage-policy changes. It applies whether you
 made the change through the Supabase MCP, the dashboard, or the SQL editor.
 
-Read-only work needs no migration: selects, data inspection, `explain`, and one-off content edits
-that only touch rows.
+Read-only work needs no migration: selects, data inspection, and `explain`.
 
-**Row-level content is not a migration.** Publishing problems (see the `add-problem` skill in
-`.claude/skills/`), news posts, or contests writes rows into existing tables — it changes no
-structure and no behaviour, so it gets **no file in `supabase/migrations/`**, even though it goes
-through the Supabase MCP. Same for flipping `is_active`, editing a statement, or deleting a row.
-Logging those here would bury the schema changes that actually need to be traceable.
+**Changing rows is not a migration.** Adding, editing, or removing the *data* the tables hold —
+as opposed to the tables themselves — gets **no file in `supabase/migrations/`**, no matter how
+many rows it touches or that it went through the Supabase MCP. That includes, and is not limited
+to:
+
+- **Problems** — publishing one (see the `add-problem` skill in `.claude/skills/`), editing a
+  statement or test data, flipping `is_active`, deleting one.
+- **Contests** — creating, editing, activating, or deleting them, and their `contest_problems` /
+  `contest_participants` rows.
+- **Users** — creating accounts, updating profile fields, granting or revoking `admins` /
+  `managers`, recalculating points.
+- Anything comparable in `news_posts`, `comments`, `submissions`, or `countdown_timers`.
+
+None of that alters the database — only what is stored in it. The schema, the policies, and the
+functions are identical before and after, so there is nothing to reverse or trace at the migration
+level. Logging content edits here would bury the structural changes that genuinely need to be
+traceable, which is the only thing this directory is for.
+
+The test is simply whether the *shape* changed. If publishing content ever seems to require a
+column, a policy, or a function that does not exist yet, that part is a real schema change and does
+need its own migration — the content edit still does not.
 
 Rules:
 
