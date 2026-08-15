@@ -9,6 +9,10 @@ export interface Problem {
   is_active?: boolean; // optional until ensured in all selects
   time_limit?: number; // Time limit in milliseconds
   memory_limit?: number; // Memory limit in MB
+  // Optional C++ source for a custom checker. Null/absent means the judge
+  // grades by exact output comparison. Staff-only — never selected into
+  // client-facing payloads.
+  checker?: string | null;
   points: number;
 }
 

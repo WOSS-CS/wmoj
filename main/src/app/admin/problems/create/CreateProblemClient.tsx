@@ -26,6 +26,7 @@ export default function CreateProblemClient() {
   const [showGuide, setShowGuide] = useState(false);
   const [formData, setFormData] = useState({ id: '', name: '', content: '', timeLimit: '5000', memoryLimit: '256', points: '' });
   const [generatorCode, setGeneratorCode] = useState('');
+  const [checkerCode, setCheckerCode] = useState('');
   const [genLoading, setGenLoading] = useState(false);
   const [generatedInput, setGeneratedInput] = useState<string[] | null>(null);
   const [generatedOutput, setGeneratedOutput] = useState<string[] | null>(null);
@@ -75,13 +76,13 @@ export default function CreateProblemClient() {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch('/api/admin/problems/create', {
         method: 'POST', headers,
-        body: JSON.stringify({ id: formData.id, name: formData.name, content: formData.content, input: generatedInput, output: generatedOutput, timeLimit: parseInt(formData.timeLimit, 10), memoryLimit: parseInt(formData.memoryLimit, 10), points: parseInt(formData.points, 10), generator_file: generatorCode })
+        body: JSON.stringify({ id: formData.id, name: formData.name, content: formData.content, input: generatedInput, output: generatedOutput, timeLimit: parseInt(formData.timeLimit, 10), memoryLimit: parseInt(formData.memoryLimit, 10), points: parseInt(formData.points, 10), generator_file: generatorCode, checker: checkerCode.trim() ? checkerCode : null })
       });
       const json = await res.json();
       if (res.ok) {
         setSuccess('Problem created successfully!');
         setFormData({ id: '', name: '', content: '', timeLimit: '5000', memoryLimit: '256', points: '' });
-        setGeneratorCode(''); setGeneratedInput(null); setGeneratedOutput(null); setGeneratedFor(null); setGenError('');
+        setGeneratorCode(''); setCheckerCode(''); setGeneratedInput(null); setGeneratedOutput(null); setGeneratedFor(null); setGenError('');
         setTimeout(() => router.push('/admin/dashboard'), 2000);
       } else { setError(json.error || 'Failed to create problem'); }
     } catch { setError('Unexpected error occurred'); }
@@ -175,6 +176,12 @@ export default function CreateProblemClient() {
                   </p>
                 </div>
               )}
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-foreground">Custom Checker (C++) — Optional</label>
+              <p className="text-xs text-text-muted">Leave this empty for the normal behaviour: every submission is graded by comparing its output to the expected output exactly. Add a checker only when the problem has <strong className="text-foreground">more than one valid answer</strong> — any shortest path, any valid ordering, a floating-point answer within a tolerance. The judge then compiles this program and lets it accept or reject each test case, and its explanation is shown to the student on a rejected case.</p>
+              <CodeEditor language="cpp" value={checkerCode} onChange={setCheckerCode} height="300px" />
             </div>
 
             {error && <div className="bg-error/10 border border-error/20 rounded-lg p-3"><p className="text-error text-sm">{error}</p></div>}

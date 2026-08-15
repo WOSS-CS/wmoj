@@ -37,6 +37,9 @@ interface TestResult {
   timeMs?: number;
   cpuMs?: number;
   memKb?: number;
+  // Present only on problems with a custom checker: the checker's own
+  // explanation of why it accepted or rejected this case.
+  checkerMessage?: string;
 }
 
 const languages = [
@@ -107,6 +110,10 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
   const [results, setResults] = useState<TestResult[] | null>(null);
   const [summary, setSummary] = useState<{ total: number; passed: number; failed: number } | null>(null);
   const [compileError, setCompileError] = useState<string | null>(null);
+  // The problem's own checker failed to compile. Kept strictly separate from
+  // compileError: this is a fault in how the problem is configured, not in the
+  // submitted code, so it must never render as a CE against the student.
+  const [checkerError, setCheckerError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeContestId || isVirtualContest) return;
@@ -122,6 +129,7 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
     setResults(null);
     setSummary(null);
     setCompileError(null);
+    setCheckerError(null);
     try {
       const resp = await fetch(`/api/problems/${problem.id}/submit`, {
         method: 'POST',
@@ -136,6 +144,7 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
       setResults(data.results || []);
       setSummary(data.summary || null);
       setCompileError(data.compileError || null);
+      setCheckerError(data.checkerError || null);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Submission failed');
     } finally {
@@ -216,7 +225,7 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
           </button>
 
           {/* Results */}
-          {(submitting || summary || compileError) && (
+          {(submitting || summary || compileError || checkerError) && (
             <div className="space-y-3">
               <div className="h-px bg-border" />
               {submitting ? (
@@ -224,6 +233,30 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
                   <LoadingSpinner size="sm" />
                   <span className="text-sm text-text-muted">Evaluating...</span>
                 </div>
+              ) : checkerError ? (
+                <>
+                  {/* Checker configuration fault. Deliberately NOT a CE: the
+                      problem's own checker failed to compile, the submission
+                      was never graded, and nothing was stored. Rendered as a
+                      warning about the problem, never as a verdict badge
+                      against the student. */}
+                  <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-warning shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                      </svg>
+                      <span className="text-xs font-semibold text-warning">Problem misconfigured</span>
+                    </div>
+                    <p className="text-xs text-text-muted leading-relaxed">
+                      This problem&apos;s custom checker failed to compile, so your solution could not be graded.{' '}
+                      <strong className="text-foreground">This is not an error in your code</strong> — nothing was recorded against you. Please let a WMOJ admin know.
+                    </p>
+                    <details className="text-xs">
+                      <summary className="cursor-pointer text-text-muted hover:text-foreground">Technical details</summary>
+                      <pre className="mt-1.5 p-2 rounded bg-surface-1 text-warning overflow-x-auto border border-border text-xs whitespace-pre-wrap">{checkerError}</pre>
+                    </details>
+                  </div>
+                </>
               ) : compileError ? (
                 <>
                   {/* Compile error panel */}
@@ -287,6 +320,14 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
                                 <span>exit {r.exitCode ?? 'N/A'}</span>
                               </div>
                             </div>
+                            {/* Custom-checker problems only: the checker's own
+                                reason for accepting or rejecting this case. */}
+                            {r.checkerMessage && (
+                              <div className="mt-2 text-xs font-mono">
+                                <div className="text-text-muted mb-0.5">Checker</div>
+                                <pre className="p-1.5 rounded bg-surface-1 text-foreground overflow-x-auto border border-border text-xs whitespace-pre-wrap">{r.checkerMessage}</pre>
+                              </div>
+                            )}
                             {!r.passed && v !== 'TLE' && v !== 'MLE' && (
                               <div className="mt-2 space-y-1.5 text-xs font-mono">
                                 <div>

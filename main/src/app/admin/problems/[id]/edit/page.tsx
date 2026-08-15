@@ -20,7 +20,7 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
 
   const { data: problemData, error: problemError } = await supabase
     .from('problems')
-    .select('id,name,content,is_active,time_limit,memory_limit,points,input,output,generator_file,created_at,updated_at')
+    .select('id,name,content,is_active,time_limit,memory_limit,points,input,output,generator_file,checker,created_at,updated_at')
     .eq('id', id)
     .maybeSingle();
 

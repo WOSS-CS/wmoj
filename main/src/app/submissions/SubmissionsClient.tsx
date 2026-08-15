@@ -61,6 +61,9 @@ interface TestResult {
   timedOut: boolean;
   expected: string;
   received: string;
+  // Present only on problems with a custom checker: the checker's own
+  // explanation of why it accepted or rejected this case.
+  checkerMessage?: string;
 }
 
 // Shape returned by GET /api/user/submissions/[id] (the caller's own submission).
@@ -540,6 +543,12 @@ export default function SubmissionsClient({
                             Exit: {r.exitCode ?? 'N/A'} {r.timedOut ? '(Timed Out)' : ''}
                           </span>
                         </div>
+                        {r.checkerMessage && (
+                          <div className="mt-1 text-xs font-mono">
+                            <div className="text-text-muted mb-0.5">Checker:</div>
+                            <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-foreground border border-border whitespace-pre-wrap">{r.checkerMessage}</pre>
+                          </div>
+                        )}
                         {!r.passed && (r.expected || r.received) && (
                           <div className="grid grid-cols-2 gap-2 mt-1 text-xs font-mono">
                             <div>

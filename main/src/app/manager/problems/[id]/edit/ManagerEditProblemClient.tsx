@@ -19,6 +19,7 @@ interface ProblemData {
   points: number;
   test_case_count: number;
   generator_file: string | null;
+  checker: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -44,6 +45,9 @@ export default function ManagerEditProblemClient({ problem }: { problem: Problem
   });
   const initialGenerator = problem.generator_file ?? '';
   const [generatorCode, setGeneratorCode] = useState(initialGenerator);
+  // The checker is independent of the stored test data, so — unlike the
+  // generator — it is always sent on save and needs no staleness guard.
+  const [checkerCode, setCheckerCode] = useState(problem.checker ?? '');
   const [genLoading, setGenLoading] = useState(false);
   const [generatedInput, setGeneratedInput] = useState<string[] | null>(null);
   const [generatedOutput, setGeneratedOutput] = useState<string[] | null>(null);
@@ -100,6 +104,7 @@ export default function ManagerEditProblemClient({ problem }: { problem: Problem
         time_limit: parseInt(formData.timeLimit, 10),
         memory_limit: parseInt(formData.memoryLimit, 10),
         points: parseInt(formData.points, 10),
+        checker: checkerCode.trim() ? checkerCode : null,
       };
 
       if (generatedInput && generatedOutput) {
@@ -216,6 +221,12 @@ export default function ManagerEditProblemClient({ problem }: { problem: Problem
                   </p>
                 </div>
               )}
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-foreground">Custom Checker (C++) — Optional</label>
+              <p className="text-xs text-text-muted">Leave this empty for the normal behaviour: every submission is graded by comparing its output to the expected output exactly. Add a checker only when the problem has <strong className="text-foreground">more than one valid answer</strong> — any shortest path, any valid ordering, a floating-point answer within a tolerance. The judge then compiles this program and lets it accept or reject each test case, and its explanation is shown to the student on a rejected case. Unlike the generator above, this field is saved as-is: clearing it removes the checker and returns the problem to exact comparison.</p>
+              <CodeEditor language="cpp" value={checkerCode} onChange={setCheckerCode} height="300px" />
             </div>
 
             {error && <div className="bg-error/10 border border-error/20 rounded-lg p-3"><p className="text-error text-sm">{error}</p></div>}

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { supabase } = auth;
   const { data, error } = await supabase
     .from('problems')
-    .select('id,name,content,contest,is_active,time_limit,memory_limit,points,input,output,generator_file,created_at,updated_at')
+    .select('id,name,content,contest,is_active,time_limit,memory_limit,points,input,output,generator_file,checker,created_at,updated_at')
     .eq('id', id)
     .maybeSingle();
   if (error) {
@@ -71,6 +71,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'generator_file must be a string' }, { status: 400 });
     }
     updates.generator_file = body.generator_file;
+  }
+  // Unlike generator_file, the checker is independent of the stored test data,
+  // so it can be updated on its own. Blank clears it back to NULL, which
+  // restores exact output comparison.
+  if (body.checker !== undefined) {
+    if (body.checker !== null && typeof body.checker !== 'string') {
+      return NextResponse.json({ error: 'checker must be a string' }, { status: 400 });
+    }
+    updates.checker = typeof body.checker === 'string' && body.checker.trim().length > 0 ? body.checker : null;
   }
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });

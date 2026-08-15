@@ -4,7 +4,7 @@ import { validateSlug } from '@/utils/validation';
 
 export async function POST(request: NextRequest) {
   try {
-    const { id, name, content, input, output, timeLimit, memoryLimit, points, generator_file } = await request.json();
+    const { id, name, content, input, output, timeLimit, memoryLimit, points, generator_file, checker } = await request.json();
 
     const slugError = validateSlug(id, 'Problem');
     if (slugError) {
@@ -14,6 +14,15 @@ export async function POST(request: NextRequest) {
     if (generator_file !== undefined && generator_file !== null && typeof generator_file !== 'string') {
       return NextResponse.json({ error: 'generator_file must be a string' }, { status: 400 });
     }
+
+    if (checker !== undefined && checker !== null && typeof checker !== 'string') {
+      return NextResponse.json({ error: 'checker must be a string' }, { status: 400 });
+    }
+
+    // A blank checker is stored as NULL so "no checker" has exactly one
+    // representation — the submit route omits the field from the judge
+    // payload on NULL/empty, falling back to exact output comparison.
+    const checkerSource = typeof checker === 'string' && checker.trim().length > 0 ? checker : null;
 
     if (!name || !content || !input || !output) {
       return NextResponse.json(
@@ -123,7 +132,8 @@ export async function POST(request: NextRequest) {
           memory_limit: memoryLimit || 256,
           points: points,
           created_by: authUser.id,
-          generator_file: generator_file ?? null
+          generator_file: generator_file ?? null,
+          checker: checkerSource
         }
       ])
       .select()
