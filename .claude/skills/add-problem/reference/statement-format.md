@@ -57,10 +57,11 @@ whole statement.
 - **Single newlines become line breaks.** `remark-breaks` is enabled, so a paragraph you wrapped at
   80 columns renders with hard breaks at every wrap point. Keep each paragraph on one line.
 - **`---` separates sample blocks**, matching the existing problems.
-- **Images.** The renderer allows `<img src="..." size="50">` (`size` is a width percentage), but
-  there is nowhere in this repo to host an extracted figure. When the source has a diagram, leave a
-  `[image goes here]` placeholder and tell the user which sample it belongs to, so they can add it
-  by hand. Never invent a description of a figure and pass it off as the statement.
+- **Figures are `<img size="N" alt="…" src="…" />`** on their own line, pointing at the
+  `problem_images` storage bucket. `size` is a width percentage; `src`, `alt`, and `size` are the
+  only attributes the sanitizer keeps. Extract the figure from the source and upload it — see
+  `figures.md` for the whole loop. Only an unextractable figure becomes an `[image goes here]`
+  placeholder, named to the user; never invent or redraw one.
 - Raw HTML is passed through `rehype-sanitize`, so most of it survives but anything exotic will be
   silently dropped. Stick to Markdown.
 

@@ -20,8 +20,9 @@ wmoj-app/          ← repo root. NOT the Next.js project.
     └── src/       ← `@/*` → `main/src/*`
 ```
 
-**Adding problems?** Use the `add-problem` skill — it covers the statement format, the
-`generator.cpp` house style, the live-judge verification loop, and the direct database insert.
+**Adding problems?** Use the `add-problem` skill — it covers the statement format, extracting and
+hosting statement figures, the `generator.cpp` house style, the live-judge verification loop, and the
+direct database insert.
 
 ## Commands
 
@@ -62,6 +63,11 @@ with the Supabase MCP (`list_tables`, `execute_sql`).
 13 tables, RLS enabled on all: `users`, `admins`, `managers`, `problems`, `contests`,
 `contest_problems`, `contest_participants`, `join_history`, `countdown_timers`, `submissions`,
 `comments`, `comment_votes`, `news_posts`.
+
+Three public storage buckets: `avatars`, **`problem_images`** (statement figures, 5 MB/object,
+raster only), and `goyslop`. The MCP has no storage tool — object bytes aren't in Postgres — so
+uploads go over the storage REST API, and the project's `sb_secret_…` key is not a JWT: it belongs in
+an `apikey` header, not `Authorization: Bearer`. The skill's `scripts/upload-image.sh` handles both.
 
 ### Every schema change must be a new migration file
 
@@ -106,7 +112,11 @@ Rules:
   `api/admin/problems/[id]/route.ts` and `api/manager/problems/[id]/route.ts` still select it, so
   **both GETs 500 unconditionally**; they're superseded by server components. Don't copy that.
 - **`problems.checker`** is nullable `text` holding optional C++ checker source; `NULL`/empty means
-  byte comparison, which is what every live problem currently uses.
+  byte comparison, which is what all but a handful of live problems use.
+- **Statement figures are raw `<img>` in the Markdown**, and `MarkdownRenderer`'s `rehype-sanitize`
+  schema keeps only `src`, `alt`, and `size` (a width *percentage*). `width`, `style`, and `class`
+  are dropped silently. `utils/problemImages.ts` scrapes those `src`s so the admin/manager DELETE
+  routes can clear the bucket — an image's lifetime is tied to the statement referencing it.
 - **`submissions.status` is GENERATED STORED** from `summary->>'failed'`/`'total'`. Never write it.
 - **`submissions.problem_id`/`user_id` have no FKs.** Orphans are possible.
 - **Contest status is never stored** — always compute with `getContestStatus()`. Both timestamps

@@ -127,13 +127,21 @@ Run this in full, per problem, in order. Later steps depend on earlier ones havi
 **1. Read the source.** PDFs go through the Read tool with a `pages` range; Markdown, text, and
 images likewise. Pull out the title (contest prefix included), the statement, the input and output
 specifications, the constraints, every sample, the marks/subtask breakdown if there is one, and the
-official time and memory limits if stated. If the source is a scan or has figures you cannot read,
-say which parts you could not extract rather than inventing them. There is nowhere in this repo to
-host a figure, so a diagram becomes an `[image goes here]` placeholder the user fills in by hand —
-never invent a description of one.
+official time and memory limits if stated. If the source is a scan or has parts you cannot read, say
+which ones rather than inventing them.
 
 **2. Write the statement.** See `reference/statement-format.md` for the required shape, the
-Markdown quirks, and how to pick `id`, `points`, `time_limit`, and `memory_limit`.
+Markdown quirks, and how to pick `id`, `points`, `time_limit`, and `memory_limit`. If the source has
+figures, do step 2a with it.
+
+**2a. Extract the figures.** See `reference/figures.md`. Most CCC statements have at least one
+diagram, and for several problems the figure *is* the specification — a statement without it is not
+a faithful copy. Render the PDF page, crop the figure out, upload it to the `problem_images` bucket,
+and embed it with `<img size="N" alt="…" src="…" />`. `scripts/figure.py` and
+`scripts/upload-image.sh` do the mechanical parts. Render at the default **600 dpi** — a figure needs
+about twice the pixels of the CSS width it renders at or it looks soft on a HiDPI screen, and 200 dpi
+leaves no margin. Only when a figure genuinely cannot be extracted does it become an
+`[image goes here]` placeholder for the user — never invent or redraw one.
 
 **3. Write `generator.cpp`.** See `reference/generator-style.md`. The house style is specific and
 non-optional: the fixed RNG seed `123456789`, the verbatim `json_escape` helper, the section
@@ -200,18 +208,19 @@ pull the stored arrays into a file without reading them, and how to confirm the 
 still reproduces the stored data exactly.
 
 **9. Report.** Give the user the problem id, title, points, limits, case count, total payload size,
-and the verdict summary from step 8. If anything is left for them to do by hand — a missing figure,
-a judgement call on points — say it explicitly.
+figures uploaded, and the verdict summary from step 8. If anything is left for them to do by hand —
+a figure that could not be extracted, a judgement call on points — say it explicitly.
 
 ## No migration file for this
 
 Publishing a problem does **not** get an entry in `supabase/migrations/`, even though it goes through
 the Supabase MCP. The repo's `AGENTS.md` requires a new migration only for changes to the database's
 *structure or behaviour* — tables, columns, constraints, indexes, RLS policies, functions, triggers,
-RPCs, enums, extensions, storage. A problem is a row of content in an existing table, exactly like a
-news post, and logging rows there would bury the schema changes the history exists for. Same for the
-rest of this workflow: flipping `is_active`, correcting a statement, adding or regenerating test
-data or a checker, deleting a problem you just added. All rows, no migrations.
+RPCs, enums, extensions, storage *buckets and their policies*. A problem is a row of content in an
+existing table, exactly like a news post, and logging rows there would bury the schema changes the
+history exists for. Same for the rest of this workflow: flipping `is_active`, correcting a statement,
+adding or regenerating test data or a checker, uploading a figure into an existing bucket, deleting a
+problem you just added. All content, no migrations.
 
 If publishing a problem ever seems to *require* a schema change, stop — that is a real migration and
 a separate conversation with the user.
@@ -245,7 +254,9 @@ halfway, in a state nobody can reason about.
 - Never run or host `wmoj-judge` locally to test a problem, and never call `judge.sh` directly —
   every judge call goes through `judge-lock.sh` so concurrent agents cannot corrupt each other.
 - Never publish through the UI, the app's API routes, or anything other than a direct database
-  insert via the Supabase MCP.
+  insert via the Supabase MCP. Figure *uploads* are the one exception and go over Supabase's storage
+  REST API, because the MCP has no storage tool — use `scripts/upload-image.sh`, not hand-rolled
+  `curl`, and never let that exception spread to rows.
 - Never proceed when the Supabase MCP is down or pointed at the wrong project — stop and say so.
 - Never store test data the live judge did not produce from the stored generator.
 - Never publish a checker problem without proving *both* halves of the rule above: a wrong answer
@@ -253,7 +264,9 @@ halfway, in a state nobody can reason about.
 - Never mark a problem active before step 8 passes.
 - Never insert a submission row to "test" a problem. Submissions feed points, solve counts, and
   leaderboards; verification goes straight to the judge and leaves no trace.
-- Never invent a `created_by` UUID, a figure you could not read, or an unstated constraint.
+- Never invent a `created_by` UUID, an unstated constraint, or a figure — not a description of one,
+  not a redrawing of it from the prose, not a lookalike. If it cannot be extracted, it stays a
+  placeholder and the user hears about it.
 
 ---
 
