@@ -110,6 +110,20 @@ The details that are not negotiable, because every existing generator has them:
 - **`std::mt19937_64 rng(123456789); // fixed seed for reproducibility`** — that literal seed, as the
   first line of `main`. Re-running the generator must reproduce the data byte for byte, or the
   stored source stops matching the stored data. Never use `random_device`, time, or `rand()`.
+- **Never draw two random values in one expression.** C++ leaves the evaluation order of function
+  arguments *unspecified*, so `add_case(pick(rng), pick(rng))` consumes the RNG in a different order
+  under Apple clang than under the judge's g++ — the same seed then yields **different test data on
+  different compilers**, which silently breaks the guarantee that the stored generator reproduces the
+  stored data. Hoist each draw into its own statement first:
+
+  ```cpp
+  int n = pick(rng);          // not add_case(pick(rng), pick(rng))
+  int m = pick(rng);
+  add_case(n, m);
+  ```
+
+  This has already bitten one problem, and it surfaced as a one-byte total mismatch — easy to
+  dismiss, and fatal to reproducibility.
 - **Section banners** in the `// -------- Name --------` form, in this order: official samples
   verbatim first, then hand-crafted edge cases, then randomised cases.
 - **Emit stdout first, then stderr**, both with `", "` between elements and `<< endl` at the close.

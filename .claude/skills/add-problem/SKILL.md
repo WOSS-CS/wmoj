@@ -232,6 +232,9 @@ halfway, in a state nobody can reason about.
 - **CCC shares problems across divisions.** `ccc23s1` is also J4, `ccc26s2` is also J5. A missing
   J-number in a year folder usually means the problem is dual-listed, not missing. Publish it once
   under the Senior slug and keep the dual attribution in the statement's opening line.
+- **Do not push to `wmoj-judge` while a batch is running.** Any push redeploys it on Render, which
+  restarts the service and can drop an in-flight `/submit` — including a docs-only commit. Land judge
+  changes before the batch starts, or after it finishes.
 - If one problem fails, leave it out, keep going with the rest, and collect the failures. Report at
   the end which were published and which were not, with the specific reason for each.
 - Track progress with the task tools for anything over a handful of problems, so the state survives

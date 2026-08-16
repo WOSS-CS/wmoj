@@ -73,6 +73,36 @@ $gen$,
   used for display. Never invent a UUID — the foreign key to `auth.users` will reject it.
 - The `id` must not already exist. Check first; the insert will fail on the primary key otherwise.
 
+### Getting a large test array into the statement
+
+Every byte of `input`/`output` has to pass through the agent's own context on its way into the MCP
+call: the arrays live in a file, and the only way to put them in the SQL is to read them and type
+them back out. Two things follow.
+
+- **Keep single cases small.** The Read tool truncates a long single-line file at roughly 47 KB, so
+  a case bigger than that cannot even be read in one piece. A case under ~25 KB reads and re-emits
+  cleanly. This is another reason to keep large cases wide in one dimension only — the byte budget
+  in SKILL.md already points the same way.
+- **Send it in chunks and checksum each one.** Insert with `input`/`output` as `'[]'::jsonb`, then
+  append a slice at a time with `set input = input || $j$[...]$j$::jsonb`. After each chunk compare
+  a digest against the same slice on disk. Transcribing thousands of digits is exactly the kind of
+  thing that silently drops or duplicates one character, and this catches it while the fix is still
+  a one-line correction:
+
+  ```sql
+  select (select md5(string_agg(x, chr(10) order by ord))
+            from jsonb_array_elements_text(p.input) with ordinality t(x, ord)) as md5_so_far
+  from public.problems p where id = 'ccc25j3';
+  ```
+
+  A single bad element can be repaired in place with `jsonb_set(output, '{28}', to_jsonb(...))`
+  rather than re-sending the whole chunk.
+- **Let Postgres build the structured cases.** A case that is a formula — a path graph, a complete
+  graph, an alternating array, a run of `L i i+1` operations — can be generated with `repeat()` and
+  `generate_series()` instead of transcribed, and it costs nothing to move. Verify the construction
+  with `md5()` against the local file *before* appending it. On a recent pair of problems this moved
+  ~68 KB of the data for free.
+
 ## Verifying the write
 
 Read the row back and confirm the data survived the round trip through `jsonb`. This is the check
