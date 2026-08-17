@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 import Pagination from '@/components/Pagination';
+import { TableBodySkeleton } from '@/components/TableBodySkeleton';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
+import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
 import { SubmissionCodeBlock } from '@/components/SubmissionCodeBlock';
 import { toast } from '@/components/ui/Toast';
 import type { SubmissionRow, SubmissionStats } from './page';
@@ -18,6 +20,8 @@ interface Props {
   stats: SubmissionStats;
   fetchError?: string;
 }
+
+const PAGE_SIZE = 20;
 
 // ─── Relative time ────────────────────────────────────────────────────────────
 
@@ -202,58 +206,36 @@ export default function SubmissionsClient({
   stats,
   fetchError,
 }: Props) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [problemInput, setProblemInput] = useState(currentProblemSearch);
-  const [userInput, setUserInput] = useState(currentUserSearch);
-  const [isStatusLoading, setIsStatusLoading] = useState(false);
   const { user, session } = useAuth();
   const [selected, setSelected] = useState<SubmissionDetail | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    setIsStatusLoading(false);
-  }, [searchParams]);
-  const problemTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const userTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { displayPage, isLoading, handlePageChange, handleFilterChange, buildHref, startTransition } = usePaginatedNavigation({
+    currentPage,
+    totalPages,
+    currentParams: {
+      problem: currentProblemSearch || undefined,
+      user: currentUserSearch || undefined,
+      status: currentStatusFilter !== 'all' ? currentStatusFilter : undefined,
+    },
+  });
 
-  const buildParams = (overrides: Record<string, string>) => {
-    const p = new URLSearchParams();
-    const problem = 'problem' in overrides ? overrides.problem : currentProblemSearch;
-    const user = 'user' in overrides ? overrides.user : currentUserSearch;
-    const status = 'status' in overrides ? overrides.status : currentStatusFilter;
-    const page = 'page' in overrides ? overrides.page : '1';
-    if (problem) p.set('problem', problem);
-    if (user) p.set('user', user);
-    if (status && status !== 'all') p.set('status', status);
-    if (page && page !== '1') p.set('page', page);
-    return p.toString();
-  };
+  const problemSearch = useDebouncedSearch({
+    param: 'problem',
+    initialValue: currentProblemSearch,
+    preserveParams: { user: currentUserSearch || undefined, status: currentStatusFilter !== 'all' ? currentStatusFilter : undefined },
+    startTransition,
+  });
 
-  const handleProblemChange = (value: string) => {
-    setProblemInput(value);
-    if (problemTimerRef.current) clearTimeout(problemTimerRef.current);
-    problemTimerRef.current = setTimeout(() => {
-      router.replace(`?${buildParams({ problem: value.trim() })}`);
-    }, 300);
-  };
+  const userSearch = useDebouncedSearch({
+    param: 'user',
+    initialValue: currentUserSearch,
+    preserveParams: { problem: currentProblemSearch || undefined, status: currentStatusFilter !== 'all' ? currentStatusFilter : undefined },
+    startTransition,
+  });
 
-  const handleUserChange = (value: string) => {
-    setUserInput(value);
-    if (userTimerRef.current) clearTimeout(userTimerRef.current);
-    userTimerRef.current = setTimeout(() => {
-      router.replace(`?${buildParams({ user: value.trim() })}`);
-    }, 300);
-  };
+  const handleStatusChange = (value: 'all' | 'passed' | 'failed') => handleFilterChange({ status: value !== 'all' ? value : undefined });
 
-  const handleStatusChange = (value: 'all' | 'passed' | 'failed') => {
-    setIsStatusLoading(true);
-    router.replace(`?${buildParams({ status: value })}`);
-  };
-
-  // Fetch and open the current user's own submission (code + results). The
-  // affordance that calls this is only rendered on the user's own rows, and the
-  // API enforces ownership regardless.
   const openSubmission = async (id: string) => {
     if (loadingId) return;
     if (!session?.access_token) {
@@ -273,10 +255,6 @@ export default function SubmissionsClient({
     } finally {
       setLoadingId(null);
     }
-  };
-
-  const buildHref = (page: number) => {
-    return `?${buildParams({ page: String(page) })}`;
   };
 
   const inputClass =
@@ -304,6 +282,9 @@ export default function SubmissionsClient({
                 currentPage={currentPage}
                 totalPages={totalPages}
                 buildHref={buildHref}
+                displayPage={displayPage}
+                loading={isLoading}
+                onPageChange={handlePageChange}
               />
             </div>
 
@@ -323,7 +304,9 @@ export default function SubmissionsClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {initialSubmissions.length === 0 ? (
+                  {isLoading ? (
+                    <TableBodySkeleton rows={PAGE_SIZE} columns={3} columnWidths={['12%', '55%', '25%']} />
+                  ) : initialSubmissions.length === 0 ? (
                     <tr>
                       <td colSpan={3} className="px-4 py-10 text-center text-text-muted text-sm">
                         No submissions match your filters.
@@ -341,7 +324,7 @@ export default function SubmissionsClient({
                         : 'bg-error/10 text-error border border-error/20';
 
                       const isOwn = !!user && sub.user_id === user.id;
-                      const isLoading = loadingId === sub.id;
+                      const isViewingCode = loadingId === sub.id;
 
                       return (
                         <tr key={sub.id} className="hover:bg-surface-2 transition-colors">
@@ -371,10 +354,10 @@ export default function SubmissionsClient({
                                 <button
                                   type="button"
                                   onClick={() => openSubmission(sub.id)}
-                                  disabled={isLoading}
+                                  disabled={isViewingCode}
                                   className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 disabled:opacity-60 whitespace-nowrap"
                                 >
-                                  {isLoading ? (
+                                  {isViewingCode ? (
                                     <>
                                       <svg className="animate-spin" width={12} height={12} viewBox="0 0 14 14" fill="none">
                                         <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
@@ -408,8 +391,8 @@ export default function SubmissionsClient({
             <div className="space-y-1">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wide">Problem</label>
               <input
-                value={problemInput}
-                onChange={(e) => handleProblemChange(e.target.value)}
+                value={problemSearch.value}
+                onChange={(e) => problemSearch.onChange(e.target.value)}
                 placeholder="Search problems..."
                 className={inputClass}
               />
@@ -418,8 +401,8 @@ export default function SubmissionsClient({
             <div className="space-y-1">
               <label className="text-xs font-medium text-text-muted uppercase tracking-wide">Username</label>
               <input
-                value={userInput}
-                onChange={(e) => handleUserChange(e.target.value)}
+                value={userSearch.value}
+                onChange={(e) => userSearch.onChange(e.target.value)}
                 placeholder="Search users..."
                 className={inputClass}
               />
@@ -443,18 +426,6 @@ export default function SubmissionsClient({
                     </button>
                   ))}
                 </div>
-                {isStatusLoading && (
-                  <svg
-                    className="animate-spin shrink-0 text-brand-primary"
-                    width={14}
-                    height={14}
-                    viewBox="0 0 14 14"
-                    fill="none"
-                  >
-                    <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
-                    <path d="M7 1.5A5.5 5.5 0 0 1 12.5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                )}
               </div>
             </div>
           </div>

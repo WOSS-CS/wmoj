@@ -1,12 +1,16 @@
 "use client";
 
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
 import { AdminGuard } from '@/components/AdminGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { Badge } from '@/components/ui/Badge';
+import Pagination from '@/components/Pagination';
+import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
 
 interface ProblemRow {
   id: string; name: string; contest_names: string[];
@@ -14,27 +18,37 @@ interface ProblemRow {
 }
 
 export default function ManageProblemsClient({
-  initialProblems,
+  rows,
+  currentPage,
+  totalPages,
+  currentSearch,
+  currentFilter,
 }: {
-  initialProblems: ProblemRow[],
+  rows: ProblemRow[];
+  currentPage: number;
+  totalPages: number;
+  currentSearch: string;
+  currentFilter: 'all' | 'active' | 'inactive';
 }) {
   const { session } = useAuth();
-  const [problems, setProblems] = useState<ProblemRow[]>(initialProblems);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const token = session?.access_token;
 
-  const filteredProblems = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return problems.filter(p => {
-      if (filter === 'active' && !p.is_active) return false;
-      if (filter === 'inactive' && p.is_active) return false;
-      if (!q) return true;
-      return p.name.toLowerCase().includes(q) || p.contest_names.some(cn => cn.toLowerCase().includes(q));
-    });
-  }, [problems, filter, search]);
+  const currentParams: Record<string, string | undefined> = {
+    search: currentSearch || undefined,
+    filter: currentFilter !== 'all' ? currentFilter : undefined,
+  };
+
+  const { displayPage, isLoading, handlePageChange, handleFilterChange, startTransition, buildHref } =
+    usePaginatedNavigation({ currentPage, totalPages, currentParams });
+
+  const { value: searchValue, onChange: onSearchChange } = useDebouncedSearch({
+    param: 'search',
+    initialValue: currentSearch,
+    preserveParams: { filter: currentFilter !== 'all' ? currentFilter : undefined },
+    startTransition,
+  });
 
   const deleteProblem = async (p: ProblemRow) => {
     if (!confirm('Delete this problem? This action cannot be undone.')) return;
@@ -42,7 +56,7 @@ export default function ManageProblemsClient({
       const res = await fetch(`/api/admin/problems/${p.id}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to delete');
-      setProblems(prev => prev.filter(row => row.id !== p.id));
+      startTransition(() => router.refresh());
     } catch (e: unknown) { setActionMessage(e instanceof Error ? e.message : 'Failed to delete'); }
   };
 
@@ -81,13 +95,12 @@ export default function ManageProblemsClient({
               <button onClick={() => setActionMessage(null)} className="text-text-muted hover:text-foreground text-lg leading-none">×</button>
             </div>
           )}
-          {error && <div className="text-error text-sm">{error}</div>}
 
           <div className="flex flex-col md:flex-row md:items-center gap-3">
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or contest..." className="flex-1 h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20" />
+            <input value={searchValue} onChange={e => onSearchChange(e.target.value)} placeholder="Search by name..." className="flex-1 h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20" />
             <div className="flex items-center gap-1.5">
               {filterOptions.map(f => (
-                <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-md text-sm border capitalize ${filter === f ? 'text-brand-primary border-brand-primary/30 bg-brand-primary/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>
+                <button key={f} onClick={() => handleFilterChange({ filter: f !== 'all' ? f : undefined })} className={`px-3 py-1.5 rounded-md text-sm border capitalize ${currentFilter === f ? 'text-brand-primary border-brand-primary/30 bg-brand-primary/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>
                   {f}
                 </button>
               ))}
@@ -98,11 +111,17 @@ export default function ManageProblemsClient({
             <div className="bg-surface-2 px-4 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">All Problems</h2>
             </div>
-            {filteredProblems.length === 0 ? (
-              <p className="text-sm text-text-muted text-center py-8">No problems match your filters.</p>
-            ) : (
-              <DataTable<Row> columns={columns} rows={filteredProblems} rowKey={(r) => r.id} pageSize={20} />
-            )}
+            <div className="px-4 py-2 border-b border-border">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                buildHref={buildHref}
+                displayPage={displayPage}
+                loading={isLoading}
+                onPageChange={handlePageChange}
+              />
+            </div>
+            <DataTable<Row> columns={columns} rows={rows} rowKey={(r) => r.id} loading={isLoading} skeletonRowCount={20} />
           </div>
         </div>
       </AdminGuard>

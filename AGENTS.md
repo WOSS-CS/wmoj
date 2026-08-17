@@ -50,6 +50,19 @@ Its 74 problems (50 errors, 24 warnings) are mostly `@typescript-eslint/no-expli
   + `lib/adminAuth.ts`/`lib/managerAuth.ts` in API routes + **RLS as the real boundary**.
 - State: `AuthContext`, `CountdownContext`, `ThemeContext`. No Redux. SWR in two components only.
 - Queries are inline and untyped (no DAL, no generated Supabase types).
+- **Pagination (server-driven).** Every list route paginates server-side: `page.tsx` reads `?page=`
+  via `parsePage`, queries with `.range(computeRange(...))` and `{ count: 'exact' }`, computes
+  `totalPages` via `computeTotalPages`, clamps out-of-range pages via `clampPage` + `redirect`, and
+  passes the page's rows + `currentPage` + `totalPages` to its client. The client uses
+  `usePaginatedNavigation` (optimistic page via `useOptimistic` + `useTransition`-driven `isLoading`)
+  + `<Pagination onPageChange displayPage loading>` + `<DataTable loading skeletonRowCount>`.
+  Filter/search changes go through `handleFilterChange` (instant URL update, page reset to 1, same
+  skeleton) or `useDebouncedSearch` (300ms debounce for text inputs). Enrichment (usernames, problem
+  names, contest names) is **per-page**: collect IDs from the page's rows, batch-fetch related names
+  via `.in('id', pageIds)` — never fetch enrichments for all rows. Shared infra lives in
+  `lib/pagination.ts`, `hooks/usePaginatedNavigation.ts`, `hooks/useDebouncedSearch.ts`,
+  `hooks/useViewCode.ts`, and `components/TableBodySkeleton.tsx`. `ClientPagination` was deleted
+  (was `DataTable`'s old client-side paginator; zero callers after the migration).
 
 **Roles: manager > admin > regular.** Admin-created problems and contests land *pending*
 (`is_active = false`); manager-created contests go live immediately. Only managers flip `is_active`,
@@ -230,6 +243,24 @@ serializes `generate`/`submit` (`health`/`check` pass through), at no cost in th
 - **Check for callers before "fixing" an API route** — ~16 are dead, several superseded by server
   components. Dead modules include `utils/userRole.ts`, `utils/participationCheck.ts`,
   `hooks/useAnimations.ts`, `components/landing/*`, and `components/layout/Sidebar.tsx`.
+- **Don't re-introduce client-side pagination** for DB-backed lists. `DataTable`'s `pageSize` prop
+  was removed; server-paginated routes pass one page of rows directly. If you need a client-side
+  table for a small static list, re-add `pageSize` deliberately — but the default for any DB-backed
+  list is server pagination.
+- **Don't call `setRows(prev => ...)` after a delete/toggle.** Call `startTransition(() =>
+  router.refresh())` to re-fetch the current page from the server. The server is the source of
+  truth and handles the "last row on page deleted" case via `clampPage` + `redirect`.
+- **Don't use `useSearchParams` in a client component** for filter state — derive from server props
+  instead (avoids the Next 16 `<Suspense>` boundary requirement). `useDebouncedSearch` handles the
+  debounced-URL-write side.
+- **Don't select `code` or `results` in submission-list queries.** The submission-list routes
+  (`/admin/dashboard`, `/manager/dashboard`, `/admin|manager/problems/[id]/submissions`,
+  `/manager/usermanagement/[id]`) select only `id, created_at, language, status, summary, problem_id,
+  user_id`. The "View Code" modal fetches `{ code, results }` on demand via
+  `GET /api/{admin,manager}/submissions/[id]` (backed by `useViewCode`). Pulling `code` for every
+  row in a 20-row page is the bug this migration fixed; don't reintroduce it.
+- **Reuse `useViewCode`** for any submission-list "View Code" affordance. Don't hand-roll the
+  fetch/state/modal triplet per route.
 
 ## Related repo
 

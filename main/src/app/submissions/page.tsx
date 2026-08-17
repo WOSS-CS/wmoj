@@ -1,4 +1,5 @@
 import { getServerSupabase } from '@/lib/supabaseServer';
+import { parsePage, computeRange, computeTotalPages } from '@/lib/pagination';
 import SubmissionsClient from './SubmissionsClient';
 
 export interface SubmissionRow {
@@ -49,21 +50,20 @@ export default async function SubmissionsPage({
   searchParams: Promise<{ page?: string; problem?: string; user?: string; status?: string }>;
 }) {
   const params = await searchParams;
-  const currentPage = Math.max(1, Number(params?.page) || 1);
+  const currentPage = parsePage(params?.page);
   const problemSearch = params?.problem?.trim() || '';
   const userSearch = params?.user?.trim() || '';
   const statusFilter = (['all', 'passed', 'failed'] as const).includes(params?.status as 'all' | 'passed' | 'failed')
     ? (params?.status as 'all' | 'passed' | 'failed')
     : 'all';
 
-  const from = (currentPage - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const { from, to } = computeRange(currentPage, PAGE_SIZE);
 
   const supabase = await getServerSupabase();
 
   let submissions: SubmissionRow[] = [];
   let totalPages = 1;
-  let stats: SubmissionStats = { passed: 0, failed: 0, timeout: 0, compile_error: 0, error: 0, total: 0 };
+  const stats: SubmissionStats = { passed: 0, failed: 0, timeout: 0, compile_error: 0, error: 0, total: 0 };
   let fetchError: string | undefined;
 
   try {
@@ -111,7 +111,7 @@ export default async function SubmissionsPage({
       if (subsError) {
         fetchError = 'Failed to fetch submissions';
       } else {
-        totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+        totalPages = computeTotalPages(count, PAGE_SIZE);
 
         // Fetch only the users and problems referenced on this page
         const userIds = [...new Set((rawSubs || []).map((s) => s.user_id))];

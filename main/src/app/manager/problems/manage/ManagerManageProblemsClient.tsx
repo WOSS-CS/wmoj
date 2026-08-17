@@ -1,12 +1,17 @@
 "use client";
 
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
 import { ManagerGuard } from '@/components/ManagerGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { Badge } from '@/components/ui/Badge';
+import Pagination from '@/components/Pagination';
+import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
+import { buildPageHref } from '@/lib/pagination';
 
 interface ProblemRow {
   id: string; name: string; contest_names: string[];
@@ -14,40 +19,46 @@ interface ProblemRow {
 }
 
 export default function ManagerManageProblemsClient({
-  initialProblems,
+  rows,
+  currentPage,
+  totalPages,
+  currentSearch,
+  currentStatus,
+  pendingCount,
 }: {
-  initialProblems: ProblemRow[],
+  rows: ProblemRow[];
+  currentPage: number;
+  totalPages: number;
+  currentSearch: string;
+  currentStatus: 'all' | 'active' | 'pending';
+  pendingCount: number;
 }) {
   const { session } = useAuth();
-  const [problems, setProblems] = useState<ProblemRow[]>(initialProblems);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
   const token = session?.access_token;
 
-  const pendingProblems = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return problems.filter(p => {
-      if (p.is_active) return false;
-      if (!q) return true;
-      return p.name.toLowerCase().includes(q) || p.contest_names.some(cn => cn.toLowerCase().includes(q));
-    });
-  }, [problems, search]);
+  const currentParams: Record<string, string | undefined> = {
+    search: currentSearch || undefined,
+    status: currentStatus !== 'all' ? currentStatus : undefined,
+  };
 
-  const allProblems = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return problems.filter(p => {
-      if (!q) return true;
-      return p.name.toLowerCase().includes(q) || p.contest_names.some(cn => cn.toLowerCase().includes(q));
-    });
-  }, [problems, search]);
+  const { displayPage, isLoading, handlePageChange, handleFilterChange, startTransition, buildHref } =
+    usePaginatedNavigation({ currentPage, totalPages, currentParams });
+
+  const { value: searchValue, onChange: onSearchChange } = useDebouncedSearch({
+    param: 'search',
+    initialValue: currentSearch,
+    preserveParams: { status: currentStatus !== 'all' ? currentStatus : undefined },
+    startTransition,
+  });
 
   const toggleActive = async (p: ProblemRow) => {
     try {
       const res = await fetch(`/api/manager/problems/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ is_active: !p.is_active }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to toggle');
-      setProblems(prev => prev.map(row => row.id === p.id ? { ...row, is_active: !p.is_active } : row));
+      startTransition(() => router.refresh());
     } catch (e: unknown) { setActionMessage(e instanceof Error ? e.message : 'Failed to toggle'); }
   };
 
@@ -57,15 +68,17 @@ export default function ManagerManageProblemsClient({
       const res = await fetch(`/api/manager/problems/${p.id}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to delete');
-      setProblems(prev => prev.filter(row => row.id !== p.id));
+      startTransition(() => router.refresh());
     } catch (e: unknown) { setActionMessage(e instanceof Error ? e.message : 'Failed to delete'); }
   };
+
+  const statusOptions = ['all', 'active', 'pending'] as const;
 
   type Row = ProblemRow;
   const columns: Array<DataTableColumn<Row>> = [
     { key: 'name', header: 'Name', className: 'w-3/12', sortable: true, sortAccessor: (r) => r.name.toLowerCase(), render: (r) => <span className="text-foreground font-medium">{r.name}</span> },
     { key: 'contest', header: 'Contests', className: 'w-2/12', sortable: true, sortAccessor: (r) => (r.contest_names[0] || '').toLowerCase(), render: (r) => <span className="text-text-muted">{r.contest_names.length > 0 ? r.contest_names.join(', ') : '-'}</span> },
-    { key: 'status', header: 'Status', className: 'w-1/12', sortable: true, sortAccessor: (r) => (r.is_active ? 1 : 0), render: (r) => <Badge variant={r.is_active ? 'success' : 'warning'}>{r.is_active ? 'Active' : 'Inactive'}</Badge> },
+    { key: 'status', header: 'Status', className: 'w-1/12', sortable: true, sortAccessor: (r) => (r.is_active ? 1 : 0), render: (r) => <Badge variant={r.is_active ? 'success' : 'warning'}>{r.is_active ? 'Active' : 'Pending'}</Badge> },
     { key: 'updated', header: 'Updated', className: 'w-2/12', sortable: true, sortAccessor: (r) => new Date(r.updated_at).getTime(), render: (r) => <span className="text-text-muted text-sm font-mono">{new Date(r.updated_at).toLocaleDateString()}</span> },
     {
       key: 'actions', header: 'Actions', className: 'w-4/12', render: (r) => (
@@ -84,9 +97,20 @@ export default function ManagerManageProblemsClient({
     <AuthGuard requireAuth allowAuthenticated>
       <ManagerGuard>
         <div className="w-full space-y-6">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Manage Problems</h1>
-            <p className="text-sm text-text-muted mt-1">Review and approve problems created by admins.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">Manage Problems</h1>
+              <p className="text-sm text-text-muted mt-1">Review and approve problems created by admins.</p>
+            </div>
+            {pendingCount > 0 && currentStatus !== 'pending' && (
+              <Link
+                href={buildPageHref({ ...currentParams, status: 'pending' }, 1)}
+                onClick={(e) => { e.preventDefault(); handleFilterChange({ status: 'pending' }); }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-warning/10 text-warning border border-warning/30 hover:bg-warning/20"
+              >
+                {pendingCount} pending review
+              </Link>
+            )}
           </div>
 
           {actionMessage && (
@@ -95,32 +119,33 @@ export default function ManagerManageProblemsClient({
               <button onClick={() => setActionMessage(null)} className="text-text-muted hover:text-foreground text-lg leading-none">×</button>
             </div>
           )}
-          {error && <div className="text-error text-sm">{error}</div>}
 
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or contest..." className="w-full h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20" />
-
-          <div className="glass-panel overflow-hidden">
-            <div className="bg-surface-2 px-4 py-3 border-b border-border flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">Pending Review</h2>
-              <span className="text-xs text-text-muted font-mono">{pendingProblems.length} item{pendingProblems.length !== 1 ? 's' : ''}</span>
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
+            <input value={searchValue} onChange={e => onSearchChange(e.target.value)} placeholder="Search by name..." className="flex-1 h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20" />
+            <div className="flex items-center gap-1.5">
+              {statusOptions.map(s => (
+                <button key={s} onClick={() => handleFilterChange({ status: s !== 'all' ? s : undefined })} className={`px-3 py-1.5 rounded-md text-sm border capitalize ${currentStatus === s ? 'text-brand-primary border-brand-primary/30 bg-brand-primary/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>
+                  {s}
+                </button>
+              ))}
             </div>
-            {pendingProblems.length === 0 ? (
-              <p className="text-sm text-text-muted px-4 py-4">No pending problems. All problems are active.</p>
-            ) : (
-              <DataTable<Row> columns={columns} rows={pendingProblems} rowKey={(r) => r.id} pageSize={15} />
-            )}
           </div>
 
           <div className="glass-panel overflow-hidden">
-            <div className="bg-surface-2 px-4 py-3 border-b border-border flex items-center justify-between">
+            <div className="bg-surface-2 px-4 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">All Problems</h2>
-              <span className="text-xs text-text-muted font-mono">{allProblems.length} total</span>
             </div>
-            {allProblems.length === 0 ? (
-              <p className="text-sm text-text-muted px-4 py-4">No problems found.</p>
-            ) : (
-              <DataTable<Row> columns={columns} rows={allProblems} rowKey={(r) => r.id} pageSize={20} />
-            )}
+            <div className="px-4 py-2 border-b border-border">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                buildHref={buildHref}
+                displayPage={displayPage}
+                loading={isLoading}
+                onPageChange={handlePageChange}
+              />
+            </div>
+            <DataTable<Row> columns={columns} rows={rows} rowKey={(r) => r.id} loading={isLoading} skeletonRowCount={20} />
           </div>
         </div>
       </ManagerGuard>

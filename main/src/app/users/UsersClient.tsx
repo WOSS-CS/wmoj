@@ -1,9 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Pagination from '@/components/Pagination';
+import { TableBodySkeleton } from '@/components/TableBodySkeleton';
+import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
+import { buildPageHref } from '@/lib/pagination';
 import type { UserRow } from './page';
 
 const PAGE_SIZE = 25;
@@ -25,39 +27,27 @@ export default function UsersClient({
   currentSort,
   fetchError,
 }: UsersClientProps) {
-  const router = useRouter();
-  const [searchInput, setSearchInput] = useState(currentSearch);
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleSearchChange = (value: string) => {
-    setSearchInput(value);
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = setTimeout(() => {
-      const params = new URLSearchParams();
-      if (value.trim()) params.set('search', value.trim());
-      params.set('page', '1');
-      if (currentSort !== 'points') params.set('sort', currentSort);
-      router.replace(`?${params.toString()}`);
-    }, 300);
+  const currentParams: Record<string, string | undefined> = {
+    search: currentSearch || undefined,
+    sort: currentSort !== 'points' ? currentSort : undefined,
   };
 
-  const buildHref = (page: number) => {
-    const params = new URLSearchParams();
-    if (currentSearch) params.set('search', currentSearch);
-    params.set('page', String(page));
-    if (currentSort !== 'points') params.set('sort', currentSort);
-    return `?${params.toString()}`;
-  };
+  const { displayPage, isLoading, handlePageChange, handleFilterChange, startTransition, buildHref } =
+    usePaginatedNavigation({ currentPage, totalPages, currentParams });
 
-  const buildSortHref = (sort: string) => {
-    const params = new URLSearchParams();
-    if (currentSearch) params.set('search', currentSearch);
-    params.set('page', '1');
-    if (sort !== 'points') params.set('sort', sort);
-    return `?${params.toString()}`;
-  };
+  const search = useDebouncedSearch({
+    param: 'search',
+    initialValue: currentSearch,
+    preserveParams: { sort: currentSort !== 'points' ? currentSort : undefined },
+    startTransition,
+  });
 
-  const rankOffset = (currentPage - 1) * PAGE_SIZE;
+  const sortParams = (sort: string) => ({
+    ...currentParams,
+    sort: sort !== 'points' ? sort : undefined,
+  });
+
+  const rankOffset = (displayPage - 1) * PAGE_SIZE;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -76,10 +66,13 @@ export default function UsersClient({
           currentPage={currentPage}
           totalPages={totalPages}
           buildHref={buildHref}
+          displayPage={displayPage}
+          loading={isLoading}
+          onPageChange={handlePageChange}
         />
         <input
-          value={searchInput}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          value={search.value}
+          onChange={(e) => search.onChange(e.target.value)}
           placeholder="Search by handle..."
           className="w-1/4 h-8 px-3 rounded-md bg-surface-1 border border-border text-sm text-foreground placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
         />
@@ -98,7 +91,8 @@ export default function UsersClient({
                 </th>
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide w-32 text-right">
                   <Link
-                    href={buildSortHref('points')}
+                    href={buildPageHref(sortParams('points'), 1)}
+                    onClick={(e) => { e.preventDefault(); handleFilterChange({ sort: 'points' }); }}
                     className={`hover:text-foreground transition-colors ${currentSort === 'points' ? 'text-brand-primary' : 'text-text-muted'}`}
                   >
                     Points{currentSort === 'points' ? ' \u25BC' : ''}
@@ -106,7 +100,8 @@ export default function UsersClient({
                 </th>
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide w-32 text-right">
                   <Link
-                    href={buildSortHref('problems')}
+                    href={buildPageHref(sortParams('problems'), 1)}
+                    onClick={(e) => { e.preventDefault(); handleFilterChange({ sort: 'problems' }); }}
                     className={`hover:text-foreground transition-colors ${currentSort === 'problems' ? 'text-brand-primary' : 'text-text-muted'}`}
                   >
                     Problems{currentSort === 'problems' ? ' \u25BC' : ''}
@@ -115,7 +110,9 @@ export default function UsersClient({
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {initialUsers.length === 0 ? (
+              {isLoading ? (
+                <TableBodySkeleton rows={PAGE_SIZE} columns={4} columnWidths={['8%', '40%', '20%', '20%']} />
+              ) : initialUsers.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-4 py-10 text-center text-text-muted text-sm">
                     No users found.

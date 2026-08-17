@@ -1,4 +1,5 @@
 import { getServerSupabase } from '@/lib/supabaseServer';
+import { parsePage, computeRange, computeTotalPages } from '@/lib/pagination';
 import ProblemsClient from './ProblemsClient';
 import { Problem } from '@/types/problem';
 import { getContestStatus } from '@/utils/contestStatus';
@@ -13,10 +14,9 @@ export default async function ProblemsPage({
   searchParams: Promise<{ page?: string; search?: string }>;
 }) {
   const params = await searchParams;
-  const currentPage = Math.max(1, Number(params?.page) || 1);
+  const currentPage = parsePage(params?.page);
   const search = params?.search?.trim() || '';
-  const from = (currentPage - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const { from, to } = computeRange(currentPage, PAGE_SIZE);
 
   const supabase = await getServerSupabase();
 
@@ -64,7 +64,7 @@ export default async function ProblemsPage({
   }
 
   const problemList = (problems as Problem[]) || [];
-  const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+  const totalPages = computeTotalPages(count, PAGE_SIZE);
 
   // Hot problems: computed from all submissions (lightweight single-column fetch)
   const { data: allSubs } = await supabase

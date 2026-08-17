@@ -6,9 +6,12 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
+import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
 import { Contest } from '@/types/contest';
 import { Badge } from '@/components/ui/Badge';
 import { getContestStatus, formatTimeUntil } from '@/utils/contestStatus';
+
+const PAST_PAGE_SIZE = 10;
 
 interface ContestsClientProps {
   activeContests: Contest[];
@@ -46,6 +49,8 @@ export default function ContestsClient({
 
   const ongoingContests = activeContests.filter(c => getContestStatus(c) === 'ongoing');
   const upcomingContests = activeContests.filter(c => getContestStatus(c) === 'upcoming');
+
+  const { displayPage: pastDisplayPage, isLoading: pastIsLoading, handlePageChange: handlePastPageChange, buildHref: buildPastHref } = usePaginatedNavigation({ currentPage: pastCurrentPage, totalPages: pastTotalPages, currentParams: {} });
 
   const columns: Array<DataTableColumn<Contest>> = [
     {
@@ -144,7 +149,7 @@ export default function ContestsClient({
             <div className="bg-surface-2 px-4 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Past Contests</h2>
             </div>
-            {pastContests.length === 0 && pastTotalPages <= 1 ? (
+            {pastContests.length === 0 && !pastIsLoading && pastTotalPages <= 1 ? (
               <p className="text-sm text-text-muted px-4 py-4">No past contests yet.</p>
             ) : (
               <>
@@ -152,10 +157,13 @@ export default function ContestsClient({
                   <Pagination
                     currentPage={pastCurrentPage}
                     totalPages={pastTotalPages}
-                    buildHref={(p) => `?page=${p}`}
+                    buildHref={buildPastHref}
+                    displayPage={pastDisplayPage}
+                    loading={pastIsLoading}
+                    onPageChange={handlePastPageChange}
                   />
                 </div>
-                <DataTable<Contest> columns={columns} rows={pastContests} rowKey={(r) => r.id} headerVariant="gray" />
+                <DataTable<Contest> columns={columns} rows={pastContests} rowKey={(r) => r.id} headerVariant="gray" loading={pastIsLoading} skeletonRowCount={PAST_PAGE_SIZE} emptyState={<p>No past contests on this page.</p>} />
               </>
             )}
           </div>

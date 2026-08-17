@@ -1,4 +1,5 @@
 import { getServerSupabase } from '@/lib/supabaseServer';
+import { parsePage, computeRange, computeTotalPages } from '@/lib/pagination';
 import UsersClient from './UsersClient';
 
 export interface UserRow {
@@ -16,11 +17,10 @@ export default async function UsersPage({
   searchParams: Promise<{ page?: string; search?: string; sort?: string }>;
 }) {
   const params = await searchParams;
-  const currentPage = Math.max(1, Number(params?.page) || 1);
+  const currentPage = parsePage(params?.page);
   const search = params?.search?.trim() || '';
   const sort = params?.sort === 'problems' ? 'problems' : 'points';
-  const from = (currentPage - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const { from, to } = computeRange(currentPage, PAGE_SIZE);
 
   const supabase = await getServerSupabase();
 
@@ -45,7 +45,7 @@ export default async function UsersPage({
     if (error) {
       fetchError = 'Failed to fetch users';
     } else {
-      totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+      totalPages = computeTotalPages(count, PAGE_SIZE);
       leaderboard = (users || []).map((u) => ({
         id: u.id,
         username: u.username || 'Unknown',

@@ -1,16 +1,18 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
+import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
 import { Problem } from '@/types/problem';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/Badge';
 import { HotProblem } from './page';
+
+const PAGE_SIZE = 20;
 
 export default function ProblemsClient({
   initialProblems,
@@ -26,27 +28,19 @@ export default function ProblemsClient({
   currentSearch: string,
 }) {
   const { user } = useAuth();
-  const router = useRouter();
-  const [searchInput, setSearchInput] = useState(currentSearch);
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleSearchChange = (value: string) => {
-    setSearchInput(value);
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = setTimeout(() => {
-      const params = new URLSearchParams();
-      if (value.trim()) params.set('search', value.trim());
-      params.set('page', '1');
-      router.replace(`?${params.toString()}`);
-    }, 300);
+  const currentParams: Record<string, string | undefined> = {
+    search: currentSearch || undefined,
   };
 
-  const buildHref = (page: number) => {
-    const params = new URLSearchParams();
-    if (currentSearch) params.set('search', currentSearch);
-    params.set('page', String(page));
-    return `?${params.toString()}`;
-  };
+  const { displayPage, isLoading, handlePageChange, startTransition, buildHref } =
+    usePaginatedNavigation({ currentPage, totalPages, currentParams });
+
+  const search = useDebouncedSearch({
+    param: 'search',
+    initialValue: currentSearch,
+    preserveParams: {},
+    startTransition,
+  });
 
   const fetcher = async () => {
     if (!user?.id || initialProblems.length === 0) return {};
@@ -114,7 +108,7 @@ export default function ProblemsClient({
             <div className="bg-surface-2 px-4 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Problems</h2>
             </div>
-            {initialProblems.length === 0 ? (
+            {initialProblems.length === 0 && !isLoading ? (
               <div className="text-center py-12">
                 <h3 className="text-base font-medium text-foreground mb-1">
                   {currentSearch ? 'No problems match your search.' : 'No Problems Available'}
@@ -128,9 +122,12 @@ export default function ProblemsClient({
                     currentPage={currentPage}
                     totalPages={totalPages}
                     buildHref={buildHref}
+                    displayPage={displayPage}
+                    loading={isLoading}
+                    onPageChange={handlePageChange}
                   />
                 </div>
-                <DataTable<Problem> columns={columns} rows={initialProblems} rowKey={(r) => r.id} headerVariant="gray" />
+                <DataTable<Problem> columns={columns} rows={initialProblems} rowKey={(r) => r.id} headerVariant="gray" loading={isLoading} skeletonRowCount={PAGE_SIZE} />
               </>
             )}
           </div>
@@ -146,8 +143,8 @@ export default function ProblemsClient({
             </div>
             <div className="p-4 bg-surface-1">
               <input
-                value={searchInput}
-                onChange={e => handleSearchChange(e.target.value)}
+                value={search.value}
+                onChange={e => search.onChange(e.target.value)}
                 placeholder="Search problems..."
                 className="w-full h-9 px-3 rounded-md bg-surface-2 border border-border text-sm text-foreground placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
               />

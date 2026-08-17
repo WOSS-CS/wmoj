@@ -1,7 +1,8 @@
-import { useMemo, useState, useEffect } from 'react';
+'use client';
+
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { getTableTheme, type HeaderVariant } from './tableThemes';
-import ClientPagination from './ClientPagination';
 
 export type DataTableColumn<Row> = {
   key: string;
@@ -22,7 +23,16 @@ export type DataTableProps<Row extends object> = {
   headerVariant?: HeaderVariant;
   className?: string;
   stickyHeader?: boolean;
-  pageSize?: number;
+  /**
+   * When true, the <tbody> renders shimmer skeleton rows instead of `rows`.
+   * Use this for server-paginated tables while a new page is loading from the server.
+   * The paginator (rendered by the parent via <Pagination>) should also get loading=true.
+   */
+  loading?: boolean;
+  /**
+   * How many skeleton rows to show when loading=true. Defaults to 8.
+   */
+  skeletonRowCount?: number;
 };
 
 type SortState<Row> = {
@@ -35,17 +45,12 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
   const {
     columns, rows, rowKey, emptyState,
     headerVariant = 'gray', className = '', stickyHeader = true,
-    pageSize,
+    loading = false,
+    skeletonRowCount,
   } = props;
 
   const [sort, setSort] = useState<SortState<Row>>({ key: null, direction: 'asc', column: null });
-  const [page, setPage] = useState(1);
   const theme = getTableTheme(headerVariant);
-
-  // Reset to page 1 whenever the incoming rows change (search/filter in parent)
-  useEffect(() => {
-    setPage(1);
-  }, [rows]);
 
   const sortedRows = useMemo(() => {
     if (!sort.key || !sort.column) return rows;
@@ -74,10 +79,7 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
     return list;
   }, [rows, sort]);
 
-  const totalPages = pageSize ? Math.ceil(sortedRows.length / pageSize) : 1;
-  const displayRows = pageSize
-    ? sortedRows.slice((page - 1) * pageSize, page * pageSize)
-    : sortedRows;
+  const displayRows = sortedRows;
 
   const onSort = (col: DataTableColumn<Row>) => {
     if (!col.sortable) return;
@@ -87,17 +89,10 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
     });
   };
 
+  const skelCount = skeletonRowCount ?? 8;
+
   return (
     <div className={className}>
-      {pageSize && totalPages > 1 && (
-        <div className="px-4 py-2 border-b border-border">
-          <ClientPagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
-        </div>
-      )}
       <div className="overflow-x-auto">
         {/* whitespace-nowrap (inherited by every th/td) makes cell text expand
             the column instead of wrapping; the overflow-x-auto wrapper scrolls
@@ -128,7 +123,23 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {displayRows.length === 0 ? (
+            {loading ? (
+              Array.from({ length: skelCount }).map((_, rowIdx) => (
+                <tr key={`skel-${rowIdx}`} className="group">
+                  {columns.map((col, colIdx) => (
+                    <td
+                      key={col.key}
+                      className={`px-4 py-3 align-middle text-sm ${col.className || ''}`}
+                    >
+                      <div
+                        className="h-4 rounded loading-shimmer"
+                        style={{ width: colIdx === 0 ? '60%' : '40%' }}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : displayRows.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-10 text-center text-text-muted text-sm">
                   {emptyState || <p>No data found.</p>}

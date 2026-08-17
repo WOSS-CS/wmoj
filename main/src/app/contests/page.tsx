@@ -1,4 +1,5 @@
 import { getServerSupabase } from '@/lib/supabaseServer';
+import { parsePage, computeRange, computeTotalPages } from '@/lib/pagination';
 import { Contest } from '@/types/contest';
 import ContestsClient from './ContestsClient';
 
@@ -10,9 +11,8 @@ export default async function ContestsPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const params = await searchParams;
-  const pastCurrentPage = Math.max(1, Number(params?.page) || 1);
-  const from = (pastCurrentPage - 1) * PAST_PAGE_SIZE;
-  const to = from + PAST_PAGE_SIZE - 1;
+  const pastCurrentPage = parsePage(params?.page);
+  const { from, to } = computeRange(pastCurrentPage, PAST_PAGE_SIZE);
 
   const supabase = await getServerSupabase();
 
@@ -47,13 +47,13 @@ export default async function ContestsPage({
       if (pastErr) {
         fetchError = 'Failed to fetch contests';
       } else {
-        pastTotalPages = Math.max(1, Math.ceil((pastCount ?? 0) / PAST_PAGE_SIZE));
+        pastTotalPages = computeTotalPages(pastCount, PAST_PAGE_SIZE);
 
         const allContests = [...(activeRaw || []), ...(pastRaw || [])];
         const contestIds = allContests.map(c => c.id);
 
-        let participantsCountMap: Record<string, number> = {};
-        let problemsCountMap: Record<string, number> = {};
+        const participantsCountMap: Record<string, number> = {};
+        const problemsCountMap: Record<string, number> = {};
 
         if (contestIds.length > 0) {
           const [participantsResult, problemsResult] = await Promise.all([

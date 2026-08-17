@@ -1,8 +1,33 @@
 import { redirect } from 'next/navigation';
 import ManagerDashboardClient from './ManagerDashboardClient';
 import { getServerSupabase } from '@/lib/supabaseServer';
+import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
 
-export default async function ManagerDashboardPage() {
+const PAGE_SIZE = 20;
+
+export type ManagerSubmissionRow = {
+  id: string;
+  timestamp: string;
+  user: string;
+  problem: string;
+  language: string;
+  status: string;
+  score: string;
+  passed: boolean;
+  compileError: string | null;
+};
+
+type RawSub = {
+  id: string; created_at: string; language: string;
+  status: string; summary: unknown;
+  problem_id: string; user_id: string;
+};
+
+export default async function ManagerDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string | string[] }>;
+}) {
   const supabase = await getServerSupabase();
 
   const { data: authData } = await supabase.auth.getUser();
@@ -17,53 +42,70 @@ export default async function ManagerDashboardPage() {
 
   if (!managerRow) redirect('/');
 
-  const { data: subs, error: subsErr } = await supabase
+  const sp = await searchParams;
+  const currentPage = parsePage(sp.page);
+  const { from, to } = computeRange(currentPage, PAGE_SIZE);
+
+  const { data: subs, count, error: subsErr } = await supabase
     .from('submissions')
-    .select('id, created_at, language, code, results, summary, status, problem_id, user_id')
-    .order('created_at', { ascending: false });
+    .select('id, created_at, language, status, summary, problem_id, user_id', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
 
   if (subsErr) {
     console.error('Manager recent submissions error:', subsErr);
   }
 
-  const rows = subs || [];
+  const totalPages = computeTotalPages(count, PAGE_SIZE);
+  const effectivePage = clampPage(currentPage, totalPages);
+  if (effectivePage !== currentPage) {
+    redirect(buildPageHref({}, effectivePage));
+  }
 
-  const problemIds = [...new Set(rows.map((s: any) => s.problem_id).filter(Boolean))];
-  const userIds = [...new Set(rows.map((s: any) => s.user_id).filter(Boolean))];
+  const pageRows = (subs || []) as RawSub[];
 
-  const problemMap = new Map<string, string>();
-  const userMap = new Map<string, string>();
+  const problemIds = [...new Set(pageRows.map((s) => s.problem_id).filter(Boolean))];
+  const userIds = [...new Set(pageRows.map((s) => s.user_id).filter(Boolean))];
 
   const [problemsRes, usersRes] = await Promise.all([
     problemIds.length > 0
       ? supabase.from('problems').select('id, name').in('id', problemIds)
-      : Promise.resolve({ data: [] }),
+      : Promise.resolve({ data: [] as Array<{ id: string; name: string }> | null }),
     userIds.length > 0
       ? supabase.from('users').select('id, username, email').in('id', userIds)
-      : Promise.resolve({ data: [] })
+      : Promise.resolve({ data: [] as Array<{ id: string; username: string; email: string }> | null }),
   ]);
 
-  (problemsRes.data || []).forEach((p: any) => problemMap.set(p.id, p.name));
-  (usersRes.data || []).forEach((u: any) => userMap.set(u.id, u.username || u.email || 'Unknown User'));
+  const problemMap = new Map<string, string>();
+  (problemsRes.data || []).forEach((p: { id: string; name: string }) => problemMap.set(p.id, p.name));
+  const userMap = new Map<string, string>();
+  (usersRes.data || []).forEach((u: { id: string; username: string; email: string }) =>
+    userMap.set(u.id, u.username || u.email || 'Unknown User'),
+  );
 
-  const submissions = rows.map((s: any) => {
-    const summary = s.summary as { total?: number; passed?: number; failed?: number } | null;
+  const rows: ManagerSubmissionRow[] = pageRows.map((s) => {
+    const summary = s.summary as { total?: number; passed?: number; failed?: number; compileError?: string } | null;
     const total = Number(summary?.total ?? 0);
     const passed = Number(summary?.passed ?? 0);
-
     return {
       id: s.id,
       timestamp: s.created_at,
       user: userMap.get(s.user_id) || 'Unknown User',
       problem: problemMap.get(s.problem_id) || 'Unknown Problem',
       language: s.language,
-      code: s.code || '',
-      results: s.results as any || null,
       status: s.status || 'failed',
       score: total > 0 ? `${passed}/${total}` : '—',
       passed: s.status === 'passed',
+      compileError: summary?.compileError ?? null,
     };
   });
 
-  return <ManagerDashboardClient initialSubmissions={submissions} />;
+  return (
+    <ManagerDashboardClient
+      initialSubmissions={rows}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      totalCount={count ?? 0}
+    />
+  );
 }

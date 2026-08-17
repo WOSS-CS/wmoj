@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
 import { ManagerGuard } from '@/components/ManagerGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { Badge } from '@/components/ui/Badge';
+import Pagination from '@/components/Pagination';
+import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
+import { buildPageHref } from '@/lib/pagination';
 import { getContestStatus } from '@/utils/contestStatus';
 import type { ContestStatus } from '@/types/contest';
 
@@ -26,29 +31,40 @@ const STATUS_SORT_ORDER: Record<ContestStatus, number> = {
   ongoing: 3, upcoming: 2, virtual: 1, inactive: 0,
 };
 
-export default function ManagerManageContestsClient({ initialContests }: { initialContests: ContestRow[] }) {
+export default function ManagerManageContestsClient({
+  rows,
+  currentPage,
+  totalPages,
+  currentSearch,
+  currentStatus,
+  pendingCount,
+}: {
+  rows: ContestRow[];
+  currentPage: number;
+  totalPages: number;
+  currentSearch: string;
+  currentStatus: 'all' | 'active' | 'pending';
+  pendingCount: number;
+}) {
   const { session } = useAuth();
-  const [contests, setContests] = useState<ContestRow[]>(initialContests);
+  const router = useRouter();
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
   const token = session?.access_token;
 
-  const pendingContests = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return contests.filter(c => {
-      if (c.is_active) return false;
-      if (!q) return true;
-      return c.name.toLowerCase().includes(q);
-    });
-  }, [contests, search]);
+  const currentParams: Record<string, string | undefined> = {
+    search: currentSearch || undefined,
+    status: currentStatus !== 'all' ? currentStatus : undefined,
+  };
 
-  const allContests = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return contests.filter(c => {
-      if (!q) return true;
-      return c.name.toLowerCase().includes(q);
-    });
-  }, [contests, search]);
+  const { displayPage, isLoading, handlePageChange, handleFilterChange, startTransition, buildHref } =
+    usePaginatedNavigation({ currentPage, totalPages, currentParams });
+
+  const { value: searchValue, onChange: onSearchChange } = useDebouncedSearch({
+    param: 'search',
+    initialValue: currentSearch,
+    preserveParams: { status: currentStatus !== 'all' ? currentStatus : undefined },
+    startTransition,
+  });
 
   const toggleActive = async (c: ContestRow) => {
     try {
@@ -59,7 +75,7 @@ export default function ManagerManageContestsClient({ initialContests }: { initi
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to toggle');
-      setContests(prev => prev.map(row => row.id === c.id ? { ...row, is_active: !c.is_active } : row));
+      startTransition(() => router.refresh());
     } catch (e: unknown) { setActionMessage(e instanceof Error ? e.message : 'Failed to toggle'); }
   };
 
@@ -69,9 +85,11 @@ export default function ManagerManageContestsClient({ initialContests }: { initi
       const res = await fetch(`/api/manager/contests/${c.id}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to delete');
-      setContests(prev => prev.filter(row => row.id !== c.id));
+      startTransition(() => router.refresh());
     } catch (e: unknown) { setActionMessage(e instanceof Error ? e.message : 'Failed to delete'); }
   };
+
+  const statusOptions = ['all', 'active', 'pending'] as const;
 
   type Row = ContestRow;
   const columns: Array<DataTableColumn<Row>> = [
@@ -109,9 +127,20 @@ export default function ManagerManageContestsClient({ initialContests }: { initi
     <AuthGuard requireAuth allowAuthenticated>
       <ManagerGuard>
         <div className="w-full space-y-6">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Manage Contests</h1>
-            <p className="text-sm text-text-muted mt-1">Review and approve contests created by admins.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">Manage Contests</h1>
+              <p className="text-sm text-text-muted mt-1">Review and approve contests created by admins.</p>
+            </div>
+            {pendingCount > 0 && currentStatus !== 'pending' && (
+              <Link
+                href={buildPageHref({ ...currentParams, status: 'pending' }, 1)}
+                onClick={(e) => { e.preventDefault(); handleFilterChange({ status: 'pending' }); }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-warning/10 text-warning border border-warning/30 hover:bg-warning/20"
+              >
+                {pendingCount} pending review
+              </Link>
+            )}
           </div>
 
           {actionMessage && (
@@ -121,30 +150,32 @@ export default function ManagerManageContestsClient({ initialContests }: { initi
             </div>
           )}
 
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name..." className="w-full h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20" />
-
-          <div className="glass-panel overflow-hidden">
-            <div className="bg-surface-2 px-4 py-3 border-b border-border flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">Pending Review</h2>
-              <span className="text-xs text-text-muted font-mono">{pendingContests.length} item{pendingContests.length !== 1 ? 's' : ''}</span>
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
+            <input value={searchValue} onChange={e => onSearchChange(e.target.value)} placeholder="Search by name..." className="flex-1 h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20" />
+            <div className="flex items-center gap-1.5">
+              {statusOptions.map(s => (
+                <button key={s} onClick={() => handleFilterChange({ status: s !== 'all' ? s : undefined })} className={`px-3 py-1.5 rounded-md text-sm border capitalize ${currentStatus === s ? 'text-brand-primary border-brand-primary/30 bg-brand-primary/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>
+                  {s}
+                </button>
+              ))}
             </div>
-            {pendingContests.length === 0 ? (
-              <p className="text-sm text-text-muted px-4 py-4">No pending contests. All contests are active.</p>
-            ) : (
-              <DataTable<Row> columns={columns} rows={pendingContests} rowKey={(r) => r.id} pageSize={15} />
-            )}
           </div>
 
           <div className="glass-panel overflow-hidden">
-            <div className="bg-surface-2 px-4 py-3 border-b border-border flex items-center justify-between">
+            <div className="bg-surface-2 px-4 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">All Contests</h2>
-              <span className="text-xs text-text-muted font-mono">{allContests.length} total</span>
             </div>
-            {allContests.length === 0 ? (
-              <p className="text-sm text-text-muted px-4 py-4">No contests found.</p>
-            ) : (
-              <DataTable<Row> columns={columns} rows={allContests} rowKey={(r) => r.id} pageSize={20} />
-            )}
+            <div className="px-4 py-2 border-b border-border">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                buildHref={buildHref}
+                displayPage={displayPage}
+                loading={isLoading}
+                onPageChange={handlePageChange}
+              />
+            </div>
+            <DataTable<Row> columns={columns} rows={rows} rowKey={(r) => r.id} loading={isLoading} skeletonRowCount={20} />
           </div>
 
         </div>

@@ -1,11 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
 import { ManagerGuard } from '@/components/ManagerGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
+import Pagination from '@/components/Pagination';
+import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
 
 interface NewsPostRow {
   id: string;
@@ -15,18 +19,35 @@ interface NewsPostRow {
   author: string;
 }
 
-export default function ManagerNewsPostsClient({ initialPosts }: { initialPosts: NewsPostRow[] }) {
+export default function ManagerNewsPostsClient({
+  rows,
+  currentPage,
+  totalPages,
+  currentSearch,
+}: {
+  rows: NewsPostRow[];
+  currentPage: number;
+  totalPages: number;
+  currentSearch: string;
+}) {
   const { session } = useAuth();
-  const [posts, setPosts] = useState<NewsPostRow[]>(initialPosts);
-  const [search, setSearch] = useState('');
+  const router = useRouter();
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const token = session?.access_token;
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return posts;
-    return posts.filter(p => p.title.toLowerCase().includes(q));
-  }, [posts, search]);
+  const currentParams: Record<string, string | undefined> = {
+    search: currentSearch || undefined,
+  };
+
+  const { displayPage, isLoading, handlePageChange, startTransition, buildHref } =
+    usePaginatedNavigation({ currentPage, totalPages, currentParams });
+
+  const { value: searchValue, onChange: onSearchChange } = useDebouncedSearch({
+    param: 'search',
+    initialValue: currentSearch,
+    preserveParams: {},
+    startTransition,
+  });
 
   const deletePost = async (p: NewsPostRow) => {
     if (!confirm('Delete this news post? This action cannot be undone.')) return;
@@ -37,7 +58,7 @@ export default function ManagerNewsPostsClient({ initialPosts }: { initialPosts:
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to delete');
-      setPosts(prev => prev.filter(row => row.id !== p.id));
+      startTransition(() => router.refresh());
     } catch (e: unknown) {
       setActionMessage(e instanceof Error ? e.message : 'Failed to delete');
     }
@@ -123,8 +144,8 @@ export default function ManagerNewsPostsClient({ initialPosts }: { initialPosts:
           )}
 
           <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+            value={searchValue}
+            onChange={e => onSearchChange(e.target.value)}
             placeholder="Search by title..."
             className="w-full h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
           />
@@ -133,13 +154,17 @@ export default function ManagerNewsPostsClient({ initialPosts }: { initialPosts:
             <div className="bg-surface-2 px-4 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">All Posts</h2>
             </div>
-            {filtered.length === 0 ? (
-              <p className="text-sm text-text-muted text-center py-8">
-                {posts.length === 0 ? 'No news posts yet. Create your first post.' : 'No posts match your search.'}
-              </p>
-            ) : (
-              <DataTable<NewsPostRow> columns={columns} rows={filtered} rowKey={r => r.id} pageSize={20} />
-            )}
+            <div className="px-4 py-2 border-b border-border">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                buildHref={buildHref}
+                displayPage={displayPage}
+                loading={isLoading}
+                onPageChange={handlePageChange}
+              />
+            </div>
+            <DataTable<NewsPostRow> columns={columns} rows={rows} rowKey={r => r.id} loading={isLoading} skeletonRowCount={20} />
           </div>
         </div>
       </ManagerGuard>

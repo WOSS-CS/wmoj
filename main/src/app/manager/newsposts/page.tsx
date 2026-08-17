@@ -1,8 +1,15 @@
 import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabaseServer';
+import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
 import ManagerNewsPostsClient from './ManagerNewsPostsClient';
 
-export default async function ManagerNewsPostsPage() {
+const PAGE_SIZE = 20;
+
+export default async function ManagerNewsPostsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const supabase = await getServerSupabase();
 
   const { data: authData } = await supabase.auth.getUser();
@@ -17,10 +24,29 @@ export default async function ManagerNewsPostsPage() {
 
   if (!managerRow) redirect('/');
 
-  const { data: postsData } = await supabase
+  const sp = await searchParams;
+  const page = parsePage(sp.page);
+  const search = typeof sp.search === 'string' ? sp.search.trim() : '';
+
+  const { from, to } = computeRange(page, PAGE_SIZE);
+
+  let query = supabase
     .from('news_posts')
-    .select('id, title, date_posted, updated_at, users!uid(username)')
+    .select('id, title, date_posted, updated_at, users!uid(username)', { count: 'exact' })
     .order('date_posted', { ascending: false });
+
+  if (search) query = query.ilike('title', `%${search}%`);
+
+  const { data: postsData, count } = await query.range(from, to);
+
+  const totalPages = computeTotalPages(count, PAGE_SIZE);
+
+  const effectivePage = clampPage(page, totalPages);
+  if (effectivePage !== page) {
+    redirect(
+      buildPageHref({ search: search || undefined }, effectivePage),
+    );
+  }
 
   const posts = (postsData || []).map((p: Record<string, unknown>) => {
     const usersField = p.users as { username: string } | { username: string }[] | null;
@@ -36,5 +62,12 @@ export default async function ManagerNewsPostsPage() {
     };
   });
 
-  return <ManagerNewsPostsClient initialPosts={posts} />;
+  return (
+    <ManagerNewsPostsClient
+      rows={posts}
+      currentPage={page}
+      totalPages={totalPages}
+      currentSearch={search}
+    />
+  );
 }
