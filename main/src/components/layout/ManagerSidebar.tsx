@@ -1,23 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { useOptimisticPathname } from "@/hooks/useOptimisticPathname";
 
 const SidebarItem = ({
     href,
     icon,
     label,
     isActive,
+    handleNavClick,
 }: {
     href: string;
     icon: React.ReactNode;
     label: string;
     isActive: boolean;
+    handleNavClick: (e: React.MouseEvent, href: string) => void;
 }) => {
     return (
         <Link
             href={href}
+            onClick={(e) => handleNavClick(e, href)}
             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${isActive
                     ? "text-foreground bg-surface-2 font-medium"
                     : "text-text-muted hover:text-foreground hover:bg-surface-2"
@@ -30,7 +33,7 @@ const SidebarItem = ({
 };
 
 export const ManagerSidebar = () => {
-    const pathname = usePathname();
+    const { pathname, handleNavClick } = useOptimisticPathname();
 
     const navItems = [
         {
@@ -129,6 +132,7 @@ export const ManagerSidebar = () => {
                             icon={item.icon}
                             label={item.label}
                             isActive={isActive}
+                            handleNavClick={handleNavClick}
                         />
                     );
                 })}

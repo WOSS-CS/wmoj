@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { useOptimisticPathname } from "@/hooks/useOptimisticPathname";
 
 const navItems = [
     {
@@ -52,14 +52,17 @@ const NavItem = ({
     icon,
     label,
     isActive,
+    handleNavClick,
 }: {
     href: string;
     icon: React.ReactNode;
     label: string;
     isActive: boolean;
+    handleNavClick: (e: React.MouseEvent, href: string) => void;
 }) => (
     <Link
         href={href}
+        onClick={(e) => handleNavClick(e, href)}
         className={`relative flex items-center gap-2 px-3 h-full text-sm font-medium transition-colors ${
             isActive ? "text-foreground" : "text-text-muted hover:text-foreground"
         }`}
@@ -70,7 +73,7 @@ const NavItem = ({
 );
 
 export const UserNavbar = () => {
-    const pathname = usePathname();
+    const { pathname, handleNavClick } = useOptimisticPathname();
     const { user, profile, userRole, profileLoading, signOut } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [avatarError, setAvatarError] = useState(false);
@@ -120,6 +123,7 @@ export const UserNavbar = () => {
                             icon={item.icon}
                             label={item.label}
                             isActive={isActive}
+                            handleNavClick={handleNavClick}
                         />
                     );
                 })}
@@ -128,6 +132,7 @@ export const UserNavbar = () => {
                 <div className="relative flex items-stretch group">
                     <Link
                         href="/about"
+                        onClick={(e) => handleNavClick(e, '/about')}
                         className={`relative flex items-center gap-2 px-3 h-full text-sm font-medium transition-colors ${
                             pathname === "/about" || pathname.startsWith("/about/") || pathname === "/status" || pathname === "/tips" || pathname === "/pointsystem"
                                 ? "text-foreground"
@@ -143,13 +148,13 @@ export const UserNavbar = () => {
                     </Link>
                     <div className="absolute left-0 top-full pt-1 hidden group-hover:block z-50">
                         <div data-surface="light" className="w-44 bg-surface-1 border border-border rounded-xl p-1.5 shadow-xl flex flex-col gap-0.5">
-                            <Link href="/status" className="block w-full text-left px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-2 rounded-lg transition-colors">
+                            <Link href="/status" onClick={(e) => handleNavClick(e, '/status')} className="block w-full text-left px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-2 rounded-lg transition-colors">
                                 Status
                             </Link>
-                            <Link href="/tips" className="block w-full text-left px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-2 rounded-lg transition-colors">
+                            <Link href="/tips" onClick={(e) => handleNavClick(e, '/tips')} className="block w-full text-left px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-2 rounded-lg transition-colors">
                                 Tips
                             </Link>
-                            <Link href="/pointsystem" className="block w-full text-left px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-2 rounded-lg transition-colors">
+                            <Link href="/pointsystem" onClick={(e) => handleNavClick(e, '/pointsystem')} className="block w-full text-left px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-2 rounded-lg transition-colors">
                                 Points
                             </Link>
                             <a href="https://github.com/WMOJ" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-2 rounded-lg transition-colors">

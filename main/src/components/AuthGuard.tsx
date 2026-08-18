@@ -2,9 +2,9 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
-import { PageLoading } from '@/components/LoadingStates';
+import { Skeleton, SkeletonTable } from '@/components/SkeletonLoader';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -48,7 +48,13 @@ export function AuthGuard({
 
   // Show loading state
   if (loading) {
-    return <PageLoading message="Loading..." />;
+    return (
+      <div role="status" aria-busy="true" aria-label="Loading" className="w-full space-y-6">
+        <Skeleton variant="text" width="30%" height={28} />
+        <SkeletonTable rows={6} />
+        <span className="sr-only">Loading…</span>
+      </div>
+    );
   }
 
   // Don't render children if auth requirements aren't met
@@ -58,7 +64,13 @@ export function AuthGuard({
 
   // If we're waiting on the dashboard path (role) still, show loading screen to avoid flash
   if (user && !userDashboardPath && !allowAuthenticated) {
-    return <PageLoading message="Determining your access..." />;
+    return (
+      <div role="status" aria-busy="true" aria-label="Loading" className="w-full space-y-6">
+        <Skeleton variant="text" width="30%" height={28} />
+        <SkeletonTable rows={6} />
+        <span className="sr-only">Loading…</span>
+      </div>
+    );
   }
 
   if (!loading && !allowAuthenticated && user && userDashboardPath) {

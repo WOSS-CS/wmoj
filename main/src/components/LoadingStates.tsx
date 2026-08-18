@@ -51,22 +51,6 @@ export function LoadingState({
   return <>{children}</>;
 }
 
-/* --- PageLoading: Clean centered spinner --- */
-
-interface PageLoadingProps {
-  className?: string;
-  message?: string;
-}
-
-export function PageLoading({ className = '', message = 'Loading...' }: PageLoadingProps) {
-  return (
-    <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 pointer-events-none ${className}`}>
-      <LoadingSpinner size="xl" />
-      <p className="text-sm text-text-muted font-medium">{message}</p>
-    </div>
-  );
-}
-
 /* --- Convenience Wrappers --- */
 
 export function CardLoading({ className = '', count = 3 }: { className?: string; count?: number }) {

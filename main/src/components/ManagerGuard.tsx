@@ -1,7 +1,8 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { LoadingSpinner } from './AnimationWrapper';
+
+import { Skeleton, SkeletonTable } from '@/components/SkeletonLoader';
 
 interface ManagerGuardProps {
   children: React.ReactNode;
@@ -17,7 +18,7 @@ interface ManagerGuardProps {
  * to return 'regular', incorrectly redirecting managers on page reload.
  *
  * This guard exists only to:
- *  1. Show a loading spinner while auth context initializes (avoids flash).
+ *  1. Show a loading skeleton while auth context initializes (avoids flash).
  *  2. Return null if there is no authenticated user — the wrapping AuthGuard
  *     handles the redirect to /auth/login.
  */
@@ -26,11 +27,10 @@ export function ManagerGuard({ children }: ManagerGuardProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingSpinner size="lg" />
-          <p className="text-sm text-text-muted">Verifying access...</p>
-        </div>
+      <div role="status" aria-busy="true" aria-label="Loading" className="w-full space-y-6">
+        <Skeleton variant="text" width="30%" height={28} />
+        <SkeletonTable rows={6} />
+        <span className="sr-only">Loading…</span>
       </div>
     );
   }
