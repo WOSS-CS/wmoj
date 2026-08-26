@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { supabase } = auth;
   const { data, error } = await supabase
     .from('problems')
-    .select('id,name,content,contest,is_active,time_limit,memory_limit,points,input,output,generator_file,checker,created_at,updated_at')
+    .select('id,name,content,is_active,time_limit,memory_limit,points,input,output,generator_file,checker,created_at,updated_at,contest_problems(contest_id)')
     .eq('id', id)
     .maybeSingle();
   if (error) {
@@ -17,9 +17,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Failed to fetch problem' }, { status: 500 });
   }
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  const { input: _input, output: _output, ...rest } = data;
+  const { input: _input, output: _output, contest_problems: _contestProblems, ...rest } = data;
   const test_case_count = Array.isArray(_input) ? _input.length : 0;
-  return NextResponse.json({ problem: { ...rest, test_case_count } });
+  // `problems` has no `contest` column — contest membership lives in the
+  // contest_problems junction, which the embed returns as [{ contest_id }, ...].
+  const contest_ids = (_contestProblems || []).map((r: { contest_id: string }) => r.contest_id);
+  return NextResponse.json({ problem: { ...rest, test_case_count, contest_ids } });
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

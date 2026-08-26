@@ -30,16 +30,37 @@ export async function GET() {
       ...(inactiveContests || []).map((c: { id: string }) => c.id),
     ];
 
-    const orFilter = virtualIds.length > 0
-      ? `contest.is.null,contest.in.(${virtualIds.join(',')})`
-      : 'contest.is.null';
+    // `problems` has no `contest` column — contest membership lives in the
+    // contest_problems junction. A problem is standalone unless it is attached
+    // to a contest outside the virtual/inactive set above.
+    const { data: cpRows, error: cpError } = await supabase
+      .from('contest_problems')
+      .select('problem_id, contest_id');
 
-    const { data: problems, error } = await supabase
+    if (cpError) {
+      console.error('Error fetching contest problems:', cpError);
+      return NextResponse.json(
+        { error: 'Failed to fetch problems' },
+        { status: 500 }
+      );
+    }
+
+    const excludedIds = new Set<string>();
+    for (const row of cpRows || []) {
+      if (!virtualIds.includes(row.contest_id)) excludedIds.add(row.problem_id);
+    }
+
+    let query = supabase
       .from('problems')
       .select('*')
-      .or(orFilter)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
+
+    if (excludedIds.size > 0) {
+      query = query.not('id', 'in', `(${Array.from(excludedIds).join(',')})`);
+    }
+
+    const { data: problems, error } = await query;
 
     console.log('API: Supabase response:', { problems: problems?.length, error });
 

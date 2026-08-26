@@ -20,14 +20,15 @@ export async function POST(
     }
     const userId = authData.user.id;
 
-    // Record in join_history
+    // Record in join_history. Must be an update, not an upsert: the row is
+    // created on join, and the uniqueness here is (user_id, contest_id) while
+    // the primary key is id, so an upsert either raises 23505 or inserts a
+    // bogus history row with a wrong joined_at and is_virtual.
     const { error: historyErr } = await supabase
       .from('join_history')
-      .upsert({
-        user_id: userId,
-        contest_id: id,
-        left_at: new Date().toISOString()
-      });
+      .update({ left_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('contest_id', id);
 
     if (historyErr) {
       console.log('Join history error:', historyErr);

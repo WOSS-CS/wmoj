@@ -37,21 +37,23 @@ export async function GET() {
       participantsCountMap[contest_id] = (participantsCountMap[contest_id] || 0) + 1;
     });
 
-    // Fetch problems per contest (problems table uses 'contest' foreign key)
+    // Fetch active problems per contest. `problems` has no `contest` column —
+    // membership lives in the contest_problems junction, so count junction rows
+    // and use an inner embed to keep only the active problems.
     const { data: problemsRaw, error: problemsErr } = await supabase
-      .from('problems')
-      .select('id,contest')
-      .in('contest', contestIds)
-      .eq('is_active', true);
+      .from('contest_problems')
+      .select('contest_id, problems!inner(is_active)')
+      .in('contest_id', contestIds)
+      .eq('problems.is_active', true);
 
     if (problemsErr) {
       console.warn('[contests API] problems aggregation error:', problemsErr);
     }
-    interface ProblemRow { id: string; contest: string | null }
+    interface ContestProblemRow { contest_id: string }
     const problemsCountMap: Record<string, number> = {};
-    (problemsRaw as ProblemRow[] | null | undefined)?.forEach(({ contest }) => {
-      if (!contest) return;
-      problemsCountMap[contest] = (problemsCountMap[contest] || 0) + 1;
+    (problemsRaw as ContestProblemRow[] | null | undefined)?.forEach(({ contest_id }) => {
+      if (!contest_id) return;
+      problemsCountMap[contest_id] = (problemsCountMap[contest_id] || 0) + 1;
     });
 
     const enriched = (contests || []).map(c => ({

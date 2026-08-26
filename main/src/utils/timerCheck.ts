@@ -104,12 +104,22 @@ export async function getTimerStatus(
         console.warn('Participant cleanup failed:', e);
       }
       try {
-        // Record left_at for join history (best-effort)
-        await supabase
+        // Record left_at for join history (best-effort).
+        // Must be an update, not an upsert: the row is created on join, and the
+        // uniqueness here is (user_id, contest_id) while the primary key is id,
+        // so an upsert either raises 23505 or inserts a bogus history row with a
+        // wrong joined_at and is_virtual.
+        const { error: leftAtErr } = await supabase
           .from('join_history')
-          .upsert({ user_id: userId, contest_id: contestId, left_at: new Date().toISOString() });
+          .update({ left_at: new Date().toISOString() })
+          .eq('user_id', userId)
+          .eq('contest_id', contestId);
+
+        if (leftAtErr) {
+          console.error('Error recording join history left_at:', leftAtErr);
+        }
       } catch (e) {
-        console.warn('Join history left_at upsert failed:', e);
+        console.error('Join history left_at update failed:', e);
       }
       return { isActive: false };
     }

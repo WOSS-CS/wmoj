@@ -61,11 +61,14 @@ export default async function ContestsPage({
               .from('contest_participants')
               .select('contest_id')
               .in('contest_id', contestIds),
+            // `problems` has no `contest` column — membership lives in the
+            // contest_problems junction, so count junction rows and use an
+            // inner embed to keep only the active problems.
             supabase
-              .from('problems')
-              .select('id,contest')
-              .in('contest', contestIds)
-              .eq('is_active', true),
+              .from('contest_problems')
+              .select('contest_id, problems!inner(is_active)')
+              .in('contest_id', contestIds)
+              .eq('problems.is_active', true),
           ]);
 
           const { data: participantsRaw, error: participantsErr } = participantsResult;
@@ -79,10 +82,10 @@ export default async function ContestsPage({
 
           const { data: problemsRaw, error: problemsErr } = problemsResult;
           if (!problemsErr) {
-            interface ProblemRow { id: string; contest: string | null }
-            (problemsRaw as ProblemRow[] | null | undefined)?.forEach(({ contest }) => {
-              if (!contest) return;
-              problemsCountMap[contest] = (problemsCountMap[contest] || 0) + 1;
+            interface ContestProblemRow { contest_id: string }
+            (problemsRaw as ContestProblemRow[] | null | undefined)?.forEach(({ contest_id }) => {
+              if (!contest_id) return;
+              problemsCountMap[contest_id] = (problemsCountMap[contest_id] || 0) + 1;
             });
           }
         }
