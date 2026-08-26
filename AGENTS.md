@@ -27,8 +27,6 @@ Load these rather than re-derive what they cover; their `.claude/skills/…` pat
 
 - **`add-problem`** — publishing problems end to end: statement format, figures, the `generator.cpp`
   house style, the test-case budget, custom checkers, live-judge verification, the database insert.
-- **`list-pages`** — adding or editing any paginated list/table page: the server pagination recipe,
-  the optimistic client hooks, filters and debounced search, per-page enrichment, `loading.tsx`.
 
 ## Commands
 
@@ -94,8 +92,8 @@ The deltas are deliberate and must survive any sync:
 - `is_active` — admin creations land pending; manager-created contests go live immediately.
 - The activated-contest PATCH/DELETE guard exists on the **manager** side only.
 - `created_by` ownership scoping is **admin** only; managers see everything.
-- `api/manager/submissions/[id]` DELETE calls the recalc RPCs and `api/admin/submissions/[id]`
-  DELETE does not — **a known bug**: deleting a passing submission as an admin leaves stale `points`.
+- Both `submissions/[id]` DELETEs call the recalc RPCs. No `submissions` DELETE policy fits an admin
+  (only `managers_all_submissions`), so the admin one deletes 0 rows silently and still 200s. Unfixed.
 
 ## Database
 
@@ -124,10 +122,10 @@ changes get **no file**, however many rows: publishing a problem, editing a stat
 
 ### Easy to get wrong
 
-- **`problems` has NO `contest` column.** The relationship is the `contest_problems` junction. Four
-  routes still assume otherwise: `api/{admin,manager}/problems/[id]` GET **500 unconditionally**,
-  `api/problems/standalone` 500s, and `api/contests` swallows the error and silently reports every
-  contest's `problems_count` as 0. All are superseded by server components — don't copy the pattern.
+- **`problems` has NO `contest` column.** The relationship is the `contest_problems` junction: count
+  membership by joining it, derive "standalone" by anti-joining it. The five sites that assumed the
+  column (`api/{admin,manager}/problems/[id]`, `api/problems/standalone`, `api/contests`,
+  `app/contests/page.tsx`) are fixed and nothing in `main/src` names it now. Don't reintroduce it.
 - **`submissions.status` is GENERATED STORED** from `summary->>'failed'`/`'total'`. Never write it.
 - **`submissions.problem_id`/`user_id` have no FKs.** Orphans are possible.
 - **Contest status is never stored** — always compute it with `getContestStatus()`. Both timestamps
@@ -179,10 +177,10 @@ never learn the judge URL (hence `/status` proxying through `api/status/health`)
 3. **Contest-problem eligibility**: a problem in a *rated* contest that is ongoing or upcoming can't
    be added elsewhere; a *rated* target contest accepts only problems not already in another contest.
 4. **`checkTimerExpiry` fails closed** (any error ⇒ expired). `getTimerStatus` is *destructive*:
-   reading an expired timer deletes the timer and participant rows. It also *attempts* to stamp
-   `left_at` on `join_history` and **always fails silently** — the `.upsert()` passes no `onConflict`
-   while the PK is `id` and `(user_id, contest_id)` is only UNIQUE, so it throws `23505`, and users
-   have no UPDATE policy there. Both call sites swallow it; `left_at` is NULL for everyone. Bug.
+   reading an expired timer deletes the timer and participant rows and stamps `left_at` on
+   `join_history`. Stamp it with `.update()` on `(user_id, contest_id)`, never `.upsert()` — the
+   default conflict target is the `id` PK, so it raises `23505`. `countdown_timers` has the same
+   PK/UNIQUE split, and `api/contests/[id]/join`'s upsert of it still carries that bug.
 5. Contest leaderboards are **not point-weighted** — each problem contributes at most 1.0.
 6. The generator staleness guard is deliberate: on create it blocks submit, on edit one state blocks
    and another only warns, so `generator_file` always matches the stored tests.
@@ -204,11 +202,18 @@ never learn the judge URL (hence `/status` proxying through `api/status/health`)
 - Hidden resources return **404, not 403** (`canUserAccessProblem`/`canUserAccessContest`).
 - Reuse `getAdminSupabase`/`getManagerSupabase` rather than re-inlining the Bearer/cookie preamble.
   Admin auth is written four ways across 14 files, three skipping the `is_active` check — no fifth.
-- API errors are `NextResponse.json({ error }, { status })` throughout; there are 2 deviations.
 - **Check for callers before "fixing" an API route or a module.** Server components query Supabase
   directly, so 23 of the 51 routes are dead, several superseded outright. Grep for importers first.
 - **Don't use `useSearchParams` in a client component** (0 usages) — derive filter state from server
   props instead, which avoids the Next 16 `<Suspense>` boundary requirement.
+
+- **Lists paginate on the server.** `page.tsx` fetches one page (`parsePage` → `.range(computeRange(…))`
+  with `{ count: 'exact' }` → `clampPage` + `redirect`); the client uses `usePaginatedNavigation` +
+  `<Pagination>` + `<DataTable>`. 18 routes do this — copy `app/admin/problems/manage/`, don't invent
+  a variant. Never client-paginate a DB-backed list; never `setRows(prev => …)` after a mutation
+  (`startTransition(() => router.refresh())` — the server re-counts and re-clamps); never enrich
+  beyond the current page's ids; and **never select `code`/`results` in a submission-list query** —
+  `useViewCode` fetches them on demand. Pulling `code` for 20 rows is the bug this system fixed.
 
 ## Related repo
 
