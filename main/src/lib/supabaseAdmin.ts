@@ -16,6 +16,13 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
  * themselves. No policy can say "this row is readable, but only by code, never
  * by the person the code is running as", so this is the escape hatch.
  *
+ * `public.problem_tests` is now the ONLY store: the legacy `problems.input`,
+ * `output`, `checker` and `generator_file` columns were dropped, so there is no
+ * second copy to read and no fallback to take. Every function here therefore
+ * fails CLOSED — it reports "cannot grade" rather than returning a partial or
+ * empty test set, because an empty test set silently grades every submission as
+ * Accepted against nothing.
+ *
  * Rules for anything that touches this module:
  *   - Never import it from a client component (the `server-only` import above
  *     turns that into a build failure).
@@ -35,22 +42,21 @@ let missingKeyWarned = false;
 function warnMissingSecretKey(): void {
   if (missingKeyWarned) return;
   missingKeyWarned = true;
-  console.warn(
-    `[supabaseAdmin] ${SECRET_KEY_VAR} is NOT SET. Falling back to the caller-scoped ` +
-      `read of problems.input/output/checker for every submission. This is the documented ` +
-      `transition path and adds no exposure — those columns are still world-readable — but ` +
-      `the secure read of public.problem_tests stays switched off until ${SECRET_KEY_VAR} ` +
-      `is set in the deployment environment.`,
+  console.error(
+    `[supabaseAdmin] ${SECRET_KEY_VAR} is NOT SET. public.problem_tests is the only ` +
+      `store for graded data and it is unreadable without this key, so NO SUBMISSION ` +
+      `CAN BE GRADED until it is set in the deployment environment. Problem pages will ` +
+      `also show an unknown test-case count. This is a deployment misconfiguration, not ` +
+      `a code path — set ${SECRET_KEY_VAR} to the project's service-role secret.`,
   );
 }
 
 /**
  * The service-role client, or `null` when {@link SECRET_KEY_VAR} is not set.
  *
- * Returning `null` rather than throwing is deliberate: the key is not yet
- * present in every deployment environment, and a hard requirement would break
- * every submission the moment this ships. Callers must handle `null` by falling
- * back to the still-readable legacy columns — see {@link readProblemTestData}.
+ * Returns `null` rather than throwing so that a missing key degrades to a clean,
+ * loud 500 on the one route that needs it, instead of taking down every page
+ * that happens to import this module at build time.
  */
 export function getSupabaseAdmin(): SupabaseClient | null {
   if (cachedAdmin !== undefined) {
@@ -85,91 +91,79 @@ export interface ProblemTestData {
 }
 
 /**
- * ⚠️ TRANSITION MECHANISM, NOT A PERMANENT DESIGN.
- *
- * Reads graded columns for one problem from `public.problem_tests` via the
- * service-role client when {@link SECRET_KEY_VAR} is set, and otherwise from the
- * legacy `public.problems` columns using the caller's own client.
- *
- * The fallback adds no exposure: `problems.input/output/checker/generator_file`
- * are world-readable today regardless of this code, and dropping them is a
- * deliberately separate later migration. It exists so that setting
- * {@link SECRET_KEY_VAR} in the deployment environment switches the secure path
- * on by itself, with no code change and no window where submissions break.
- *
- * EXPIRY CONDITION: delete the fallback — and make a missing
- * {@link SECRET_KEY_VAR} a hard error — as soon as the key is set everywhere the
- * app runs. It MUST be gone before the migration that drops those four columns
- * from `problems`, at which point the fallback silently grades against `'[]'`.
- *
- * `columns` must always include `input`: it is the freshness check that decides
- * whether the `problem_tests` row is usable. A missing row (a problem created by
- * a writer that has not been repointed yet) or an empty test set falls back to
- * `problems`, which is still the authoritative source until it is dropped.
+ * Reads the named columns of one `problem_tests` row through the service-role
+ * client. `null` means "could not read" for every reason — no key, query error,
+ * or no row — because every one of those is equally disqualifying for a caller
+ * that is about to grade someone's submission.
  */
 async function readTestColumns(
-  fallbackClient: SupabaseClient,
   problemId: string,
   columns: string,
 ): Promise<Record<string, unknown> | null> {
   const admin = getSupabaseAdmin();
+  if (!admin) return null;
 
-  if (admin) {
-    const { data, error } = await admin
-      .from('problem_tests')
-      .select(columns)
-      .eq('problem_id', problemId)
-      .maybeSingle();
-
-    const row = data as Record<string, unknown> | null;
-    const input = row?.input;
-
-    if (error) {
-      console.error(`[supabaseAdmin] problem_tests read failed for "${problemId}":`, error);
-    } else if (Array.isArray(input) && input.length > 0) {
-      return row;
-    } else {
-      console.warn(
-        `[supabaseAdmin] problem_tests has no usable row for "${problemId}"; ` +
-          `falling back to the legacy problems columns.`,
-      );
-    }
-  }
-
-  const { data, error } = await fallbackClient
-    .from('problems')
+  const { data, error } = await admin
+    .from('problem_tests')
     .select(columns)
-    .eq('id', problemId)
+    .eq('problem_id', problemId)
     .maybeSingle();
 
   if (error) {
-    console.error(`[supabaseAdmin] legacy problems test-data read failed for "${problemId}":`, error);
+    console.error(`[supabaseAdmin] problem_tests read failed for "${problemId}":`, error);
     return null;
   }
-  return (data as Record<string, unknown> | null) ?? null;
-}
-
-function asArray(value: unknown): unknown[] {
-  return Array.isArray(value) ? value : [];
+  if (!data) {
+    console.error(
+      `[supabaseAdmin] problem_tests has no row for "${problemId}". The problem exists ` +
+        `but has no test data, so it cannot be graded — it was created outside the ` +
+        `staff API routes, or its row was deleted.`,
+    );
+    return null;
+  }
+  // PostgREST types a dynamic `select()` string as a union that includes an error
+  // shape, so the widening hop through `unknown` is required, not cosmetic.
+  return data as unknown as Record<string, unknown>;
 }
 
 /**
  * The full graded payload for one problem, for the judge call only.
  *
  * Call this **after** the caller has been authorized for the problem — it
- * deliberately bypasses RLS when the service-role key is present.
- * Returns `null` only when the read itself failed.
+ * deliberately bypasses RLS. Returns `null` when the problem cannot be graded,
+ * which the caller MUST treat as a hard failure rather than as an empty test
+ * set: shipping `[]` to the judge marks every submission Accepted against no
+ * test cases at all.
  */
-export async function readProblemTestData(
-  fallbackClient: SupabaseClient,
-  problemId: string,
-): Promise<ProblemTestData | null> {
-  const row = await readTestColumns(fallbackClient, problemId, 'input, output, checker');
+export async function readProblemTestData(problemId: string): Promise<ProblemTestData | null> {
+  const row = await readTestColumns(problemId, 'input, output, checker');
   if (!row) return null;
 
+  const { input, output } = row;
+
+  // Fail closed on a malformed test set. The staff API routes already reject
+  // these shapes on write, but `problem_tests` is also written directly by the
+  // add-problem workflow, and this is the last checkpoint before the arrays
+  // become someone's verdict.
+  if (!Array.isArray(input) || !Array.isArray(output)) {
+    console.error(`[supabaseAdmin] problem_tests row for "${problemId}" is not array-shaped.`);
+    return null;
+  }
+  if (input.length === 0) {
+    console.error(`[supabaseAdmin] problem_tests row for "${problemId}" has zero test cases.`);
+    return null;
+  }
+  if (input.length !== output.length) {
+    console.error(
+      `[supabaseAdmin] problem_tests row for "${problemId}" is ragged: ` +
+        `${input.length} inputs vs ${output.length} outputs.`,
+    );
+    return null;
+  }
+
   return {
-    input: asArray(row.input),
-    output: asArray(row.output),
+    input,
+    output,
     checker: typeof row.checker === 'string' ? row.checker : null,
   };
 }
@@ -178,11 +172,14 @@ export async function readProblemTestData(
  * How many test cases a problem has — the only thing a public page is allowed to
  * learn about the test set. Returns a scalar so the arrays themselves never
  * leave the server.
+ *
+ * `null` means the count is genuinely unknown (no service-role key, or no row).
+ * Callers render that as "unknown" rather than as `0`: a confident `0` on a
+ * problem page is a lie, and it is the same reading a broken deployment would
+ * produce.
  */
-export async function countProblemTestCases(
-  fallbackClient: SupabaseClient,
-  problemId: string,
-): Promise<number> {
-  const row = await readTestColumns(fallbackClient, problemId, 'input');
-  return asArray(row?.input).length;
+export async function countProblemTestCases(problemId: string): Promise<number | null> {
+  const row = await readTestColumns(problemId, 'input');
+  if (!row) return null;
+  return Array.isArray(row.input) ? row.input.length : null;
 }

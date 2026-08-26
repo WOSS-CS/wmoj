@@ -1,7 +1,7 @@
 # The generator contract and house style
 
 Every WMOJ problem's test data is produced by a `generator.cpp`, and that source is stored
-alongside the data in `problems.generator_file`. The stored source is not decoration — a manager
+alongside the data in `problem_tests.generator_file`. The stored source is not decoration — a manager
 can pull it up later, tweak a constraint, and re-run it to regenerate the whole set. It only works
 if the file you store is the exact file that produced the data you store.
 

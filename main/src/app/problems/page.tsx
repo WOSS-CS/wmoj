@@ -10,10 +10,12 @@ export type HotProblem = ProblemListItem & { submission_count: number };
 const PAGE_SIZE = 20;
 
 /**
- * The only columns this list is allowed to select. `input`, `output`, `checker`
- * and `generator_file` are the answer key: every row here is serialised into the
- * RSC flight payload for `ProblemsClient`, twenty at a time plus five hot rows.
- * Never widen this to `*`.
+ * The only columns this list is allowed to select. Every row here is serialised
+ * into the RSC flight payload for `ProblemsClient`, twenty at a time plus five
+ * hot rows, so the list pays for each column twenty-five times over — `content`
+ * alone is a full Markdown statement. The answer key can no longer be reached
+ * from this table at all (it lives in the staff-only `problem_tests`), but the
+ * narrow list is still the rule: never widen this to `*`.
  */
 const LIST_COLUMNS = 'id, name, points, is_active, created_at';
 

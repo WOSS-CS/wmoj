@@ -156,7 +156,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // service-role client (`readProblemTestData`) rather than the student's own.
     // It must never be selected into anything that becomes a client-component
     // prop.
-    const tests = await readProblemTestData(supabase, problem.id);
+    const tests = await readProblemTestData(problem.id);
     if (!tests) {
       console.error(`Could not load test data for problem ${problem.id}`);
       return NextResponse.json(

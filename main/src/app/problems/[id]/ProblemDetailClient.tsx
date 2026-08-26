@@ -19,7 +19,7 @@ interface ProblemDetailClientProps {
    * are the answer key, and every prop of a client component is serialised into
    * the RSC flight payload. Only the count crosses the boundary.
    */
-  testCaseCount: number;
+  testCaseCount: number | null;
   activeContestId: string | null;
   initialBestSummary: { total: number; passed: number; failed: number } | null;
   isVirtualContest?: boolean;
@@ -91,7 +91,7 @@ export default function ProblemDetailClient({ problem, testCaseCount, activeCont
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
                   <span className="text-text-muted">Test Cases</span>
-                  <span className="text-foreground font-mono">{testCaseCount}</span>
+                  <span className="text-foreground font-mono">{testCaseCount ?? '\u2014'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-text-muted">Points</span>

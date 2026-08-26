@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/adminAuth';
 import { validateSlug } from '@/utils/validation';
 
-// TEMPORARY DUAL-WRITE (C4). The graded data (input/output/checker/generator_file)
-// now lives in `public.problem_tests`, which is staff-only. The four legacy columns
-// on `problems` still exist and the public submit path still falls back to them, so
-// every staff write updates BOTH tables and they must not be allowed to diverge.
-// EXPIRY: delete the `problems` half of these writes in the same change as the
-// migration that drops input/output/checker/generator_file from `problems`.
+// The graded data (input/output/checker/generator_file) lives ONLY in
+// `public.problem_tests`, which is staff-only. The four legacy columns were dropped
+// from `problems` — that table is world-readable, so the answer key sat in it for
+// anyone who asked. There is no second copy and no fallback: if the write below
+// fails, the problem has no test data at all, which is why it is undone rather than
+// left half-applied.
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,15 +101,11 @@ export async function POST(request: NextRequest) {
           id,
           name,
           content,
-          input,
-          output,
           is_active: false,
           time_limit: timeLimit || 5000,
           memory_limit: memoryLimit || 256,
           points: points,
-          created_by: user.id,
-          generator_file: generator_file ?? null,
-          checker: checkerSource
+          created_by: user.id
         }
       ])
       .select()
@@ -123,9 +119,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mirror the graded data into the staff-only side table. If this fails the
-    // problem would exist with no test data anywhere but the legacy columns, so
-    // undo the insert rather than leave the two tables disagreeing.
+    // Write the graded data to its own staff-only table. This is the ONLY copy,
+    // so a failure here leaves a problem that exists but can never be graded —
+    // undo the `problems` insert rather than publish that.
     const { error: testsErr } = await supabase
       .from('problem_tests')
       .insert([

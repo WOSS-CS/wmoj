@@ -7,11 +7,13 @@ import { isActiveAdmin, isActiveManager } from '@/lib/staffAuth';
 import { notFound, redirect } from 'next/navigation';
 
 /**
- * The only columns this page may select. `input`, `output` and `checker` are the
- * answer key and this is the page students submit FROM — selecting them here put
- * the expected stdout for every test case into the page source. Everything below
- * is used server-side for the access gate; only `id` and `name` cross into the
- * client. Never widen this to `*`.
+ * The only columns this page may select. This is the page students submit FROM,
+ * and selecting the answer key here once put the expected stdout for every test
+ * case into its page source. Those columns are gone from `problems` now — they
+ * live in the staff-only `problem_tests`, readable only through
+ * `lib/supabaseAdmin.ts` on the server — so the leak cannot be recreated from
+ * this table. Everything below is used server-side for the access gate; only
+ * `id` and `name` cross into the client. Never widen this to `*`.
  */
 const PROBLEM_COLUMNS = 'id, name, is_active, created_by, time_limit, memory_limit';
 

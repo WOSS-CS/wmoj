@@ -11,10 +11,11 @@ import { notFound, redirect } from 'next/navigation';
 /**
  * The only columns this page may select. The whole row is passed to
  * `ProblemDetailClient`, and React serialises every prop into the RSC flight
- * payload — so `input`, `output` and `checker` would be sitting in the page
- * source of the page students submit from. The test-case count the sidebar
- * needs is computed on the server and passed as its own scalar instead.
- * Never widen this to `*`.
+ * payload, so anything listed here lands in the page source. The graded columns
+ * were dropped from `problems` and now live in the staff-only `problem_tests`,
+ * which is why the test-case count the sidebar needs is fetched separately as a
+ * server-computed scalar. Never widen this to `*`, and never add a column here
+ * that the client does not actually render.
  */
 const PROBLEM_COLUMNS =
   'id, name, content, points, time_limit, memory_limit, created_at, is_active, created_by';
@@ -179,8 +180,10 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
 
   // Server-computed scalar: the sidebar shows how many test cases a problem has,
   // and that is the ONLY thing about the test set a public page may learn. The
-  // arrays themselves never leave the server.
-  const testCaseCount = await countProblemTestCases(supabase, problem.id);
+  // arrays themselves never leave the server. `null` means the count could not be
+  // read at all (no service-role key, or no `problem_tests` row) and renders as
+  // an em dash — never as `0`, which would read as a deliberate "no tests".
+  const testCaseCount = await countProblemTestCases(problem.id);
 
   return (
     <ProblemDetailClient

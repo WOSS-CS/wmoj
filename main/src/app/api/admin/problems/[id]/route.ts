@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/adminAuth';
 import { deleteProblemImages } from '@/utils/problemImages';
 
-// TEMPORARY DUAL-WRITE (C4). The graded data (input/output/checker/generator_file)
-// now lives in `public.problem_tests`, which is staff-only. The four legacy columns
-// on `problems` still exist and the public submit path still falls back to them, so
-// every staff write updates BOTH tables and they must not be allowed to diverge.
-// EXPIRY: delete the `problems` half of these writes in the same change as the
-// migration that drops input/output/checker/generator_file from `problems`.
+// The graded data (input/output/checker/generator_file) lives ONLY in
+// `public.problem_tests`, which is staff-only. The four legacy columns were dropped
+// from `problems` — that table is world-readable, so the answer key sat in it for
+// anyone who asked. There is no second copy and no fallback: if the write below
+// fails, the problem has no test data at all, which is why it is undone rather than
+// left half-applied.
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -63,9 +63,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { supabase, user } = auth;
   const body = await request.json();
   const updates: Record<string, unknown> = {};
-  // Set when the request changes any column that also lives in `problem_tests`,
-  // so the side table is only rewritten when the graded data actually moved.
-  let touchesTestData = false;
+  // Graded data lives in `problem_tests`, metadata in `problems`. These two
+  // objects are written to different tables and must never be merged.
+  const testUpdates: Record<string, unknown> = {};
   if (body.name !== undefined) updates.name = body.name;
   if (body.content !== undefined) updates.content = body.content;
   if (body.points !== undefined) {
@@ -96,9 +96,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.input.length !== body.output.length) {
       return NextResponse.json({ error: 'Input and output arrays must have equal length' }, { status: 400 });
     }
-    updates.input = body.input;
-    updates.output = body.output;
-    touchesTestData = true;
+    testUpdates.input = body.input;
+    testUpdates.output = body.output;
   }
   if (body.generator_file !== undefined) {
     if (body.input === undefined || body.output === undefined) {
@@ -107,8 +106,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.generator_file !== null && typeof body.generator_file !== 'string') {
       return NextResponse.json({ error: 'generator_file must be a string' }, { status: 400 });
     }
-    updates.generator_file = body.generator_file;
-    touchesTestData = true;
+    testUpdates.generator_file = body.generator_file;
   }
   // Unlike generator_file, the checker is independent of the stored test data,
   // so it can be updated on its own. Blank clears it back to NULL, which
@@ -117,11 +115,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.checker !== null && typeof body.checker !== 'string') {
       return NextResponse.json({ error: 'checker must be a string' }, { status: 400 });
     }
-    updates.checker = typeof body.checker === 'string' && body.checker.trim().length > 0 ? body.checker : null;
-    touchesTestData = true;
+    testUpdates.checker = typeof body.checker === 'string' && body.checker.trim().length > 0 ? body.checker : null;
   }
-  if (Object.keys(updates).length === 0) {
+  const touchesTestData = Object.keys(testUpdates).length > 0;
+  if (Object.keys(updates).length === 0 && !touchesTestData) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+  }
+  // A test-data-only edit — a checker change, say — still has to run the UPDATE
+  // on `problems` below: that statement carries the scoping that turns a target
+  // this caller may not touch into a 404, and it is what stamps `updated_at`.
+  // Give it a column to write when nothing else in the request changed.
+  if (Object.keys(updates).length === 0) {
+    updates.updated_at = new Date().toISOString();
   }
   // `.eq('created_by', user.id)` is load-bearing, not belt-and-braces: RLS FILTERS
   // rather than raising, so without it an unowned target updates zero rows with
@@ -140,23 +145,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   if (touchesTestData) {
-    // Mirror into `problem_tests` from the row we just wrote, so a checker-only
-    // edit cannot blank the tests: every column is carried over, not just the
-    // ones this request happened to touch.
-    const { error: testsErr } = await supabase
+    // An UPDATE of exactly the columns this request changed. It cannot be rebuilt
+    // from the `problems` row the way it used to be — that row no longer carries
+    // the graded columns — and naming only what changed is also what keeps a
+    // checker-only edit from blanking the tests it never mentioned.
+    const { data: testRow, error: testsErr } = await supabase
       .from('problem_tests')
-      .upsert(
-        {
-          problem_id: id,
-          input: data.input ?? [],
-          output: data.output ?? [],
-          checker: data.checker ?? null,
-          generator_file: data.generator_file ?? null,
-        },
-        { onConflict: 'problem_id' },
-      );
+      .update(testUpdates)
+      .eq('problem_id', id)
+      .select('problem_id')
+      .maybeSingle();
     if (testsErr) {
       console.error('Update problem_tests error:', testsErr);
+      return NextResponse.json({ error: 'Failed to update problem test data' }, { status: 500 });
+    }
+    // RLS filters rather than raises, so a row this caller cannot write — or a
+    // problem with no side-table row at all — comes back as zero rows updated
+    // and `error === null`. Without this the editor would show a green save for
+    // an edit that never landed.
+    if (!testRow) {
+      console.error(`Update problem_tests matched no row for problem "${id}"`);
       return NextResponse.json({ error: 'Failed to update problem test data' }, { status: 500 });
     }
   }

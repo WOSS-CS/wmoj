@@ -62,10 +62,10 @@ Commits are Conventional Commits, lowercase after the colon. **Never add an agen
 - **No `middleware.ts`** — deliberate. Auth = SSR checks in `page.tsx` via `lib/staffAuth.ts`
   (`requireActiveManager()`/`requireActiveAdmin()`) plus `lib/adminAuth.ts`/`lib/managerAuth.ts` in
   API routes, with **RLS as the real boundary**.
-- **Exactly ONE service-role client**, `lib/supabaseAdmin.ts`, with exactly one caller:
-  `api/problems/[id]/submit` reading `problem_tests`. It bypasses RLS entirely. It is `server-only`,
-  so a client-component import is a build error — keep it that way, and **never let its result
-  become a client-component prop**. Do not add a second call site without a reason as good.
+- **Exactly ONE service-role client**, `lib/supabaseAdmin.ts`, with two callers: `problems/[id]/submit`
+  (test data) and `problems/[id]/page.tsx` (case count), both on `problem_tests`. It bypasses RLS and
+  is `server-only`, so a client-component import is a build error — and **never let its result become
+  a client-component prop**. No `SUPABASE_SECRET_KEY` ⇒ nothing grades. Do not add a third caller.
 - **No generated Supabase types.** Clients are untyped and queries inline, so nothing in the type
   system catches a bad `.select()`. Check column names against the schema by hand.
 - **Every route has a `loading.tsx`** (42; only `app/auth/*` lack one), built from
@@ -134,10 +134,10 @@ changes get **no file**, however many rows: publishing a problem, editing a stat
   `email`) and `problems` are world-readable. Every *write* policy is tight — never read this as
   blessing a permissive write policy.
 - **The graded data lives in `problem_tests`, not `problems`.** `input`, `output` (the answer key),
-  `checker` and `generator_file` moved to a staff-only side table because RLS filters rows, not
-  columns. Staff read it through the ordinary client; the submit route reads it through
-  `lib/supabaseAdmin.ts`. **Never select it into anything a browser receives.** The old `problems`
-  columns still exist and are still dual-written — delete that half when they are dropped.
+  `checker` and `generator_file` moved to a staff-only side table — RLS filters rows, not columns, so
+  on world-readable `problems` they were public — and were then DROPPED from `problems`. One copy,
+  no fallback. Staff read it through the ordinary client, the submit route through
+  `lib/supabaseAdmin.ts`. **Never select it into anything a browser receives.**
 
 ## Judge integration
 

@@ -185,10 +185,11 @@ off-by-one, a brute force that ignores an edge case) and check it *fails*. A tes
 passes is not a test set.
 
 **7. Insert into Supabase.** See `reference/database.md` for the column reference, the dollar-quoted
-insert, and the escaping traps. `is_active` is `true` — the ask is a visible, active problem. Store
-`generator_file` in the same insert (and `checker`, if the problem has one); a problem published
-without its generator is half-published. The 24 legacy problems that predate this skill have none,
-so their data can never be regenerated or audited — do not add a 25th.
+inserts, and the escaping traps. `is_active` is `true` — the ask is a visible, active problem. A
+problem is TWO inserts: the statement and limits into `problems`, the answer key into the staff-only
+`problem_tests`. Store `generator_file` alongside the tests (and `checker`, if the problem has one);
+a problem published without its generator is half-published. The 24 legacy problems that predate
+this skill have none, so their data can never be regenerated or audited — do not add a 25th.
 
 **Never paste a large `jq` dump into SQL.** Output above roughly 30 KB is silently truncated on its
 way through the Bash tool, and a truncated case lands in `input`/`output` looking perfectly valid.
