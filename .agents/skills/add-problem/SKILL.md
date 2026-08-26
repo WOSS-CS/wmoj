@@ -187,7 +187,8 @@ passes is not a test set.
 **7. Insert into Supabase.** See `reference/database.md` for the column reference, the dollar-quoted
 insert, and the escaping traps. `is_active` is `true` — the ask is a visible, active problem. Store
 `generator_file` in the same insert (and `checker`, if the problem has one); a problem published
-without its generator is half-published.
+without its generator is half-published. The 24 legacy problems that predate this skill have none,
+so their data can never be regenerated or audited — do not add a 25th.
 
 **Never paste a large `jq` dump into SQL.** Output above roughly 30 KB is silently truncated on its
 way through the Bash tool, and a truncated case lands in `input`/`output` looking perfectly valid.
