@@ -4,6 +4,35 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { useOptimisticPathname } from "@/hooks/useOptimisticPathname";
 
+type NavEntry = {
+    label: string;
+    href: string;
+    icon: React.ReactNode;
+    /**
+     * Extra path prefixes this item owns. Without these, the plain
+     * `pathname === href || startsWith(href + "/")` rule leaves NO item
+     * highlighted on e.g. /admin/problems/[id]/edit — the sidebar simply goes
+     * blank while you are editing.
+     */
+    activePrefixes?: string[];
+};
+
+/**
+ * The active item is the one whose own href matches; only if none does do we
+ * fall back to `activePrefixes`. That ordering matters: "Create Problem"
+ * (/admin/problems/create) must win over "Manage Problems", which claims the
+ * whole /admin/problems subtree as a fallback.
+ */
+function findActiveHref(navItems: NavEntry[], pathname: string): string | undefined {
+    const direct = navItems.find(
+        (i) => pathname === i.href || pathname.startsWith(`${i.href}/`),
+    );
+    if (direct) return direct.href;
+    return navItems.find((i) =>
+        (i.activePrefixes ?? []).some((p) => pathname === p || pathname.startsWith(`${p}/`)),
+    )?.href;
+}
+
 const SidebarItem = ({
     href,
     icon,
@@ -21,12 +50,13 @@ const SidebarItem = ({
         <Link
             href={href}
             onClick={(e) => handleNavClick(e, href)}
+            aria-current={isActive ? "page" : undefined}
             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${isActive
                     ? "text-foreground bg-surface-2 font-medium"
                     : "text-text-muted hover:text-foreground hover:bg-surface-2"
                 }`}
         >
-            <span className={isActive ? "text-brand-primary" : ""}>{icon}</span>
+            <span className={isActive ? "text-brand-primary" : ""} aria-hidden="true">{icon}</span>
             <span>{label}</span>
         </Link>
     );
@@ -35,7 +65,7 @@ const SidebarItem = ({
 export const ManagerSidebar = () => {
     const { pathname, handleNavClick } = useOptimisticPathname();
 
-    const navItems = [
+    const navItems: NavEntry[] = [
         {
             label: "Overview",
             href: "/manager/dashboard",
@@ -48,6 +78,7 @@ export const ManagerSidebar = () => {
         {
             label: "User Management",
             href: "/manager/usermanagement",
+            activePrefixes: ["/manager/usermanagement"],
             icon: (
                 <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M7 10a4 4 0 118 0 4 4 0 01-8 0z" />
@@ -75,6 +106,7 @@ export const ManagerSidebar = () => {
         {
             label: "Manage Problems",
             href: "/manager/problems/manage",
+            activePrefixes: ["/manager/problems"],
             icon: (
                 <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -84,6 +116,7 @@ export const ManagerSidebar = () => {
         {
             label: "Manage Contests",
             href: "/manager/contests/manage",
+            activePrefixes: ["/manager/contests"],
             icon: (
                 <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18" />
@@ -93,6 +126,7 @@ export const ManagerSidebar = () => {
         {
             label: "News Posts",
             href: "/manager/newsposts",
+            activePrefixes: ["/manager/newsposts"],
             icon: (
                 <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -110,6 +144,8 @@ export const ManagerSidebar = () => {
         },
     ];
 
+    const activeHref = findActiveHref(navItems, pathname);
+
     return (
         <aside className="fixed left-0 top-0 h-screen w-60 border-r border-border bg-surface-1 z-50 flex flex-col">
             <div className="p-5">
@@ -122,20 +158,17 @@ export const ManagerSidebar = () => {
                 </span>
             </div>
 
-            <nav className="flex-1 px-3 space-y-1">
-                {navItems.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                    return (
-                        <SidebarItem
-                            key={item.href}
-                            href={item.href}
-                            icon={item.icon}
-                            label={item.label}
-                            isActive={isActive}
-                            handleNavClick={handleNavClick}
-                        />
-                    );
-                })}
+            <nav aria-label="Manager" className="flex-1 px-3 space-y-1">
+                {navItems.map((item) => (
+                    <SidebarItem
+                        key={item.href}
+                        href={item.href}
+                        icon={item.icon}
+                        label={item.label}
+                        isActive={item.href === activeHref}
+                        handleNavClick={handleNavClick}
+                    />
+                ))}
             </nav>
         </aside>
     );

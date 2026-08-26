@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getManagerSupabase } from '@/lib/managerAuth';
 import { validateSlug } from '@/utils/validation';
 
+// TEMPORARY DUAL-WRITE (C4). The graded data (input/output/checker/generator_file)
+// now lives in `public.problem_tests`, which is staff-only. The four legacy columns
+// on `problems` still exist and the public submit path still falls back to them, so
+// every staff write updates BOTH tables and they must not be allowed to diverge.
+// EXPIRY: delete the `problems` half of these writes in the same change as the
+// migration that drops input/output/checker/generator_file from `problems`.
+
 export async function POST(request: NextRequest) {
   try {
     const { id, name, content, input, output, timeLimit, memoryLimit, points, generator_file, checker } = await request.json();
@@ -107,6 +114,30 @@ export async function POST(request: NextRequest) {
       console.error('Database error:', error);
       return NextResponse.json(
         { error: 'Failed to create problem' },
+        { status: 500 }
+      );
+    }
+
+    // Mirror the graded data into the staff-only side table. If this fails the
+    // problem would exist with no test data anywhere but the legacy columns, so
+    // undo the insert rather than leave the two tables disagreeing.
+    const { error: testsErr } = await supabase
+      .from('problem_tests')
+      .insert([
+        {
+          problem_id: id,
+          input,
+          output,
+          checker: checkerSource,
+          generator_file: generator_file ?? null,
+        }
+      ]);
+
+    if (testsErr) {
+      console.error('problem_tests insert error:', testsErr);
+      await supabase.from('problems').delete().eq('id', id);
+      return NextResponse.json(
+        { error: 'Failed to store problem test data' },
         { status: 500 }
       );
     }

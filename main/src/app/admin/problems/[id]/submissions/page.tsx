@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getServerSupabase } from '@/lib/supabaseServer';
+import { requireActiveAdmin } from '@/lib/staffAuth';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
 import ProblemSubmissionsClient from './ProblemSubmissionsClient';
 
@@ -31,31 +31,25 @@ export default async function ProblemSubmissionsPage({
   searchParams: Promise<{ page?: string | string[] }>;
 }) {
   const { id } = await params;
-  const supabase = await getServerSupabase();
-
-  const { data: authData } = await supabase.auth.getUser();
-  const userId = authData?.user?.id;
-  if (!userId) redirect('/auth/login');
-
-  const { data: adminRow } = await supabase
-    .from('admins')
-    .select('id')
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (!adminRow) redirect('/');
+  const { supabase, userId } = await requireActiveAdmin();
 
   const sp = await searchParams;
   const currentPage = parsePage(sp.page);
   const { from, to } = computeRange(currentPage, PAGE_SIZE);
 
+  // Scoped and checked: `.single()` used to swallow its error, so a mistyped
+  // slug rendered "Submissions: Problem — 0 total" instead of going anywhere.
+  // The scope matches Manage Problems, which only lists this admin's own rows.
   const { data: problem } = await supabase
     .from('problems')
     .select('name')
     .eq('id', id)
-    .single();
+    .eq('created_by', userId)
+    .maybeSingle();
 
-  const problemName = problem?.name || 'Problem';
+  if (!problem) redirect('/admin/problems/manage');
+
+  const problemName = problem.name || 'Problem';
 
   const { data: subs, count, error: subsErr } = await supabase
     .from('submissions')

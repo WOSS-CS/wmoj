@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState, type MouseEvent } from 'react';
 import Pagination from '@/components/Pagination';
 import { TableBodySkeleton } from '@/components/TableBodySkeleton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,8 +16,15 @@ interface Props {
   currentPage: number;
   currentProblemSearch: string;
   currentUserSearch: string;
+  /** Exact-id deep-link filters (from "My Submissions" links). */
+  currentProblemId: string;
+  currentUserId: string;
   currentStatusFilter: 'all' | 'passed' | 'failed';
   stats: SubmissionStats;
+  /** The statistics counts could not be computed; the chart is hidden. */
+  statsError?: boolean;
+  /** A free-text filter matched too many rows to query safely. */
+  filterTooBroad?: boolean;
   fetchError?: string;
 }
 
@@ -79,11 +86,22 @@ interface SubmissionDetail {
   code: string;
   results: TestResult[] | null;
   summary: { total: number; passed: number; failed: number };
+  // A compile error is stored as summary {0,0,0} with the compiler's message in
+  // the summary JSON. The route has always returned it; without this field the
+  // modal rendered neither a message nor a results section (results is []) and
+  // the only explanation of the failure sat unread in the JSON response.
+  compileError: string | null;
   created_at: string;
 }
 
 function isAccepted(sub: SubmissionDetail): boolean {
   return sub.summary.total > 0 && sub.summary.failed === 0;
+}
+
+function statusLabel(sub: SubmissionDetail): string {
+  if (isAccepted(sub)) return 'Accepted';
+  if (sub.compileError) return 'Compile Error';
+  return 'Failed';
 }
 
 function formatModalDate(timestamp: string): string {
@@ -103,12 +121,15 @@ const PIE_SLICES = [
   { key: 'failed' as const,        label: 'Failed',        color: '#dc2626' },
   { key: 'timeout' as const,       label: 'Timeout',       color: '#ca8a04' },
   { key: 'compile_error' as const, label: 'Compile Error', color: '#7c3aed' },
-  { key: 'error' as const,         label: 'Error',         color: '#6b7280' },
 ];
 
 function PieChart({ stats }: { stats: SubmissionStats }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  // The tooltip is absolutely positioned against this wrapper, so it has to be
+  // measured against this wrapper too. Measuring the 160px <svg> instead left
+  // the tooltip offset by half the difference between the two widths.
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   const cx = 80;
   const cy = 80;
@@ -140,8 +161,14 @@ function PieChart({ stats }: { stats: SubmissionStats }) {
     return <p className="text-sm text-text-muted text-center py-4">No submissions yet.</p>;
   }
 
+  const trackTooltip = (e: MouseEvent<SVGPathElement>) => {
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
   return (
-    <div className="relative flex flex-col items-center gap-3">
+    <div ref={wrapperRef} className="relative flex flex-col items-center gap-3">
       <svg width={160} height={160} viewBox="0 0 160 160" className="overflow-visible">
         {slices.map((slice) => (
           <path
@@ -154,13 +181,9 @@ function PieChart({ stats }: { stats: SubmissionStats }) {
             style={{ opacity: hovered && hovered !== slice.key ? 0.5 : 1 }}
             onMouseEnter={(e) => {
               setHovered(slice.key);
-              const rect = (e.target as SVGElement).closest('svg')!.getBoundingClientRect();
-              setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+              trackTooltip(e);
             }}
-            onMouseMove={(e) => {
-              const rect = (e.target as SVGElement).closest('svg')!.getBoundingClientRect();
-              setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-            }}
+            onMouseMove={trackTooltip}
             onMouseLeave={() => setHovered(null)}
           />
         ))}
@@ -202,18 +225,30 @@ export default function SubmissionsClient({
   currentPage,
   currentProblemSearch,
   currentUserSearch,
+  currentProblemId,
+  currentUserId,
   currentStatusFilter,
   stats,
+  statsError,
+  filterTooBroad,
   fetchError,
 }: Props) {
   const { user, session } = useAuth();
   const [selected, setSelected] = useState<SubmissionDetail | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
+  // The id filters arrive from deep links and have no input of their own, so
+  // they ride along on every page flip and filter change like the text ones.
+  const idParams = {
+    problem_id: currentProblemId || undefined,
+    user_id: currentUserId || undefined,
+  };
+
   const { displayPage, isLoading, handlePageChange, handleFilterChange, buildHref, startTransition } = usePaginatedNavigation({
     currentPage,
     totalPages,
     currentParams: {
+      ...idParams,
       problem: currentProblemSearch || undefined,
       user: currentUserSearch || undefined,
       status: currentStatusFilter !== 'all' ? currentStatusFilter : undefined,
@@ -223,14 +258,14 @@ export default function SubmissionsClient({
   const problemSearch = useDebouncedSearch({
     param: 'problem',
     initialValue: currentProblemSearch,
-    preserveParams: { user: currentUserSearch || undefined, status: currentStatusFilter !== 'all' ? currentStatusFilter : undefined },
+    preserveParams: { ...idParams, user: currentUserSearch || undefined, status: currentStatusFilter !== 'all' ? currentStatusFilter : undefined },
     startTransition,
   });
 
   const userSearch = useDebouncedSearch({
     param: 'user',
     initialValue: currentUserSearch,
-    preserveParams: { problem: currentProblemSearch || undefined, status: currentStatusFilter !== 'all' ? currentStatusFilter : undefined },
+    preserveParams: { ...idParams, problem: currentProblemSearch || undefined, status: currentStatusFilter !== 'all' ? currentStatusFilter : undefined },
     startTransition,
   });
 
@@ -269,6 +304,14 @@ export default function SubmissionsClient({
       {fetchError && (
         <div className="bg-error/10 border border-error/20 rounded-lg p-4">
           <p className="text-sm text-error">{fetchError}</p>
+        </div>
+      )}
+
+      {filterTooBroad && (
+        <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+          <p className="text-sm text-warning">
+            That filter matches too many problems or users to search. Type a few more characters to narrow it down.
+          </p>
         </div>
       )}
 
@@ -433,10 +476,16 @@ export default function SubmissionsClient({
           {/* Statistics card */}
           <div className="glass-panel p-4 space-y-4">
             <h3 className="text-sm font-semibold text-foreground">Statistics</h3>
-            <PieChart stats={stats} />
-            <p className="text-xs text-text-muted text-center font-mono">
-              Total: {stats.total}
-            </p>
+            {statsError ? (
+              <p className="text-sm text-text-muted text-center py-4">Statistics are unavailable right now.</p>
+            ) : (
+              <>
+                <PieChart stats={stats} />
+                <p className="text-xs text-text-muted text-center font-mono">
+                  Total: {stats.total}
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -473,7 +522,7 @@ export default function SubmissionsClient({
                 <div className="bg-surface-2 p-3 rounded-md border border-border">
                   <div className="text-text-muted text-xs uppercase tracking-wider">Status</div>
                   <div className={`text-sm font-semibold mt-1 ${isAccepted(selected) ? 'text-success' : 'text-error'}`}>
-                    {isAccepted(selected) ? 'Accepted' : 'Failed'}
+                    {statusLabel(selected)}
                   </div>
                 </div>
                 <div className="bg-surface-2 p-3 rounded-md border border-border">
@@ -487,6 +536,18 @@ export default function SubmissionsClient({
                   <div className="text-sm font-semibold text-foreground mt-1">{languageLabel(selected.language)}</div>
                 </div>
               </div>
+
+              {/* Compile error — the only explanation a CE submission has.
+                  There are no test-case results to fall back on (results is []),
+                  so without this the modal showed a bare 0/0 and nothing else. */}
+              {selected.compileError && (
+                <div>
+                  <h3 className="text-sm font-medium text-foreground mb-1.5">Compile Error</h3>
+                  <pre className="p-2 rounded bg-surface-1 text-error overflow-x-auto border border-border text-xs whitespace-pre-wrap">
+                    {selected.compileError}
+                  </pre>
+                </div>
+              )}
 
               {/* Source Code */}
               <div>

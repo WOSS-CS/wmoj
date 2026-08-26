@@ -17,11 +17,19 @@ export async function GET(request: Request) {
     }
     const userId = authData.user.id;
 
-    // Parallelize fetching submissions and contest joins for better performance
+    // Parallelize fetching submissions and contest joins for better performance.
+    //
+    // `submissions` has no foreign keys at all, so PostgREST cannot resolve a
+    // `problems(...)` embed from pg_constraint — it fails the whole query with
+    // PGRST200 and the feed silently loses every submission. Resolve the
+    // display names with a second lookup instead, exactly as
+    // api/user/submissions/[id] does.
+    // The `contests(...)` embed below is fine: join_history.contest_id has a
+    // real FK.
     const [submissionsResult, contestJoinsResult] = await Promise.all([
       supabase
         .from('submissions')
-        .select('id, problem_id, created_at, summary, problems(id, name)')
+        .select('id, problem_id, created_at, summary')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(100),
@@ -36,17 +44,37 @@ export async function GET(request: Request) {
     const { data: submissions, error: submissionsErr } = submissionsResult;
     const { data: contestJoins, error: joinsErr } = contestJoinsResult;
 
+    // A half-empty activity feed is indistinguishable from an empty one, so a
+    // failed half is an error, not something to log and paper over.
     if (submissionsErr) {
       console.error('Error fetching submissions:', submissionsErr);
+      return NextResponse.json({ error: 'Failed to fetch activity' }, { status: 500 });
     }
     if (joinsErr) {
       console.error('Error fetching contest joins:', joinsErr);
+      return NextResponse.json({ error: 'Failed to fetch activity' }, { status: 500 });
     }
 
     // Fetch contest associations for submitted problems via junction table
     const problemIdSet = new Set<string>();
     for (const sub of submissions || []) {
       if (sub.problem_id) problemIdSet.add(sub.problem_id as string);
+    }
+
+    // Resolve problem display names for this page of submissions.
+    const problemNameById: Record<string, string> = {};
+    if (problemIdSet.size > 0) {
+      const { data: problemRows, error: problemsErr } = await supabase
+        .from('problems')
+        .select('id, name')
+        .in('id', Array.from(problemIdSet));
+      if (problemsErr) {
+        console.error('Error fetching problems for submissions:', problemsErr);
+        return NextResponse.json({ error: 'Failed to fetch activity' }, { status: 500 });
+      }
+      for (const p of problemRows || []) {
+        problemNameById[p.id as string] = p.name as string;
+      }
     }
 
     const problemContestMap: Record<string, string> = {};
@@ -98,19 +126,19 @@ export async function GET(request: Request) {
     // Add submissions
     if (submissions) {
       for (const sub of submissions) {
-        const problem = Array.isArray(sub.problems) ? sub.problems[0] : sub.problems;
+        const problemId = sub.problem_id as string | null;
         const s = (sub.summary || {}) as { total?: number; passed?: number; failed?: number };
         const total = Number(s.total ?? 0);
         const passed = Number(s.passed ?? 0);
         const failed = Number(s.failed ?? 0);
         const solved = total > 0 && failed === 0 && passed === total;
-        const contestId = problem?.id ? (problemContestMap[problem.id] || null) : null;
+        const contestId = problemId ? (problemContestMap[problemId] || null) : null;
         const contestName = contestId ? contestNameById[contestId] : undefined;
         activities.push({
           id: `sub-${sub.id}`,
           type: 'submission',
           action: solved ? 'Solved' : 'Attempted',
-          item: problem?.name || 'Unknown Problem',
+          item: (problemId ? problemNameById[problemId] : undefined) || 'Unknown Problem',
           itemId: sub.problem_id,
           timestamp: sub.created_at,
           status: solved ? 'success' : 'warning',

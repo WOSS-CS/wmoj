@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@/components/AnimationWrapper';
 import type { Contest } from '@/types/contest';
 import { Badge } from '@/components/ui/Badge';
 import { toast } from '@/components/ui/Toast';
+import { getContestStatus, CONTEST_STATUS_VARIANT, CONTEST_STATUS_LABEL } from '@/utils/contestStatus';
 
 const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
 
@@ -33,6 +34,13 @@ export default function ContestDetailClient({
   const router = useRouter();
 
   const [leaving, setLeaving] = useState(false);
+
+  // Never hard-code the badge: contest status is computed, never stored, so a
+  // virtual contest's hub page used to claim "Active" while the page next door
+  // correctly said "Virtual".
+  const status = initialContest
+    ? getContestStatus(initialContest)
+    : null;
 
   const handleLeaveContest = async () => {
     if (!user || !id) return;
@@ -71,7 +79,7 @@ export default function ContestDetailClient({
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
                     <h1 className="text-xl font-semibold text-foreground">{initialContest?.name}</h1>
-                    <Badge variant="success">Active</Badge>
+                    {status && <Badge variant={CONTEST_STATUS_VARIANT[status]}>{CONTEST_STATUS_LABEL[status]}</Badge>}
                   </div>
 
                   <div className="glass-panel p-5 mb-4">

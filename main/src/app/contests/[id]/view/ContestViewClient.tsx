@@ -10,7 +10,7 @@ import { LoadingSpinner } from '@/components/AnimationWrapper';
 import { AuthPromptModal } from '@/components/AuthPromptModal';
 import { Badge } from '@/components/ui/Badge';
 import { toast } from '@/components/ui/Toast';
-import { getContestStatus, formatTimeUntil } from '@/utils/contestStatus';
+import { getContestStatus, formatTimeUntil, CONTEST_STATUS_VARIANT, CONTEST_STATUS_LABEL } from '@/utils/contestStatus';
 import type { ContestStatus } from '@/types/contest';
 
 const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
@@ -39,20 +39,19 @@ interface ContestViewClientProps {
   problems?: ContestProblem[];
 }
 
-
-const STATUS_VARIANT: Record<ContestStatus, 'success' | 'info' | 'warning' | 'neutral'> = {
-  ongoing:  'success',
-  upcoming: 'info',
-  virtual:  'warning',
-  inactive: 'neutral',
-};
-
-const STATUS_LABEL: Record<ContestStatus, string> = {
-  ongoing:  'Ongoing',
-  upcoming: 'Upcoming',
-  virtual:  'Virtual',
-  inactive: 'Inactive',
-};
+/**
+ * Contest problem label: A, B, ... Z, AA, AB, ... `String.fromCharCode(65 + i)`
+ * alone produced '[', '\' and ']' from the 27th problem onward.
+ */
+function problemLabel(index: number): string {
+  let n = index;
+  let label = '';
+  do {
+    label = String.fromCharCode(65 + (n % 26)) + label;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return label;
+}
 
 export default function ContestViewClient({ error, initialContest, problems = [] }: ContestViewClientProps) {
   const router = useRouter();
@@ -115,7 +114,7 @@ export default function ContestViewClient({ error, initialContest, problems = []
 
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-xl font-semibold text-foreground">{initialContest.name}</h1>
-              <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
+              <Badge variant={CONTEST_STATUS_VARIANT[status]}>{CONTEST_STATUS_LABEL[status]}</Badge>
               {initialContest.is_rated && (
                 <Badge variant="info">Rated</Badge>
               )}
@@ -217,7 +216,7 @@ export default function ContestViewClient({ error, initialContest, problems = []
                       className="flex items-center justify-between px-4 py-3 bg-surface-1 hover:bg-surface-2 transition-colors group"
                     >
                       <span className="text-sm font-medium text-foreground group-hover:text-brand-primary transition-colors">
-                        {String.fromCharCode(65 + i)}. {problem.name}
+                        {problemLabel(i)}. {problem.name}
                       </span>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-mono text-text-muted">{problem.points} pts</span>

@@ -1,5 +1,6 @@
+import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabaseServer';
-import { parsePage, computeRange, computeTotalPages } from '@/lib/pagination';
+import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
 import UsersClient from './UsersClient';
 
 export interface UserRow {
@@ -27,6 +28,7 @@ export default async function UsersPage({
   let leaderboard: UserRow[] = [];
   let totalPages = 1;
   let fetchError: string | undefined;
+  let effectivePage = currentPage;
 
   try {
     const orderCol = sort === 'problems' ? 'problems_solved' : 'points';
@@ -34,7 +36,11 @@ export default async function UsersPage({
       .from('users')
       .select('id, username, problems_solved, points', { count: 'exact' })
       .eq('is_active', true)
-      .order(orderCol, { ascending: false });
+      .order(orderCol, { ascending: false })
+      // Most users sit at points = 0, and without a unique tiebreaker Postgres
+      // gives no stable order across separate LIMIT/OFFSET queries — paging
+      // 2 -> 3 -> 2 could show one user twice and omit another.
+      .order('id', { ascending: true });
 
     if (search) {
       query = query.ilike('username', `%${search}%`);
@@ -46,6 +52,7 @@ export default async function UsersPage({
       fetchError = 'Failed to fetch users';
     } else {
       totalPages = computeTotalPages(count, PAGE_SIZE);
+      effectivePage = clampPage(currentPage, totalPages);
       leaderboard = (users || []).map((u) => ({
         id: u.id,
         username: u.username || 'Unknown',
@@ -56,6 +63,17 @@ export default async function UsersPage({
   } catch (err) {
     console.error('[UsersPage] Error fetching data:', err);
     fetchError = 'Failed to fetch users';
+  }
+
+  // Outside the try/catch on purpose: redirect() signals by throwing, and the
+  // catch above would swallow it.
+  if (effectivePage !== currentPage) {
+    redirect(
+      buildPageHref(
+        { search: search || undefined, sort: sort !== 'points' ? sort : undefined },
+        effectivePage,
+      ),
+    );
   }
 
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,23 +29,20 @@ export default function ContestsClient({
   fetchError,
 }: ContestsClientProps) {
   const { session } = useAuth();
-  const [joinedContestId, setJoinedContestId] = useState<string | null>(null);
-  const [joinedHistory, setJoinedHistory] = useState<Set<string>>(new Set());
 
   const fetcher = (url: string) => fetch(url, { headers: { 'Authorization': `Bearer ${session?.access_token}` } }).then(r => r.json());
 
   const { data: participation } = useSWR(session?.access_token ? '/api/contests/participation' : null, fetcher);
   const { data: joinHistory } = useSWR(session?.access_token ? '/api/contests/join-history' : null, fetcher);
 
-  useEffect(() => {
-    if (participation?.contest_id) setJoinedContestId(participation.contest_id);
-  }, [participation]);
-
-  useEffect(() => {
-    if (joinHistory?.contest_ids && Array.isArray(joinHistory.contest_ids)) {
-      setJoinedHistory(new Set(joinHistory.contest_ids));
-    }
-  }, [joinHistory]);
+  // Derived, not mirrored into state through an effect. The effects these
+  // replace had no `else`, so once SWR revalidated to `{contest_id: null}` the
+  // row kept rendering "Continue →" at a URL that now redirects away.
+  const joinedContestId: string | null = participation?.contest_id ?? null;
+  const joinedHistory = useMemo(
+    () => new Set<string>(Array.isArray(joinHistory?.contest_ids) ? joinHistory.contest_ids : []),
+    [joinHistory],
+  );
 
   const ongoingContests = activeContests.filter(c => getContestStatus(c) === 'ongoing');
   const upcomingContests = activeContests.filter(c => getContestStatus(c) === 'upcoming');
@@ -119,7 +116,10 @@ export default function ContestsClient({
     </div>
   );
 
-  const hasAnyContests = activeContests.length > 0 || pastContests.length > 0 || (pastTotalPages > 0);
+  // `pastTotalPages > 0` was a tautology — computeTotalPages never returns less
+  // than 1 — which made the designed empty card unreachable and showed three
+  // empty bordered panels on a site with no contests instead.
+  const hasAnyContests = activeContests.length > 0 || pastContests.length > 0;
 
   return (
     <div className="space-y-6">

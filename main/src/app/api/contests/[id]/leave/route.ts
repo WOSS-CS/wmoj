@@ -31,7 +31,7 @@ export async function POST(
       .eq('contest_id', id);
 
     if (historyErr) {
-      console.log('Join history error:', historyErr);
+      console.error('Join history error:', historyErr);
     }
 
     // Remove user from contest
@@ -42,7 +42,7 @@ export async function POST(
       .eq('user_id', userId);
 
     if (deleteErr) {
-      console.log('Leave contest error:', deleteErr);
+      console.error('Leave contest error:', deleteErr);
       return NextResponse.json({ error: 'Failed to leave contest' }, { status: 500 });
     }
 
@@ -54,13 +54,13 @@ export async function POST(
       .eq('contest_id', id);
 
     if (timerErr) {
-      console.log('Countdown timer cleanup error:', timerErr);
+      console.error('Countdown timer cleanup error:', timerErr);
       // Don't fail the request if timer cleanup fails
     }
 
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.log('Leave contest error:', e);
+    console.error('Leave contest error:', e);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

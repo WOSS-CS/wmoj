@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isActiveAdmin, isActiveManager } from '@/lib/staffAuth';
 
 export async function canUserAccessProblem(
   supabase: SupabaseClient,
@@ -8,20 +9,12 @@ export async function canUserAccessProblem(
   if (problem.is_active === true) return true;
   if (!userId) return false;
 
-  const { data: managerRow } = await supabase
-    .from('managers')
-    .select('id')
-    .eq('id', userId)
-    .maybeSingle();
-  if (managerRow) return true;
+  // Membership alone is not authorization — a deactivated manager must lose
+  // access to unpublished problems (statement, tests, checker) like anyone else.
+  if (await isActiveManager(supabase, userId)) return true;
 
-  if (problem.created_by === userId) {
-    const { data: adminRow } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle();
-    if (adminRow) return true;
+  if (problem.created_by === userId && (await isActiveAdmin(supabase, userId))) {
+    return true;
   }
 
   return false;

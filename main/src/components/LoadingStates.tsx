@@ -1,55 +1,12 @@
 'use client';
 
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode } from 'react';
 import { Skeleton, SkeletonCard, SkeletonTable, SkeletonList, SkeletonGrid, SkeletonForm, SkeletonProfile, SkeletonLeaderboard, SkeletonCodeEditor } from './SkeletonLoader';
 import { LoadingSpinner } from './AnimationWrapper';
 
 /* ==========================================================================
    Loading States — Clean, minimal, functional
    ========================================================================== */
-
-interface LoadingStateProps {
-  children: ReactNode;
-  isLoading: boolean;
-  skeleton?: ReactNode;
-  fallback?: ReactNode;
-  delay?: number;
-  className?: string;
-}
-
-export function LoadingState({
-  children,
-  isLoading,
-  skeleton,
-  fallback,
-  delay = 0,
-  className = ''
-}: LoadingStateProps) {
-  const [showLoading, setShowLoading] = useState(false);
-
-  useEffect(() => {
-    if (isLoading) {
-      const timer = setTimeout(() => setShowLoading(true), delay);
-      return () => clearTimeout(timer);
-    } else {
-      setShowLoading(false);
-    }
-  }, [isLoading, delay]);
-
-  if (isLoading && showLoading) {
-    return (
-      <div className={className}>
-        {skeleton || fallback || (
-          <div className="flex items-center justify-center p-8">
-            <LoadingSpinner size="lg" />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
 
 /* --- Convenience Wrappers --- */
 

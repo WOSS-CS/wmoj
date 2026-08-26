@@ -41,7 +41,7 @@ export function TableBodySkeleton({
   return (
     <>
       {Array.from({ length: rows }).map((_, rowIdx) => (
-        <tr key={`skel-${rowIdx}`}>
+        <tr key={`skel-${rowIdx}`} aria-hidden="true">
           {Array.from({ length: columns }).map((_, colIdx) => (
             <td key={colIdx} className={cellClassName}>
               <div

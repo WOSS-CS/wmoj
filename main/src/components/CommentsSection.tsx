@@ -1,11 +1,37 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthPromptModal } from '@/components/AuthPromptModal';
+import { toast } from '@/components/ui/Toast';
 import { Comment } from '@/types/comment';
+
+/**
+ * Mirrors the live `comments_body_check` constraint
+ * (`char_length(body) between 1 and 10000`). Without this the 10 001st
+ * character came back as Postgres 23514 and the button just... did nothing.
+ */
+const COMMENT_MAX_LENGTH = 10000;
+
+function validateCommentBody(body: string): string | null {
+    const trimmed = body.trim();
+    if (trimmed.length < 1) return 'Comment cannot be empty.';
+    if (trimmed.length > COMMENT_MAX_LENGTH) {
+        return `Comment is too long (${trimmed.length} / ${COMMENT_MAX_LENGTH} characters).`;
+    }
+    return null;
+}
+
+function errorMessage(e: unknown, fallback: string): string {
+    if (e instanceof Error && e.message) return e.message;
+    if (typeof e === 'object' && e !== null && 'message' in e) {
+        const m = (e as { message?: unknown }).message;
+        if (typeof m === 'string' && m) return m;
+    }
+    return fallback;
+}
 
 interface CommentsSectionProps {
   problemId: string;
@@ -60,17 +86,47 @@ export default function CommentsSection({ problemId, initialComments }: Comments
   const [pendingVotes, setPendingVotes] = useState<Set<string>>(new Set());
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyBody, setReplyBody] = useState('');
+  const authPromptDismissedRef = useRef(false);
+
+  /**
+   * Open the sign-in prompt from a FOCUS event.
+   *
+   * AuthPromptModal now restores focus to whatever was focused when it opened —
+   * which, for the comment box, is the very textarea whose onFocus opened it.
+   * Without this one-tick guard, dismissing the prompt refocuses the textarea,
+   * refires onFocus and reopens the prompt: an inescapable loop.
+   */
+  function requestAuthFromFocus() {
+    if (user || authPromptDismissedRef.current) return;
+    setShowAuthPrompt(true);
+  }
+
+  function closeAuthPrompt() {
+    authPromptDismissedRef.current = true;
+    setShowAuthPrompt(false);
+    // Focus restoration happens synchronously in the modal's effect cleanup, so
+    // a macrotask is enough to re-arm the prompt for the next deliberate focus.
+    setTimeout(() => { authPromptDismissedRef.current = false; }, 0);
+  }
 
   const commentTree = useMemo(() => buildCommentTree(comments), [comments]);
 
+  // Key on the SET of comment ids, not on `comments` itself: every vote rewrites
+  // a score and so replaces the array, and refetching (and overwriting) the
+  // user's votes on each optimistic click would stomp the very state the click
+  // just set. A sorted id string changes only when a comment is added or removed.
+  const commentIdsKey = useMemo(
+    () => comments.map(c => c.id).sort().join(','),
+    [comments],
+  );
+
   useEffect(() => {
-    if (!user || comments.length === 0) return;
-    const commentIds = comments.map(c => c.id);
+    if (!user || !commentIdsKey) return;
     supabase
       .from('comment_votes')
       .select('comment_id, value')
       .eq('user_id', user.id)
-      .in('comment_id', commentIds)
+      .in('comment_id', commentIdsKey.split(','))
       .then(({ data }) => {
         if (data) {
           const votes = new Map<string, number>();
@@ -78,7 +134,7 @@ export default function CommentsSection({ problemId, initialComments }: Comments
           setUserVotes(votes);
         }
       });
-  }, [user, comments.length]);
+  }, [user, commentIdsKey]);
 
   async function handleVote(commentId: string, direction: 1 | -1) {
     if (!user) { setShowAuthPrompt(true); return; }
@@ -110,60 +166,130 @@ export default function CommentsSection({ problemId, initialComments }: Comments
       return next;
     });
 
+    const rollback = () => {
+      setComments(prev => prev.map(c => {
+        if (c.id !== commentId) return c;
+        let scoreDelta = 0;
+        if (currentVote === direction) {
+          scoreDelta = direction;
+        } else if (currentVote) {
+          scoreDelta = -(direction * 2);
+        } else {
+          scoreDelta = -direction;
+        }
+        return { ...c, score: c.score + scoreDelta };
+      }));
+      setUserVotes(prev => {
+        const next = new Map(prev);
+        if (currentVote) {
+          next.set(commentId, currentVote);
+        } else {
+          next.delete(commentId);
+        }
+        return next;
+      });
+    };
+
     try {
       let dbError = null;
+      // The UPDATE and DELETE below carry `.select()` deliberately: keyed writes
+      // that match zero rows (RLS filtered them, the row was removed in another
+      // tab, or the vote was re-pointed at a different comment) resolve with
+      // `error: null`, so without it a desync commits locally, the
+      // update_comment_score trigger never fires, and the number on screen is
+      // one no reload will ever reproduce.
+      //
+      // Note the UPDATE writes `value` only, never `comment_id`. Re-pointing a
+      // vote row corrupts the old comment's stored score permanently (the
+      // trigger rescores only new.comment_id); the durable fix is a DB-side
+      // BEFORE UPDATE guard, which is not in this file's reach.
+      let rowsAffected = 1;
       if (currentVote === direction) {
-        const { error } = await supabase.from('comment_votes').delete().eq('comment_id', commentId).eq('user_id', user.id);
+        const { data, error } = await supabase
+          .from('comment_votes').delete()
+          .eq('comment_id', commentId).eq('user_id', user.id)
+          .select('comment_id');
         dbError = error;
+        rowsAffected = data?.length ?? 0;
       } else if (currentVote) {
-        const { error } = await supabase.from('comment_votes').update({ value: direction }).eq('comment_id', commentId).eq('user_id', user.id);
+        const { data, error } = await supabase
+          .from('comment_votes').update({ value: direction })
+          .eq('comment_id', commentId).eq('user_id', user.id)
+          .select('comment_id');
         dbError = error;
+        rowsAffected = data?.length ?? 0;
       } else {
-        const { error } = await supabase.from('comment_votes').insert({ comment_id: commentId, user_id: user.id, value: direction });
+        const { error } = await supabase
+          .from('comment_votes')
+          .insert({ comment_id: commentId, user_id: user.id, value: direction });
         dbError = error;
       }
 
       if (dbError) {
-        setComments(prev => prev.map(c => {
-          if (c.id !== commentId) return c;
-          let scoreDelta = 0;
-          if (currentVote === direction) {
-            scoreDelta = direction;
-          } else if (currentVote) {
-            scoreDelta = -(direction * 2);
-          } else {
-            scoreDelta = -direction;
-          }
-          return { ...c, score: c.score + scoreDelta };
-        }));
-        setUserVotes(prev => {
-          const next = new Map(prev);
-          if (currentVote) {
-            next.set(commentId, currentVote);
-          } else {
-            next.delete(commentId);
-          }
-          return next;
-        });
+        rollback();
+        toast.error('Vote failed', errorMessage(dbError, 'Please try again.'));
+      } else if (rowsAffected === 0) {
+        rollback();
+        toast.error('Vote is out of date', 'Refreshing this comment from the server.');
+        await resyncComment(commentId);
       }
+    } catch (e) {
+      rollback();
+      toast.error('Vote failed', errorMessage(e, 'Please try again.'));
     } finally {
       setPendingVotes(prev => { const next = new Set(prev); next.delete(commentId); return next; });
+    }
+  }
+
+  /** Pull one comment's authoritative score and this user's vote back from the server. */
+  async function resyncComment(commentId: string) {
+    try {
+      const { data: row } = await supabase
+        .from('comments').select('score').eq('id', commentId).maybeSingle();
+
+      if (!row) {
+        // The comment itself is gone — drop it (and its replies) locally.
+        setComments(prev => prev.filter(c => c.id !== commentId && c.parent_id !== commentId));
+        return;
+      }
+      setComments(prev => prev.map(c => (c.id === commentId ? { ...c, score: row.score } : c)));
+
+      if (!user) return;
+      const { data: vote } = await supabase
+        .from('comment_votes').select('value')
+        .eq('comment_id', commentId).eq('user_id', user.id).maybeSingle();
+      setUserVotes(prev => {
+        const next = new Map(prev);
+        if (vote) next.set(commentId, vote.value);
+        else next.delete(commentId);
+        return next;
+      });
+    } catch {
+      // Best effort — the toast already told the user their vote didn't stick.
     }
   }
 
   async function handleSubmitComment(e: React.FormEvent) {
     e.preventDefault();
     if (!user) { setShowAuthPrompt(true); return; }
-    if (!newCommentBody.trim() || isSubmitting) return;
+    if (isSubmitting) return;
+
+    const invalid = validateCommentBody(newCommentBody);
+    if (invalid) { toast.error('Comment not posted', invalid); return; }
 
     setIsSubmitting(true);
-    const { data, error } = await supabase
-      .from('comments')
-      .insert({ problem_id: problemId, user_id: user.id, body: newCommentBody.trim() })
-      .select('id, problem_id, user_id, parent_id, body, score, created_at, updated_at')
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .insert({ problem_id: problemId, user_id: user.id, body: newCommentBody.trim() })
+        .select('id, problem_id, user_id, parent_id, body, score, created_at, updated_at')
+        .single();
 
-    if (data && !error) {
+      if (error || !data) {
+        toast.error('Comment not posted', errorMessage(error, 'Please try again.'));
+        return;
+      }
+
       const newComment: Comment = {
         ...data,
         parent_id: null,
@@ -172,22 +298,35 @@ export default function CommentsSection({ problemId, initialComments }: Comments
       };
       setComments(prev => [...prev, newComment]);
       setNewCommentBody('');
+    } catch (err) {
+      toast.error('Comment not posted', errorMessage(err, 'Please try again.'));
+    } finally {
+      // finally, not a trailing call: a rejected await used to leave
+      // isSubmitting stuck true and the button disabled until a full reload.
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   }
 
   async function handleSubmitReply(parentId: string) {
     if (!user) { setShowAuthPrompt(true); return; }
-    if (!replyBody.trim() || isSubmitting) return;
+    if (isSubmitting) return;
+
+    const invalid = validateCommentBody(replyBody);
+    if (invalid) { toast.error('Reply not posted', invalid); return; }
 
     setIsSubmitting(true);
-    const { data, error } = await supabase
-      .from('comments')
-      .insert({ problem_id: problemId, user_id: user.id, body: replyBody.trim(), parent_id: parentId })
-      .select('id, problem_id, user_id, parent_id, body, score, created_at, updated_at')
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .insert({ problem_id: problemId, user_id: user.id, body: replyBody.trim(), parent_id: parentId })
+        .select('id, problem_id, user_id, parent_id, body, score, created_at, updated_at')
+        .single();
 
-    if (data && !error) {
+      if (error || !data) {
+        toast.error('Reply not posted', errorMessage(error, 'Please try again.'));
+        return;
+      }
+
       const newComment: Comment = {
         ...data,
         parent_id: parentId,
@@ -197,13 +336,30 @@ export default function CommentsSection({ problemId, initialComments }: Comments
       setComments(prev => [...prev, newComment]);
       setReplyBody('');
       setReplyingTo(null);
+    } catch (err) {
+      toast.error('Reply not posted', errorMessage(err, 'Please try again.'));
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   }
 
   async function handleDeleteComment(commentId: string) {
-    const { error } = await supabase.from('comments').delete().eq('id', commentId);
-    if (!error) {
+    try {
+      // `.select('id')` again: a DELETE that RLS filters to zero rows still
+      // resolves with error: null, so without it the whole thread vanished from
+      // the UI and silently came back on the next refresh.
+      const { data, error } = await supabase
+        .from('comments').delete().eq('id', commentId).select('id');
+
+      if (error) {
+        toast.error('Delete failed', errorMessage(error, 'Please try again.'));
+        return;
+      }
+      if (!data || data.length === 0) {
+        toast.error('Delete failed', 'The comment was not removed — it may already be gone, or you may no longer have permission.');
+        return;
+      }
+
       // Collect this comment and all descendants (DB cascades, client must match)
       const toRemove = new Set<string>([commentId]);
       let added = true;
@@ -221,6 +377,9 @@ export default function CommentsSection({ problemId, initialComments }: Comments
         setReplyingTo(null);
         setReplyBody('');
       }
+      toast.success('Comment deleted');
+    } catch (err) {
+      toast.error('Delete failed', errorMessage(err, 'Please try again.'));
     }
   }
 
@@ -232,6 +391,7 @@ export default function CommentsSection({ problemId, initialComments }: Comments
           {/* Vote buttons */}
           <div className="flex flex-col items-center gap-0.5 pt-0.5">
             <button
+              type="button"
               onClick={() => handleVote(node.id, 1)}
               className={`transition-colors ${voteValue === 1 ? 'text-brand-primary' : 'text-text-muted hover:text-brand-primary'}`}
               aria-label="Upvote"
@@ -242,6 +402,7 @@ export default function CommentsSection({ problemId, initialComments }: Comments
             </button>
             <span className="text-xs font-mono font-medium text-foreground">{node.score}</span>
             <button
+              type="button"
               onClick={() => handleVote(node.id, -1)}
               className={`transition-colors ${voteValue === -1 ? 'text-error' : 'text-text-muted hover:text-error'}`}
               aria-label="Downvote"
@@ -259,9 +420,14 @@ export default function CommentsSection({ problemId, initialComments }: Comments
                 {node.username.charAt(0).toUpperCase()}
               </div>
             ) : (
+              // Plain <img>, not next/image: Supabase storage is not registered
+              // in next.config's images.remotePatterns and this is a fixed 32px
+              // thumbnail beside a link that already names the user.
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={node.avatar_url}
-                alt={node.username}
+                alt=""
+                aria-hidden="true"
                 className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                 onError={() => setAvatarErrors(prev => new Set(prev).add(node.id))}
               />
@@ -278,6 +444,7 @@ export default function CommentsSection({ problemId, initialComments }: Comments
             </div>
             <p className="text-sm text-foreground mt-1.5 whitespace-pre-wrap">{node.body}</p>
             <button
+              type="button"
               onClick={() => {
                 if (!user) { setShowAuthPrompt(true); return; }
                 setReplyingTo(replyingTo === node.id ? null : node.id);
@@ -292,6 +459,7 @@ export default function CommentsSection({ problemId, initialComments }: Comments
           {/* Manager-only delete button */}
           {userRole === 'manager' && (
             <button
+              type="button"
               onClick={() => handleDeleteComment(node.id)}
               className="flex-shrink-0 text-text-muted hover:text-error transition-colors p-1 self-start"
               aria-label="Delete comment"
@@ -314,6 +482,8 @@ export default function CommentsSection({ problemId, initialComments }: Comments
               value={replyBody}
               onChange={e => setReplyBody(e.target.value)}
               placeholder={`Reply to ${node.username}...`}
+              aria-label={`Reply to ${node.username}`}
+              maxLength={COMMENT_MAX_LENGTH}
               className="w-full bg-surface-2 border border-border rounded-lg p-3 text-sm text-foreground placeholder:text-text-muted resize-y min-h-[60px]"
               autoFocus
             />
@@ -364,8 +534,10 @@ export default function CommentsSection({ problemId, initialComments }: Comments
             <textarea
               value={newCommentBody}
               onChange={e => setNewCommentBody(e.target.value)}
-              onFocus={() => { if (!user) setShowAuthPrompt(true); }}
+              onFocus={requestAuthFromFocus}
               placeholder="Leave a comment..."
+              aria-label="Leave a comment"
+              maxLength={COMMENT_MAX_LENGTH}
               className="w-full bg-surface-2 border border-border rounded-lg p-3 text-sm text-foreground placeholder:text-text-muted resize-y min-h-[80px]"
             />
             <div className="flex justify-end mt-2">
@@ -396,7 +568,7 @@ export default function CommentsSection({ problemId, initialComments }: Comments
       {showAuthPrompt && (
         <AuthPromptModal
           message="You must be logged in to interact with comments."
-          onClose={() => setShowAuthPrompt(false)}
+          onClose={closeAuthPrompt}
         />
       )}
     </>

@@ -28,6 +28,8 @@ export const tableThemeByVariant: Record<HeaderVariant, TableTheme> = {
   purple: defaultTheme,
 };
 
-export function getTableTheme(variant: HeaderVariant | undefined): TableTheme {
-  return defaultTheme;
+// Every variant deliberately resolves to the same theme (see above); the
+// argument is kept so the ~17 call sites passing headerVariant keep working.
+export function getTableTheme(variant?: HeaderVariant): TableTheme {
+  return (variant && tableThemeByVariant[variant]) || defaultTheme;
 }

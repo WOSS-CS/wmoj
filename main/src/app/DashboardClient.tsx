@@ -6,7 +6,25 @@ import { useState } from 'react';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { NewsPost, CompactContest, CompactProblem } from './page';
 import { formatTimeUntil } from '@/utils/contestStatus';
+import { toast } from '@/components/ui/Toast';
 
+const NEWS_PAGE_SIZE = 10;
+
+/**
+ * Module scope, not component scope: it reads the wall clock, so it is not a
+ * pure render-time computation.
+ */
+function formatTimeAgo(timestamp: string) {
+  const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(timestamp).toLocaleDateString();
+}
 
 interface DashboardClientProps {
   initialNewsPosts: NewsPost[];
@@ -22,38 +40,45 @@ export default function DashboardClient({
   recentProblems 
 }: DashboardClientProps) {
   const [posts, setPosts] = useState<NewsPost[]>(initialNewsPosts || []);
-  const [offset, setOffset] = useState(10);
-  const [hasMore, setHasMore] = useState((initialNewsPosts || []).length === 10);
+  const [offset, setOffset] = useState(NEWS_PAGE_SIZE);
+  const [hasMore, setHasMore] = useState((initialNewsPosts || []).length === NEWS_PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
 
   const loadMore = async () => {
+    if (loadingMore) return;
     setLoadingMore(true);
-    const { data } = await supabase
-      .from('news_posts')
-      .select('id, title, content, date_posted, users!inner(username)')
-      .order('date_posted', { ascending: false })
-      .range(offset, offset + 9);
-      
-    if (data && data.length > 0) {
-      setPosts([...posts, ...(data as unknown as NewsPost[])]);
-      setOffset(offset + data.length);
-      setHasMore(data.length === 10);
-    } else {
-      setHasMore(false);
-    }
-    setLoadingMore(false);
-  };
+    try {
+      const { data, error } = await supabase
+        .from('news_posts')
+        .select('id, title, content, date_posted, users!inner(username)')
+        .order('date_posted', { ascending: false })
+        // Tiebreaker: two posts sharing a date_posted have no stable order
+        // across separate LIMIT/OFFSET queries, so one could repeat while
+        // another was skipped.
+        .order('id', { ascending: true })
+        .range(offset, offset + NEWS_PAGE_SIZE - 1);
 
-  const formatTimeAgo = (timestamp: string) => {
-    const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
-    if (seconds < 60) return 'just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
-    return new Date(timestamp).toLocaleDateString();
+      if (error) {
+        // A failed fetch used to be indistinguishable from "no more posts" and
+        // silently hid the Load More button for the rest of the session.
+        console.error('[Dashboard] Failed to load more news posts:', error);
+        toast.error('Error', 'Failed to load more news posts.');
+        return;
+      }
+
+      const batch = (data || []) as unknown as NewsPost[];
+      // Functional updates: reading `posts`/`offset` out of the closure dropped
+      // a whole batch when two loads overlapped. The id filter keeps a post
+      // published between two pages from appearing twice.
+      setPosts(prev => {
+        const seen = new Set(prev.map(p => p.id));
+        return [...prev, ...batch.filter(p => !seen.has(p.id))];
+      });
+      setOffset(prev => prev + batch.length);
+      setHasMore(batch.length === NEWS_PAGE_SIZE);
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   return (
@@ -117,7 +142,7 @@ export default function DashboardClient({
             ) : (
               ongoingContests.map(contest => (
                 <div key={contest.id} className="p-4 text-center">
-                  <Link href={`/contests/${contest.id}`} className="block text-sm font-semibold text-brand-primary hover:text-brand-secondary transition-colors mb-1">
+                  <Link href={`/contests/${contest.id}/view`} className="block text-sm font-semibold text-brand-primary hover:text-brand-secondary transition-colors mb-1">
                     {contest.name}
                   </Link>
                   <div className="text-xs text-text-muted">
@@ -140,7 +165,7 @@ export default function DashboardClient({
             ) : (
               upcomingContests.map(contest => (
                 <div key={contest.id} className="p-4 text-center">
-                  <Link href={`/contests/${contest.id}`} className="block text-sm font-semibold text-brand-primary hover:text-brand-secondary transition-colors mb-1">
+                  <Link href={`/contests/${contest.id}/view`} className="block text-sm font-semibold text-brand-primary hover:text-brand-secondary transition-colors mb-1">
                     {contest.name}
                   </Link>
                   <div className="text-xs text-text-muted">

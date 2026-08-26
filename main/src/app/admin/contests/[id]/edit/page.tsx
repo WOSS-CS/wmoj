@@ -1,27 +1,19 @@
 import { redirect } from 'next/navigation';
-import { getServerSupabase } from '@/lib/supabaseServer';
+import { requireActiveAdmin } from '@/lib/staffAuth';
 import EditContestClient from './EditContestClient';
 
 export default async function EditContestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await getServerSupabase();
+  const { supabase, userId } = await requireActiveAdmin();
 
-  const { data: authData } = await supabase.auth.getUser();
-  const userId = authData?.user?.id;
-  if (!userId) redirect('/auth/login');
-
-  const { data: adminRow } = await supabase
-    .from('admins')
-    .select('id')
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (!adminRow) redirect('/');
-
+  // `contests` is world-readable, so without this scope the editor happily opens
+  // — fully populated — on another admin's contest that the PATCH route can
+  // never write. Admin-side only; managers see everything.
   const { data: contestData, error: contestError } = await supabase
     .from('contests')
     .select('id,name,description,length,is_active,created_at,updated_at,starts_at,ends_at,is_rated')
     .eq('id', id)
+    .eq('created_by', userId)
     .maybeSingle();
 
   if (contestError || !contestData) {

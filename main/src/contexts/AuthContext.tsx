@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo, u
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { UserRole, UserProfile, getUserDashboardPath } from '@/types/user';
+import { sanitizeUsername, USERNAME_MAX_LENGTH } from '@/utils/validation';
 
 interface AuthContextType {
   user: User | null;
@@ -64,18 +65,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Round 1 — 3 queries in parallel: role check + full profile in one shot.
       // Previously this was 8 sequential queries (6 of which were duplicates).
+      //
+      // Both role checks pin `is_active = true`: a row in `admins`/`managers` is
+      // membership, not authorization. `managers_select_all` lets a deactivated
+      // manager read their own row, so without this filter deactivation would
+      // revoke nothing here.
       const [adminResult, managerResult, userResult] = await Promise.all([
-        supabase.from('admins').select('id').eq('id', currentUser.id).maybeSingle(),
-        supabase.from('managers').select('id').eq('id', currentUser.id).maybeSingle(),
+        supabase.from('admins').select('id').eq('id', currentUser.id).eq('is_active', true).maybeSingle(),
+        supabase.from('managers').select('id').eq('id', currentUser.id).eq('is_active', true).maybeSingle(),
         supabase.from('users').select('*').eq('id', currentUser.id).maybeSingle(),
       ]);
+
+      // A disabled account cannot authenticate at all. This runs before any role
+      // or profile state is published, so a disabled staff member never sees the
+      // panel flash. It is the UX half only — an already-issued JWT keeps working
+      // against PostgREST until it expires, so the RLS policies carry the same
+      // `users.is_active` predicate and are the actual boundary.
+      if (userResult.data && userResult.data.is_active !== true) {
+        await supabase.auth.signOut();
+        // Hard navigation, so no stale client cache survives. Compared against the
+        // full target so a failed sign-out cannot turn this into a redirect loop.
+        const target = '/auth/login?disabled=1';
+        if (typeof window !== 'undefined' && window.location.pathname + window.location.search !== target) {
+          window.location.replace(target);
+        }
+        return;
+      }
 
       // Derive role and path immediately from Round 1 — no extra queries needed.
       // Manager is the higher tier and wins precedence over admin when a user
       // is present in both tables.
       const role: UserRole = managerResult.data ? 'manager' : adminResult.data ? 'admin' : 'regular';
       setUserRole(role);
-      setUserDashboardPath(getUserDashboardPath(role));
+      setUserDashboardPath(getUserDashboardPath());
 
       // Profile is already in Round 1 — set it right away instead of waiting
       // for a separate fetchUserProfile call.
@@ -85,47 +107,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Round 2 — fire background updates in parallel; don't block the UI.
+      // These are fire-and-forget for latency, not for correctness: log every
+      // failure, or a missing UPDATE policy stays invisible forever.
       const updates: Promise<unknown>[] = [];
 
+      const stampLastLogin = async (table: 'managers' | 'admins' | 'users') => {
+        const { error } = await supabase
+          .from(table)
+          .update({ last_login: now, updated_at: now })
+          .eq('id', currentUser.id);
+        if (error) console.error(`Failed to stamp ${table}.last_login:`, error);
+      };
+
       if (managerResult.data) {
-        updates.push(
-          Promise.resolve(supabase.from('managers').update({ last_login: now, updated_at: now }).eq('id', currentUser.id))
-        );
+        updates.push(stampLastLogin('managers'));
       } else if (adminResult.data) {
-        updates.push(
-          Promise.resolve(supabase.from('admins').update({ last_login: now, updated_at: now }).eq('id', currentUser.id))
-        );
+        updates.push(stampLastLogin('admins'));
       }
 
       if (!userResult.data) {
         // New user: insert then fetch profile (fetchUserProfile clears profileLoading).
-        // 23505 fallback: signup precheck makes username collisions near-impossible,
-        // but if one slips through we suffix the id so the row still lands and the
-        // verified auth.users row isn't orphaned.
-        const desired = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'user';
+        //
+        // `desired` comes from user metadata or an email local part, so it can very
+        // easily violate `users_username_format` (23514) — a `+` tag, a dot-heavy
+        // corporate address, or simply being too long. Sanitise it to something the
+        // constraint accepts before the first attempt, and keep a suffixed fallback
+        // that still fits in 30 characters for the collision case (23505). Both
+        // results are checked: a silent failure here leaves a verified auth user
+        // with no `public.users` row, permanently.
+        const rawDesired =
+          currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'user';
+        const suffix = `_${currentUser.id.slice(0, 8)}`;
+        const desired = sanitizeUsername(rawDesired);
+        const fallback = `${sanitizeUsername(rawDesired, USERNAME_MAX_LENGTH - suffix.length)}${suffix}`;
+
         updates.push((async () => {
-          const insert = await supabase.from('users').insert({
-            id: currentUser.id,
-            username: desired,
-            email: currentUser.email || '',
-            created_at: currentUser.created_at,
-            last_login: now,
-          });
-          if (insert.error?.code === '23505') {
-            await supabase.from('users').insert({
+          const insertProfile = (username: string) =>
+            supabase.from('users').insert({
               id: currentUser.id,
-              username: `${desired}_${currentUser.id.slice(0, 4)}`,
+              username,
               email: currentUser.email || '',
               created_at: currentUser.created_at,
               last_login: now,
             });
+
+          const insert = await insertProfile(desired);
+          if (insert.error) {
+            if (insert.error.code === '23505' || insert.error.code === '23514') {
+              const retry = await insertProfile(fallback);
+              if (retry.error) {
+                console.error('Failed to create user profile (retry):', retry.error);
+              }
+            } else {
+              console.error('Failed to create user profile:', insert.error);
+            }
           }
           await fetchUserProfile(currentUser.id);
         })());
       } else {
-        updates.push(
-          Promise.resolve(supabase.from('users').update({ last_login: now, updated_at: now }).eq('id', currentUser.id))
-        );
+        updates.push(stampLastLogin('users'));
       }
 
       await Promise.all(updates);

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getServerSupabase } from '@/lib/supabaseServer';
+import { requireActiveManager } from '@/lib/staffAuth';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
 import ManagerUserManagementClient from './ManagerUserManagementClient';
 
@@ -10,19 +10,7 @@ export default async function ManagerUserManagementPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const supabase = await getServerSupabase();
-
-  const { data: authData } = await supabase.auth.getUser();
-  const userId = authData?.user?.id;
-  if (!userId) redirect('/auth/login');
-
-  const { data: managerRow } = await supabase
-    .from('managers')
-    .select('id')
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (!managerRow) redirect('/');
+  const { supabase } = await requireActiveManager();
 
   const sp = await searchParams;
   const page = parsePage(sp.page);
@@ -90,17 +78,22 @@ export default async function ManagerUserManagementPage({
   const adminIds = new Set((adminsRes.data || []).map((a: { id: string }) => a.id));
   const managerIds = new Set((managersRes.data || []).map((m: { id: string }) => m.id));
 
+  // One `head: true` count per user on the current page (at most PAGE_SIZE of
+  // them) rather than materialising every matching `submissions` row just to
+  // length it in JavaScript — the pattern the sibling `[id]/page.tsx` uses.
   const pageUserIds = users.map((u: { id: string }) => u.id);
+  const countResults = await Promise.all(
+    pageUserIds.map((uid: string) =>
+      supabase
+        .from('submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', uid),
+    ),
+  );
   const submissionCounts: Record<string, number> = {};
-  if (pageUserIds.length > 0) {
-    const { data: subsData } = await supabase
-      .from('submissions')
-      .select('user_id')
-      .in('user_id', pageUserIds);
-    for (const sub of subsData || []) {
-      if (sub.user_id) submissionCounts[sub.user_id] = (submissionCounts[sub.user_id] || 0) + 1;
-    }
-  }
+  pageUserIds.forEach((uid: string, i: number) => {
+    submissionCounts[uid] = countResults[i].count ?? 0;
+  });
 
   const usersWithCounts = users.map((user) => ({
     ...user,

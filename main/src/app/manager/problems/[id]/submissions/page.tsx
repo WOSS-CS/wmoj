@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getServerSupabase } from '@/lib/supabaseServer';
+import { requireActiveManager } from '@/lib/staffAuth';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
 import ManagerProblemSubmissionsClient from './ManagerProblemSubmissionsClient';
 
@@ -31,31 +31,23 @@ export default async function ManagerProblemSubmissionsPage({
   searchParams: Promise<{ page?: string | string[] }>;
 }) {
   const { id } = await params;
-  const supabase = await getServerSupabase();
-
-  const { data: authData } = await supabase.auth.getUser();
-  const userId = authData?.user?.id;
-  if (!userId) redirect('/auth/login');
-
-  const { data: managerRow } = await supabase
-    .from('managers')
-    .select('id')
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (!managerRow) redirect('/');
+  const { supabase } = await requireActiveManager();
 
   const sp = await searchParams;
   const currentPage = parsePage(sp.page);
   const { from, to } = computeRange(currentPage, PAGE_SIZE);
 
+  // `.single()` used to swallow its error, so a mistyped slug rendered
+  // "Submissions: Problem — 0 total" instead of going anywhere.
   const { data: problem } = await supabase
     .from('problems')
     .select('name')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
-  const problemName = problem?.name || 'Problem';
+  if (!problem) redirect('/manager/problems/manage');
+
+  const problemName = problem.name || 'Problem';
 
   const { data: subs, count, error: subsErr } = await supabase
     .from('submissions')

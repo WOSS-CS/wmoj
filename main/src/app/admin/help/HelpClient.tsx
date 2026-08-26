@@ -115,6 +115,28 @@ int main() {
             </section>
 
 
+            <section id="judge" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Judge Service</h2>
+              <p className="text-text-muted">Compilation and grading run on a separate judge service. The app sends the language, the submitted source, and the problem&apos;s stored test data, then records the verdict that comes back — the judge never writes to the database itself. Its current state is on the <Link href="/status" className="text-brand-primary hover:underline">Status</Link> page.</p>
+              <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
+                <li><strong className="text-foreground">Supported languages:</strong> Python 3, PyPy 3, and C++14, C++17, C++20 and C++23. Nothing else — do not promise a language the submit dropdown does not offer.</li>
+                <li><strong className="text-foreground">Submissions are stored only for active problems.</strong> Your own test submissions against a pending problem run and render normally but are never recorded, so they never move anyone&apos;s points.</li>
+                <li><strong className="text-foreground">A compile error is a verdict, not an outage.</strong> It comes back as <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">CE</code> with the compiler output attached.</li>
+                <li><strong className="text-foreground">A broken custom checker is a configuration fault.</strong> The submission is rejected outright and nothing is stored — it is never counted against the student. Fix the checker, then ask them to resubmit.</li>
+              </ul>
+            </section>
+
+            <section id="timers" className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">Contest Timers &amp; Participation</h2>
+              <p className="text-text-muted">A contest&apos;s status is never stored — it is computed from its start/end window every time it is shown. Leave both blank and the contest is <strong className="text-foreground">virtual</strong>: open indefinitely for practice. Set both and it is <strong className="text-foreground">upcoming</strong> before the start, <strong className="text-foreground">ongoing</strong> between the two, and virtual afterwards. Setting one without the other is rejected.</p>
+              <ul className="list-disc list-inside ml-4 space-y-1 text-text-muted">
+                <li><strong className="text-foreground">Duration is per participant, not per contest.</strong> Joining starts that user&apos;s own countdown of Duration minutes; the start/end window only decides when joining is possible at all.</li>
+                <li><strong className="text-foreground">Expiry is destructive.</strong> When a participant&apos;s countdown runs out they are removed from the contest and their timer is deleted, and the moment they left is stamped on the permanent join history.</li>
+                <li><strong className="text-foreground">Join history is permanent.</strong> A contest anyone has ever joined cannot be deleted — that record is the proof of who competed. Ask a manager to deactivate it instead.</li>
+                <li>A contest&apos;s creator cannot join their own contest.</li>
+              </ul>
+            </section>
+
             <section id="generators" className="space-y-3">
               <h2 className="text-lg font-semibold text-foreground">Test Case Generators (C++)</h2>
               <p className="text-text-muted">Upload a single <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">.cpp</code> on the Create Problem page and click <code className="px-1.5 py-0.5 bg-surface-2 rounded text-sm font-mono">Generate Test Cases</code>. The judge compiles and runs it. It must:</p>

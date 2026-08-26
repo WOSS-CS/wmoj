@@ -1,10 +1,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+// These are the sizes actually rendered. The map used to claim 28/36/48 while
+// the component drew at `imageSize + 14`, so `size="md"` was a 50px logo
+// described as 36 — the numbers below are the real ones, pixel-for-pixel
+// identical to what shipped.
 const SIZE_MAP = {
-  sm: 28,
-  md: 36,
-  lg: 48,
+  sm: 42,
+  md: 50,
+  lg: 62,
 } as const;
 
 const TEXT_SIZE_MAP = {
@@ -35,7 +39,6 @@ export function Logo({
   badge,
 }: LogoProps) {
   const imageSize = SIZE_MAP[size];
-  const wrapperSize = imageSize + 14;
   const textSizeClass = TEXT_SIZE_MAP[size];
 
   const content = (
@@ -43,8 +46,8 @@ export function Logo({
       <Image
         src="/logo.png"
         alt="WMOJ logo"
-        width={wrapperSize}
-        height={wrapperSize}
+        width={imageSize}
+        height={imageSize}
         priority={priority}
         className="object-contain"
       />

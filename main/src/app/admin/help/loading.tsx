@@ -18,7 +18,7 @@ export default function Loading() {
       </div>
 
       <div className="space-y-8">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 8 }).map((_, i) => (
           <SkeletonCard key={i} lines={4} />
         ))}
       </div>

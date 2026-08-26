@@ -1,26 +1,14 @@
 import { redirect } from 'next/navigation';
-import { getServerSupabase } from '@/lib/supabaseServer';
+import { requireActiveManager } from '@/lib/staffAuth';
 import ManagerEditProblemClient from './ManagerEditProblemClient';
 
 export default async function ManagerEditProblemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await getServerSupabase();
-
-  const { data: authData } = await supabase.auth.getUser();
-  const userId = authData?.user?.id;
-  if (!userId) redirect('/auth/login');
-
-  const { data: managerRow } = await supabase
-    .from('managers')
-    .select('id')
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (!managerRow) redirect('/');
+  const { supabase } = await requireActiveManager();
 
   const { data: problemData, error: problemError } = await supabase
     .from('problems')
-    .select('id,name,content,is_active,time_limit,memory_limit,points,input,output,generator_file,checker,created_at,updated_at')
+    .select('id,name,content,is_active,time_limit,memory_limit,points,created_at,updated_at')
     .eq('id', id)
     .maybeSingle();
 
@@ -28,12 +16,24 @@ export default async function ManagerEditProblemPage({ params }: { params: Promi
     redirect('/manager/problems/manage');
   }
 
-  const { input: _input, output: _output, ...rest } = problemData;
-  const testCaseCount = Array.isArray(_input) ? _input.length : 0;
+  // Graded data lives in the staff-only `problem_tests` side table (C4). RLS
+  // authorises staff to read it through the normal client.
+  const { data: testsData } = await supabase
+    .from('problem_tests')
+    .select('input,generator_file,checker')
+    .eq('problem_id', id)
+    .maybeSingle();
+
+  const testCaseCount = Array.isArray(testsData?.input) ? testsData.input.length : 0;
 
   return (
     <ManagerEditProblemClient
-      problem={{ ...rest, test_case_count: testCaseCount }}
+      problem={{
+        ...problemData,
+        generator_file: testsData?.generator_file ?? null,
+        checker: testsData?.checker ?? null,
+        test_case_count: testCaseCount,
+      }}
     />
   );
 }

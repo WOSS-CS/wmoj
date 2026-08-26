@@ -1,41 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getManagerSupabase } from '@/lib/managerAuth';
 import { validateSlug } from '@/utils/validation';
-import { getContestStatus } from '@/utils/contestStatus';
+import { checkContestProblemEligibility, validateContestCreate } from '@/lib/contestValidation';
 
 export async function POST(request: NextRequest) {
   try {
-    const { id, name, description, length, starts_at, ends_at, is_rated, problem_ids } = await request.json();
+    const auth = await getManagerSupabase(request);
+    if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const { supabase, user } = auth;
+
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+    const { id, problem_ids } = body;
 
     const slugError = validateSlug(id, 'Contest');
     if (slugError) {
       return NextResponse.json({ error: slugError }, { status: 400 });
     }
 
-    if (!name || !description || !length) {
-      return NextResponse.json(
-        { error: 'Name, description, and length are required' },
-        { status: 400 }
-      );
+    const validated = validateContestCreate(body);
+    if ('error' in validated) {
+      return NextResponse.json({ error: validated.error }, { status: validated.status });
     }
-
-    if (length < 1 || length > 1440) {
-      return NextResponse.json(
-        { error: 'Length must be between 1 and 1440 minutes' },
-        { status: 400 }
-      );
-    }
-
-    if (starts_at && ends_at && new Date(starts_at) >= new Date(ends_at)) {
-      return NextResponse.json(
-        { error: 'Start date/time must be before end date/time' },
-        { status: 400 }
-      );
-    }
-
-    const auth = await getManagerSupabase(request);
-    if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
-    const { supabase, user } = auth;
+    const { values } = validated;
 
     // Check uniqueness of contest ID
     const { data: existing } = await supabase.from('contests').select('id').eq('id', id).maybeSingle();
@@ -43,19 +32,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'A contest with this ID already exists' }, { status: 409 });
     }
 
+    // ---- Validate the problem selection before inserting anything. There is no
+    // transaction here, so a rejection after the insert would strand an empty
+    // contest and make the retry collide with its own 409. ----
+    const selectedIds: string[] = Array.isArray(problem_ids) ? [...new Set<string>(problem_ids)] : [];
+
+    if (selectedIds.length > 0) {
+      const eligibility = await checkContestProblemEligibility(supabase, {
+        contestId: null,
+        problemIds: selectedIds,
+        isRated: values.is_rated,
+      });
+      if (eligibility) {
+        return NextResponse.json({ error: eligibility.error }, { status: eligibility.status });
+      }
+    }
+
     const { data, error } = await supabase
       .from('contests')
       .insert([
         {
           id,
-          name,
-          description,
-          length,
+          name: values.name,
+          description: values.description,
+          length: values.length,
           is_active: true,
           created_by: user.id,
-          starts_at: starts_at || null,
-          ends_at: ends_at || null,
-          is_rated: is_rated ?? false
+          starts_at: values.starts_at,
+          ends_at: values.ends_at,
+          is_rated: values.is_rated,
         }
       ])
       .select()
@@ -69,52 +74,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Assign selected problems to this contest via junction table
-    if (Array.isArray(problem_ids) && problem_ids.length > 0) {
-      // Validate problem eligibility
-      const { data: cpRows } = await supabase
+    if (selectedIds.length > 0) {
+      const rows = selectedIds.map((pid: string) => ({ contest_id: id, problem_id: pid }));
+      const { data: inserted, error: cpError } = await supabase
         .from('contest_problems')
-        .select('problem_id, contest_id')
-        .in('problem_id', problem_ids);
+        .insert(rows)
+        .select('problem_id');
 
-      if (cpRows && cpRows.length > 0) {
-        const contestIdsInUse = [...new Set(cpRows.map(r => r.contest_id))];
-        const { data: contestsInUse } = await supabase
-          .from('contests')
-          .select('id, is_active, is_rated, starts_at, ends_at')
-          .in('id', contestIdsInUse);
-
-        // Rule 1: Block problems in rated non-virtual contests
-        const ratedNonVirtualIds = new Set(
-          (contestsInUse || [])
-            .filter(c => {
-              if (!c.is_rated) return false;
-              const status = getContestStatus(c as { is_active: boolean; starts_at: string | null; ends_at: string | null });
-              return status === 'ongoing' || status === 'upcoming';
-            })
-            .map(c => c.id)
-        );
-        const blockedByRule1 = cpRows.filter(r => ratedNonVirtualIds.has(r.contest_id)).map(r => r.problem_id);
-        if (blockedByRule1.length > 0) {
-          return NextResponse.json({ error: 'Some problems are in a rated ongoing/upcoming contest and cannot be added' }, { status: 400 });
-        }
-
-        // Rule 2: If this contest is rated, block problems in ANY other contest
-        if (is_rated) {
-          const inOtherContest = cpRows.map(r => r.problem_id);
-          if (inOtherContest.length > 0) {
-            return NextResponse.json({ error: 'Rated contests can only include standalone problems not already in another contest' }, { status: 400 });
-          }
-        }
-      }
-
-      const rows = problem_ids.map((pid: string) => ({ contest_id: id, problem_id: pid }));
-      const { error: cpError } = await supabase
-        .from('contest_problems')
-        .insert(rows);
-
-      if (cpError) {
+      if (cpError || (inserted || []).length !== rows.length) {
         console.error('Problem assignment error:', cpError);
+        // Nothing here is transactional, so roll the contest back by hand rather
+        // than leaving a problem-less contest behind a 500.
+        await supabase.from('contests').delete().eq('id', id);
+        return NextResponse.json(
+          { error: 'Failed to assign problems to the contest' },
+          { status: 500 }
+        );
       }
     }
 

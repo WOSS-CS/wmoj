@@ -86,15 +86,24 @@ export default function Pagination({
   const renderPrev = () => {
     const prev = effectivePage - 1;
     if (effectivePage <= 1) {
-      return <span className={`${base} opacity-40 cursor-not-allowed select-none`}>«</span>;
+      return (
+        <span
+          aria-disabled="true"
+          aria-label="Previous page"
+          className={`${base} opacity-40 cursor-not-allowed select-none`}
+        >
+          <span aria-hidden="true">&laquo;</span>
+        </span>
+      );
     }
     return (
       <Link
         href={buildHref(prev)}
         onClick={(e) => handleClick(e, prev)}
+        aria-label={`Previous page, page ${prev}`}
         className={`${base} hover:bg-surface-3`}
       >
-        «
+        <span aria-hidden="true">&laquo;</span>
       </Link>
     );
   };
@@ -102,21 +111,31 @@ export default function Pagination({
   const renderNext = () => {
     const next = effectivePage + 1;
     if (effectivePage >= totalPages) {
-      return <span className={`${base} opacity-40 cursor-not-allowed select-none`}>»</span>;
+      return (
+        <span
+          aria-disabled="true"
+          aria-label="Next page"
+          className={`${base} opacity-40 cursor-not-allowed select-none`}
+        >
+          <span aria-hidden="true">&raquo;</span>
+        </span>
+      );
     }
     return (
       <Link
         href={buildHref(next)}
         onClick={(e) => handleClick(e, next)}
+        aria-label={`Next page, page ${next}`}
         className={`${base} hover:bg-surface-3`}
       >
-        »
+        <span aria-hidden="true">&raquo;</span>
       </Link>
     );
   };
 
   return (
-    <div
+    <nav
+      aria-label="Pagination"
       className={`inline-flex items-center rounded-md overflow-hidden border border-border ${
         loading ? 'opacity-60' : ''
       }`}
@@ -124,11 +143,16 @@ export default function Pagination({
       {renderPrev()}
       {pages.map((p, i) =>
         p === '...' ? (
-          <span key={`e${i}`} className={`${base} cursor-default select-none`}>
+          <span key={`e${i}`} aria-hidden="true" className={`${base} cursor-default select-none`}>
             …
           </span>
         ) : p === effectivePage ? (
-          <span key={p} className={`${base} bg-brand-primary text-white pointer-events-none select-none`}>
+          <span
+            key={p}
+            aria-current="page"
+            aria-label={`Page ${p}, current page`}
+            className={`${base} bg-brand-primary text-white pointer-events-none select-none`}
+          >
             {p}
           </span>
         ) : (
@@ -136,6 +160,7 @@ export default function Pagination({
             key={p}
             href={buildHref(p)}
             onClick={(e) => handleClick(e, p)}
+            aria-label={`Page ${p}`}
             className={`${base} hover:bg-surface-3`}
           >
             {p}
@@ -144,7 +169,7 @@ export default function Pagination({
       )}
       {renderNext()}
       {loading && (
-        <span className="flex items-center pl-2 ml-1 border-l border-border">
+        <span role="status" aria-label="Loading page" className="flex items-center pl-2 ml-1 border-l border-border">
           <svg
             className="animate-spin text-brand-primary"
             width={14}
@@ -158,6 +183,6 @@ export default function Pagination({
           </svg>
         </span>
       )}
-    </div>
+    </nav>
   );
 }

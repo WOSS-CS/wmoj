@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   // Fetch contest associations from junction table
   const problemIds = problems.map(p => p.id);
   let contestNameMap: Record<string, string> = {};
-  let problemContestNamesMap: Record<string, string[]> = {};
+  const problemContestNamesMap: Record<string, string[]> = {};
 
   if (problemIds.length > 0) {
     const { data: cpRows } = await supabase

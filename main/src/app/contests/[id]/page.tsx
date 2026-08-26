@@ -4,6 +4,17 @@ import ContestDetailClient from './ContestDetailClient';
 import { canUserAccessContest } from '@/lib/contestAccess';
 import type { Contest } from '@/types/contest';
 
+interface EmbeddedProblem {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+interface ContestProblemRow {
+  problem_id: string;
+  problems: EmbeddedProblem | EmbeddedProblem[] | null;
+}
+
 export default async function ContestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await getServerSupabase();
@@ -27,10 +38,15 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
       .select('*')
       .eq('id', id)
       .maybeSingle(),
+    // Inner embed + is_active filter, matching /contests, /contests/[id]/view and
+    // api/contests. Without it a pending problem was listed here and counted in
+    // the metadata row, contradicting the badge on /contests and linking to a
+    // /problems/<pending> that 404s via canUserAccessProblem.
     supabase
       .from('contest_problems')
-      .select('problem_id, problems(id, name, created_at)')
-      .eq('contest_id', id),
+      .select('problem_id, problems!inner(id, name, created_at, is_active)')
+      .eq('contest_id', id)
+      .eq('problems.is_active', true),
   ]);
 
   const { data: contestData, error: contestError } = contestResult;
@@ -51,16 +67,12 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
   }
 
   // Extract problems from junction table result
-  const cpRows = cpResult.data || [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cpRows = (cpResult.data || []) as unknown as ContestProblemRow[];
   const problems = cpRows
-    .map((row: any) => {
-      const p = Array.isArray(row.problems) ? row.problems[0] : row.problems;
-      return { id: p.id as string, name: p.name as string, created_at: p.created_at as string };
-    })
-    .sort((a: { created_at: string }, b: { created_at: string }) =>
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
+    .map((row) => (Array.isArray(row.problems) ? row.problems[0] : row.problems))
+    .filter((p): p is EmbeddedProblem => !!p)
+    .map((p) => ({ id: p.id, name: p.name, created_at: p.created_at }))
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   return (
     <ContestDetailClient

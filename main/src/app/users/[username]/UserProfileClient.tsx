@@ -45,6 +45,7 @@ export default function UserProfileClient({ profile, heatmapData }: UserProfileC
           {/* Avatar */}
           <div className="glass-panel p-4 flex flex-col items-center">
             {!avatarError ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={profile.avatarUrl}
                 alt={`${profile.username}'s avatar`}
@@ -68,8 +69,14 @@ export default function UserProfileClient({ profile, heatmapData }: UserProfileC
               <span className="font-semibold text-foreground">{Math.round(profile.points)}</span> points
             </p>
 
+            {/*
+              `user_id` pins the exact account: the `user` filter is an unanchored
+              ilike, so a link carrying only the handle shows `bobby`'s and
+              `bobcat`'s submissions on `bob`'s profile. `user` is still passed so
+              the destination's search box reads back the handle a human typed.
+            */}
             <Link
-              href={`/submissions?user=${encodeURIComponent(profile.username)}`}
+              href={`/submissions?user_id=${encodeURIComponent(profile.id)}&user=${encodeURIComponent(profile.username)}`}
               className="block text-sm text-brand-primary hover:underline"
             >
               View submissions

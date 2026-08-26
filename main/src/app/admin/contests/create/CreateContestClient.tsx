@@ -43,6 +43,13 @@ export default function CreateContestClient() {
     const slugError = validateSlug(formData.id, 'Contest');
     if (slugError) { setError(slugError); setLoading(false); return; }
 
+    // `contests_window_paired` requires both timestamps or neither.
+    if (!!formData.starts_at !== !!formData.ends_at) {
+      setError('Set both a start and an end date/time, or neither');
+      setLoading(false);
+      return;
+    }
+
     if (formData.starts_at && formData.ends_at && new Date(formData.starts_at) >= new Date(formData.ends_at)) {
       setError('Start date/time must be before end date/time');
       setLoading(false);

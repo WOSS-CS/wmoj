@@ -1,12 +1,21 @@
+import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabaseServer';
-import { parsePage, computeRange, computeTotalPages } from '@/lib/pagination';
+import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
 import ProblemsClient from './ProblemsClient';
-import { Problem } from '@/types/problem';
+import { ProblemListItem } from '@/types/problem';
 import { getContestStatus } from '@/utils/contestStatus';
 
-export type HotProblem = Problem & { submission_count: number };
+export type HotProblem = ProblemListItem & { submission_count: number };
 
 const PAGE_SIZE = 20;
+
+/**
+ * The only columns this list is allowed to select. `input`, `output`, `checker`
+ * and `generator_file` are the answer key: every row here is serialised into the
+ * RSC flight payload for `ProblemsClient`, twenty at a time plus five hot rows.
+ * Never widen this to `*`.
+ */
+const LIST_COLUMNS = 'id, name, points, is_active, created_at';
 
 export default async function ProblemsPage({
   searchParams,
@@ -20,28 +29,35 @@ export default async function ProblemsPage({
 
   const supabase = await getServerSupabase();
 
-  // Find all contests and determine which are "ongoing" (problems should be hidden)
+  // Find every contest whose problems must stay off the public list.
   const { data: allContests } = await supabase
     .from('contests')
     .select('id, is_active, starts_at, ends_at');
 
-  const ongoingContestIds = (allContests || [])
-    .filter(c => getContestStatus(c as { is_active: boolean; starts_at: string | null; ends_at: string | null }) === 'ongoing')
+  // 'upcoming' is hidden for the same reason as 'ongoing', not a weaker one: a
+  // scheduled contest's problem set must not be enumerable, readable or
+  // submittable before the start bell. Listing them lets an entrant solve the
+  // contest days early and walk in finished.
+  const hiddenContestIds = (allContests || [])
+    .filter(c => {
+      const status = getContestStatus(c as { is_active: boolean; starts_at: string | null; ends_at: string | null });
+      return status === 'ongoing' || status === 'upcoming';
+    })
     .map(c => c.id);
 
-  // Get problem IDs that are in ongoing contests (these should be excluded)
+  // Get problem IDs that are in ongoing or upcoming contests (these are excluded)
   let excludedProblemIds: string[] = [];
-  if (ongoingContestIds.length > 0) {
+  if (hiddenContestIds.length > 0) {
     const { data: cpRows } = await supabase
       .from('contest_problems')
       .select('problem_id')
-      .in('contest_id', ongoingContestIds);
+      .in('contest_id', hiddenContestIds);
     excludedProblemIds = (cpRows || []).map((r: { problem_id: string }) => r.problem_id);
   }
 
   let query = supabase
     .from('problems')
-    .select('*', { count: 'exact' })
+    .select(LIST_COLUMNS, { count: 'exact' })
     .eq('is_active', true)
     .order('created_at', { ascending: false });
 
@@ -63,8 +79,18 @@ export default async function ProblemsPage({
     );
   }
 
-  const problemList = (problems as Problem[]) || [];
   const totalPages = computeTotalPages(count, PAGE_SIZE);
+
+  // Out-of-range pages render an empty table whose empty state also hides the
+  // paginator, stranding the user with no control to get back. Clamp and
+  // redirect instead, carrying the current filter. `redirect()` throws
+  // NEXT_REDIRECT, so it must stay outside any try/catch.
+  const effectivePage = clampPage(currentPage, totalPages);
+  if (effectivePage !== currentPage) {
+    redirect(buildPageHref({ search: search || undefined }, effectivePage));
+  }
+
+  const problemList = (problems as unknown as ProblemListItem[]) || [];
 
   // Hot problems: computed from all submissions (lightweight single-column fetch)
   const { data: allSubs } = await supabase
@@ -87,7 +113,7 @@ export default async function ProblemsPage({
   if (topIds.length > 0) {
     let hotQuery = supabase
       .from('problems')
-      .select('*')
+      .select(LIST_COLUMNS)
       .in('id', topIds)
       .eq('is_active', true);
 
@@ -96,7 +122,7 @@ export default async function ProblemsPage({
     }
 
     const { data: hotData } = await hotQuery;
-    hotProblems = (hotData || [])
+    hotProblems = ((hotData as unknown as ProblemListItem[]) || [])
       .map(p => ({ ...p, submission_count: countMap[p.id] || 0 }))
       .sort((a, b) => b.submission_count - a.submission_count);
   }

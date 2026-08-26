@@ -8,7 +8,7 @@ import { Header } from "./Header";
 import { UserNavbar } from "./UserNavbar";
 import { Skeleton, SkeletonTable } from "@/components/SkeletonLoader";
 
-type ShellType = "auth" | "admin" | "manager" | "poopthrower" | "user";
+type ShellType = "auth" | "admin" | "manager" | "user";
 
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
     const pathname = usePathname();
@@ -16,17 +16,14 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     const isAuthPage = pathname.startsWith("/auth");
     const isAdminPage = pathname.startsWith("/admin");
     const isManagerPage = pathname.startsWith("/manager");
-    const isPoopthrowerPage = pathname.startsWith("/poopthrower");
 
-    const shellType: ShellType = isPoopthrowerPage
-        ? "poopthrower"
-        : isAuthPage
-            ? "auth"
-            : isAdminPage
-                ? "admin"
-                : isManagerPage
-                    ? "manager"
-                    : "user";
+    const shellType: ShellType = isAuthPage
+        ? "auth"
+        : isAdminPage
+            ? "admin"
+            : isManagerPage
+                ? "manager"
+                : "user";
 
     // Track the previous shell so we can detect cross-shell transitions
     // (e.g. user → admin). During a transition the whole chrome swaps, so we
@@ -38,11 +35,6 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         setPrevShell(shellType);
     }, [shellType]);
-
-    // Secret game route — render nothing but the page itself
-    if (isPoopthrowerPage) {
-        return <>{children}</>;
-    }
 
     const showNavigation = !isAuthPage;
 

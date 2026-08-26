@@ -3,7 +3,21 @@ import ProblemDetailClient from './ProblemDetailClient';
 import { checkTimerExpiry } from '@/utils/timerCheck';
 import { getContestStatus } from '@/utils/contestStatus';
 import { canUserAccessProblem } from '@/lib/problemAccess';
+import { isActiveAdmin, isActiveManager } from '@/lib/staffAuth';
+import { countProblemTestCases } from '@/lib/supabaseAdmin';
+import { Problem } from '@/types/problem';
 import { notFound, redirect } from 'next/navigation';
+
+/**
+ * The only columns this page may select. The whole row is passed to
+ * `ProblemDetailClient`, and React serialises every prop into the RSC flight
+ * payload — so `input`, `output` and `checker` would be sitting in the page
+ * source of the page students submit from. The test-case count the sidebar
+ * needs is computed on the server and passed as its own scalar instead.
+ * Never widen this to `*`.
+ */
+const PROBLEM_COLUMNS =
+  'id, name, content, points, time_limit, memory_limit, created_at, is_active, created_by';
 
 export default async function ProblemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,7 +26,7 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
   const [problemResult, authResult, cpResult] = await Promise.all([
     supabase
       .from('problems')
-      .select('*')
+      .select(PROBLEM_COLUMNS)
       .eq('id', id)
       .single(),
     supabase.auth.getUser(),
@@ -22,11 +36,13 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
       .eq('problem_id', id),
   ]);
 
-  const { data: problem, error } = problemResult;
+  const { data: problemRow, error } = problemResult;
 
-  if (error || !problem) {
+  if (error || !problemRow) {
     notFound();
   }
+
+  const problem = problemRow as unknown as Problem;
 
   // Auth and participation check
   const { data: authUser } = authResult;
@@ -48,9 +64,25 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
       .select('id, is_active, starts_at, ends_at')
       .in('id', contestIds);
 
-    const ongoingContests = (contests || []).filter(
-      c => getContestStatus(c as { is_active: boolean; starts_at: string | null; ends_at: string | null }) === 'ongoing'
-    );
+    const statusOf = (c: unknown) =>
+      getContestStatus(c as { is_active: boolean; starts_at: string | null; ends_at: string | null });
+
+    // A contest that has not started yet hides its problems completely. There is
+    // no participation to check — nobody can be a participant before the start
+    // bell — so the only correct answer for a non-staff caller is a hard 404,
+    // matching how hidden resources behave everywhere else in the app. Without
+    // this, a scheduled contest's problems are ordinary public practice problems
+    // right up until they open.
+    const upcomingContests = (contests || []).filter(c => statusOf(c) === 'upcoming');
+    if (upcomingContests.length > 0) {
+      const isStaff =
+        !!user && ((await isActiveManager(supabase, user.id)) || (await isActiveAdmin(supabase, user.id)));
+      if (!isStaff) {
+        notFound();
+      }
+    }
+
+    const ongoingContests = (contests || []).filter(c => statusOf(c) === 'ongoing');
 
     if (ongoingContests.length > 0) {
       isVirtualContest = false;
@@ -116,6 +148,11 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
       const s = row.summary as { total?: number; passed?: number; failed?: number } | null;
       if (!s) continue;
       const current = { total: Number(s.total ?? 0), passed: Number(s.passed ?? 0), failed: Number(s.failed ?? 0) };
+      // A compile error is stored as {total: 0, passed: 0, failed: 0, verdict: 'CE'}.
+      // That object is truthy, so it used to survive as `bestSummary` and render
+      // a green 0/0 at NaN% — "solved" for a submission that never compiled.
+      // Nothing was graded, so it is not a candidate for "best submission".
+      if (current.total <= 0) continue;
       if (!bestSummary || current.passed > bestSummary.passed || (current.passed === bestSummary.passed && current.total > bestSummary.total)) {
         bestSummary = current;
       }
@@ -140,9 +177,15 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
     };
   });
 
+  // Server-computed scalar: the sidebar shows how many test cases a problem has,
+  // and that is the ONLY thing about the test set a public page may learn. The
+  // arrays themselves never leave the server.
+  const testCaseCount = await countProblemTestCases(supabase, problem.id);
+
   return (
     <ProblemDetailClient
       problem={problem}
+      testCaseCount={testCaseCount}
       activeContestId={activeContestId}
       initialBestSummary={bestSummary}
       isVirtualContest={isVirtualContest}

@@ -83,13 +83,19 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             return NextResponse.json({ error: 'Failed to delete submission' }, { status: 500 });
         }
 
+        // RLS filters rather than raising, so "no error" does not mean "a row went".
+        // Never report success for a delete that removed nothing.
+        if (!deleted) {
+            return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+        }
+
         // Recalculate the affected user's stats now that one of their submissions
         // is gone (points and problems_solved are derived from passed submissions).
-        if (deleted?.user_id) {
-            const { error: solvedErr } = await supabase.rpc('recalculate_problems_solved', { uid: deleted.user_id });
-            const { error: pointsErr } = await supabase.rpc('recalculate_user_points', { uid: deleted.user_id });
-            if (solvedErr) console.error('recalculate_problems_solved error:', solvedErr);
-            if (pointsErr) console.error('recalculate_user_points error:', pointsErr);
+        // `recalc_user_stats` does both recalculations in one authorised call; the
+        // old `recalculate_*` RPCs took an arbitrary uid and are no longer callable.
+        if (deleted.user_id) {
+            const { error: recalcErr } = await supabase.rpc('recalc_user_stats', { target: deleted.user_id });
+            if (recalcErr) console.error(`recalc_user_stats failed for user ${deleted.user_id}:`, recalcErr);
         }
 
         return NextResponse.json({ success: true });

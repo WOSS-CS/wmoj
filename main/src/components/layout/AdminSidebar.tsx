@@ -4,6 +4,35 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { useOptimisticPathname } from "@/hooks/useOptimisticPathname";
 
+type NavEntry = {
+    label: string;
+    href: string;
+    icon: React.ReactNode;
+    /**
+     * Extra path prefixes this item owns. Without these, the plain
+     * `pathname === href || startsWith(href + "/")` rule leaves NO item
+     * highlighted on e.g. /admin/problems/[id]/edit — the sidebar simply goes
+     * blank while you are editing.
+     */
+    activePrefixes?: string[];
+};
+
+/**
+ * The active item is the one whose own href matches; only if none does do we
+ * fall back to `activePrefixes`. That ordering matters: "Create Problem"
+ * (/admin/problems/create) must win over "Manage Problems", which claims the
+ * whole /admin/problems subtree as a fallback.
+ */
+function findActiveHref(navItems: NavEntry[], pathname: string): string | undefined {
+    const direct = navItems.find(
+        (i) => pathname === i.href || pathname.startsWith(`${i.href}/`),
+    );
+    if (direct) return direct.href;
+    return navItems.find((i) =>
+        (i.activePrefixes ?? []).some((p) => pathname === p || pathname.startsWith(`${p}/`)),
+    )?.href;
+}
+
 const SidebarItem = ({
     href,
     icon,
@@ -21,12 +50,13 @@ const SidebarItem = ({
         <Link
             href={href}
             onClick={(e) => handleNavClick(e, href)}
+            aria-current={isActive ? "page" : undefined}
             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${isActive
                     ? "text-foreground bg-surface-2 font-medium"
                     : "text-text-muted hover:text-foreground hover:bg-surface-2"
                 }`}
         >
-            <span className={isActive ? "text-brand-primary" : ""}>{icon}</span>
+            <span className={isActive ? "text-brand-primary" : ""} aria-hidden="true">{icon}</span>
             <span>{label}</span>
         </Link>
     );
@@ -35,7 +65,7 @@ const SidebarItem = ({
 export const AdminSidebar = () => {
     const { pathname, handleNavClick } = useOptimisticPathname();
 
-    const navItems = [
+    const navItems: NavEntry[] = [
         {
             label: "Overview",
             href: "/admin/dashboard",
@@ -66,6 +96,7 @@ export const AdminSidebar = () => {
         {
             label: "Manage Problems",
             href: "/admin/problems/manage",
+            activePrefixes: ["/admin/problems"],
             icon: (
                 <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -75,6 +106,7 @@ export const AdminSidebar = () => {
         {
             label: "Manage Contests",
             href: "/admin/contests/manage",
+            activePrefixes: ["/admin/contests"],
             icon: (
                 <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18" />
@@ -92,6 +124,8 @@ export const AdminSidebar = () => {
         },
     ];
 
+    const activeHref = findActiveHref(navItems, pathname);
+
     return (
         <aside className="fixed left-0 top-0 h-screen w-60 border-r border-border bg-surface-1 z-50 flex flex-col">
             <div className="p-5">
@@ -104,20 +138,17 @@ export const AdminSidebar = () => {
                 </span>
             </div>
 
-            <nav className="flex-1 px-3 space-y-1">
-                {navItems.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                    return (
-                        <SidebarItem
-                            key={item.href}
-                            href={item.href}
-                            icon={item.icon}
-                            label={item.label}
-                            isActive={isActive}
-                            handleNavClick={handleNavClick}
-                        />
-                    );
-                })}
+            <nav aria-label="Admin" className="flex-1 px-3 space-y-1">
+                {navItems.map((item) => (
+                    <SidebarItem
+                        key={item.href}
+                        href={item.href}
+                        icon={item.icon}
+                        label={item.label}
+                        isActive={item.href === activeHref}
+                        handleNavClick={handleNavClick}
+                    />
+                ))}
             </nav>
         </aside>
     );

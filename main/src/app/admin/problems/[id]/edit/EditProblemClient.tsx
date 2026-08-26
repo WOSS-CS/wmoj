@@ -41,8 +41,11 @@ export default function EditProblemClient({ problem }: { problem: ProblemData })
     timeLimit: String(problem.time_limit || 5000),
     memoryLimit: String(problem.memory_limit || 256),
     points: String(problem.points),
-    is_active: problem.is_active ?? true,
   });
+  // A live problem is uneditable by an admin: the RLS UPDATE policy pins
+  // is_active = false, so the PATCH would match zero rows and 404. Say so up
+  // front rather than letting the author write a statement and lose it on save.
+  const isLive = problem.is_active === true;
   const initialGenerator = problem.generator_file ?? '';
   const [generatorCode, setGeneratorCode] = useState(initialGenerator);
   // The checker is independent of the stored test data, so — unlike the
@@ -100,7 +103,6 @@ export default function EditProblemClient({ problem }: { problem: ProblemData })
       const payload: Record<string, unknown> = {
         name: formData.name,
         content: formData.content,
-        is_active: formData.is_active,
         time_limit: parseInt(formData.timeLimit, 10),
         memory_limit: parseInt(formData.memoryLimit, 10),
         points: parseInt(formData.points, 10),
@@ -124,7 +126,10 @@ export default function EditProblemClient({ problem }: { problem: ProblemData })
         body: JSON.stringify(payload),
       });
       const json = await res.json();
-      if (res.ok) {
+      // `res.ok && json.problem` — not `res.ok` alone. A write filtered to zero
+      // rows by RLS comes back 200 with no problem, and reporting that as saved
+      // is what made unowned edits look like they had worked.
+      if (res.ok && json.problem) {
         setSuccess('Problem updated successfully!');
         setTimeout(() => router.push('/admin/problems/manage'), 1500);
       } else { setError(json.error || 'Failed to update problem'); }
@@ -140,6 +145,15 @@ export default function EditProblemClient({ problem }: { problem: ProblemData })
             <h1 className="text-xl font-semibold text-foreground">Edit Problem</h1>
             <p className="text-sm text-text-muted mt-1">Update problem details, statement, and optionally regenerate test cases</p>
           </div>
+
+          {isLive && (
+            <div className="p-4 border border-warning/20 rounded-lg bg-warning/5 flex items-start gap-3 max-w-4xl">
+              <div className="w-2 h-2 rounded-full bg-warning mt-1.5 shrink-0" />
+              <p className="text-warning text-sm font-medium">
+                This problem is already <span className="font-semibold">live</span>, so it is read-only here — published problems can only be changed by a Manager. Ask a Manager to deactivate it first, or to make the edit for you.
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5 max-w-4xl">
             <div className="space-y-1.5">
@@ -168,13 +182,12 @@ export default function EditProblemClient({ problem }: { problem: ProblemData })
                 <label htmlFor="memoryLimit" className="block text-sm font-medium text-foreground">Memory Limit (MB) *</label>
                 <input type="number" id="memoryLimit" name="memoryLimit" value={formData.memoryLimit} onChange={handleChange} required min="1" className={inputClass} placeholder="256" />
               </div>
-              <div className="space-y-2 flex items-end pb-0.5">
-                <label className="inline-flex items-center gap-2 text-sm text-foreground">
-                  <input type="checkbox" className="h-4 w-4 rounded border-border bg-surface-2" checked={formData.is_active} onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))} />
-                  Active
-                </label>
-              </div>
             </div>
+
+            {/* No "Active" control here, deliberately. Only managers publish: the
+                admin PATCH route never reads is_active and the RLS write policies
+                pin is_active = false, so the checkbox this file used to ship could
+                only ever report a success it had not achieved. */}
 
             {/* Existing test case info */}
             <div className="p-4 border border-border rounded-lg bg-surface-2 flex items-center gap-3">
@@ -235,7 +248,7 @@ export default function EditProblemClient({ problem }: { problem: ProblemData })
             {success && <div className="bg-success/10 border border-success/20 rounded-lg p-3"><p className="text-success text-sm">{success}</p></div>}
 
             <div className="flex gap-3">
-              <button type="submit" disabled={loading || isStaleAfterGen} className="h-10 px-5 bg-brand-primary text-white text-sm font-medium rounded-md hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+              <button type="submit" disabled={loading || isStaleAfterGen || isLive} title={isLive ? 'Live problems can only be edited by a Manager.' : undefined} className="h-10 px-5 bg-brand-primary text-white text-sm font-medium rounded-md hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                 {loading ? <><LoadingSpinner size="sm" /><span>Saving...</span></> : 'Save Changes'}
               </button>
               <Link href="/admin/problems/manage" className="h-10 px-5 bg-surface-2 text-foreground text-sm font-medium rounded-md hover:bg-surface-3 flex items-center">Cancel</Link>

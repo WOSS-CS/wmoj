@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
 import { ManagerGuard } from '@/components/ManagerGuard';
@@ -57,6 +57,7 @@ export default function ManagerUserDetailClient({
 }: ManagerUserDetailClientProps) {
   const router = useRouter();
   const { session } = useAuth();
+  const [, startTransition] = useTransition();
   const [isAdmin, setIsAdmin] = useState(initialIsAdmin);
   const [isManager, setIsManager] = useState(initialIsManager);
   const [promoting, setPromoting] = useState(false);
@@ -90,13 +91,17 @@ export default function ManagerUserDetailClient({
     try {
       const res = await fetch(`/api/manager/users/${user.id}/promote`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ promote }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setIsAdmin(data.isAdmin);
       toast.success(promote ? 'User promoted to Admin' : 'User demoted to User');
+      startTransition(() => router.refresh());
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Something went wrong');
     } finally {
@@ -109,13 +114,21 @@ export default function ManagerUserDetailClient({
     try {
       const res = await fetch(`/api/manager/users/${user.id}/promote-manager`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ promote }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setIsManager(data.isManager);
+      // Manager supersedes admin, so promotion drops any `admins` row. Without
+      // reflecting that here the row is still an admin while the UI hides the
+      // "Demote from Admin" control behind the manager branch.
+      setIsAdmin(!!data.isAdmin);
       toast.success(promote ? 'User promoted to Manager' : 'User demoted from Manager');
+      startTransition(() => router.refresh());
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Something went wrong');
     } finally {

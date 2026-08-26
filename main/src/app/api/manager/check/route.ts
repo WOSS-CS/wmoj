@@ -1,46 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabaseFromToken } from '@/lib/supabaseServer';
+import { checkActiveManager } from '@/lib/staffAuth';
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    // RFC 7235 defines the auth scheme as case-insensitive; the rest of the tree
+    // lowercases before comparing, so this one must too.
+    const token = authHeader?.toLowerCase().startsWith('bearer ')
+      ? authHeader.substring(7).trim()
+      : null;
+    if (!token) {
       return NextResponse.json(
         { error: 'Authorization header required' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.split(' ')[1];
-    const supabase = await getServerSupabaseFromToken(token);
+    // A `managers` row is not authorization on its own — `is_active` must be
+    // true. `checkActiveManager` is the non-throwing variant; `requireActive*`
+    // throws a redirect, which is wrong in a route handler.
+    const result = await checkActiveManager(getServerSupabaseFromToken(token));
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Check if user exists in managers table
-    const { data: managerData, error: managerError } = await supabase
-      .from('managers')
-      .select('id')
-      .eq('id', user.id)
-      .single();
-
-    if (managerError || !managerData) {
-      return NextResponse.json(
-        { error: 'User is not a manager' },
-        { status: 403 }
-      );
+    if (!result.ok) {
+      if (result.reason === 'unauthenticated') {
+        return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      }
+      if (result.reason === 'error') {
+        return NextResponse.json({ error: 'Authorization check failed' }, { status: 500 });
+      }
+      return NextResponse.json({ error: 'User is not a manager' }, { status: 403 });
     }
 
     return NextResponse.json(
       {
         isManager: true,
-        userId: user.id
+        userId: result.userId
       },
       { status: 200 }
     );

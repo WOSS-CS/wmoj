@@ -13,6 +13,11 @@ export interface UserProfile {
   problems_solved: number;
 }
 
-export const getUserDashboardPath = (_userRole: UserRole): string => {
+/**
+ * Every role currently lands on the same page. Kept as a function so a role-based
+ * split can be reintroduced here without touching the call sites that already
+ * await it (`AuthContext`, `AuthGuard`).
+ */
+export const getUserDashboardPath = (): string => {
   return '/';
 };

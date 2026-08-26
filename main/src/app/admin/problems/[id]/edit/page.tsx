@@ -1,40 +1,44 @@
 import { redirect } from 'next/navigation';
-import { getServerSupabase } from '@/lib/supabaseServer';
+import { requireActiveAdmin } from '@/lib/staffAuth';
 import EditProblemClient from './EditProblemClient';
 
 export default async function EditProblemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await getServerSupabase();
+  const { supabase, userId } = await requireActiveAdmin();
 
-  const { data: authData } = await supabase.auth.getUser();
-  const userId = authData?.user?.id;
-  if (!userId) redirect('/auth/login');
-
-  const { data: adminRow } = await supabase
-    .from('admins')
-    .select('id')
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (!adminRow) redirect('/');
-
+  // Scoped to this admin's own rows: the RLS write policies require
+  // created_by = auth.uid(), so opening the editor on someone else's problem
+  // could only ever produce a save that silently writes nothing.
   const { data: problemData, error: problemError } = await supabase
     .from('problems')
-    .select('id,name,content,is_active,time_limit,memory_limit,points,input,output,generator_file,checker,created_at,updated_at')
+    .select('id,name,content,is_active,time_limit,memory_limit,points,created_at,updated_at')
     .eq('id', id)
+    .eq('created_by', userId)
     .maybeSingle();
 
   if (problemError || !problemData) {
     redirect('/admin/problems/manage');
   }
 
+  // Graded data lives in the staff-only `problem_tests` side table (C4). RLS
+  // authorises staff to read it through the normal client.
+  const { data: testsData } = await supabase
+    .from('problem_tests')
+    .select('input,generator_file,checker')
+    .eq('problem_id', id)
+    .maybeSingle();
+
   // Only send test case count to the client, not the full arrays
-  const { input: _input, output: _output, ...rest } = problemData;
-  const testCaseCount = Array.isArray(_input) ? _input.length : 0;
+  const testCaseCount = Array.isArray(testsData?.input) ? testsData.input.length : 0;
 
   return (
     <EditProblemClient
-      problem={{ ...rest, test_case_count: testCaseCount }}
+      problem={{
+        ...problemData,
+        generator_file: testsData?.generator_file ?? null,
+        checker: testsData?.checker ?? null,
+        test_case_count: testCaseCount,
+      }}
     />
   );
 }

@@ -74,7 +74,12 @@ export default function ManageProblemsClient({
           <Link href={`/problems/${r.id}`} target="_blank" rel="noopener" className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-surface-2 text-foreground hover:bg-surface-3">View Problem</Link>
           <Link href={`/admin/problems/${r.id}/submissions`} className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-surface-2 text-foreground hover:bg-surface-3">Submissions</Link>
           <Link href={`/admin/problems/${r.id}/edit`} className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20">Edit</Link>
-          <button onClick={() => deleteProblem(r)} className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-error/10 text-error hover:bg-error/20">Delete</button>
+          <button
+            onClick={() => deleteProblem(r)}
+            disabled={!!r.is_active}
+            title={r.is_active ? 'Live problems can only be deleted by a Manager.' : undefined}
+            className={`px-2.5 py-1.5 rounded-md text-xs font-medium ${r.is_active ? 'bg-surface-2 text-text-muted opacity-50 cursor-not-allowed' : 'bg-error/10 text-error hover:bg-error/20'}`}
+          >Delete</button>
         </div>
       )
     },

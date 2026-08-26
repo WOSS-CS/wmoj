@@ -83,44 +83,44 @@ export async function getTimerStatus(
     const remainingSeconds = Math.max(0, totalDurationSeconds - elapsedSeconds);
 
     if (remainingSeconds <= 0) {
-      // Timer expired, clean up timer and mark user as having left the contest
-      try {
-      await supabase
-        .from('countdown_timers')
-        .delete()
-        .eq('user_id', userId)
-        .eq('contest_id', contestId);
-      } catch (e) {
-        console.warn('Timer cleanup failed:', e);
-      }
-      try {
+      // Timer expired: clean up the timer and mark the user as having left.
+      // supabase-js resolves with `{ error }` rather than throwing, so each
+      // write's error must be read — a wrapping try/catch here caught nothing
+      // and the two deletes silently discarded their results entirely.
+      const [timerDelete, participantDelete, leftAtUpdate] = await Promise.all([
+        supabase
+          .from('countdown_timers')
+          .delete()
+          .eq('user_id', userId)
+          .eq('contest_id', contestId),
         // Remove from active participants so UI shows spectator state
-        await supabase
+        supabase
           .from('contest_participants')
           .delete()
           .eq('user_id', userId)
-          .eq('contest_id', contestId);
-      } catch (e) {
-        console.warn('Participant cleanup failed:', e);
-      }
-      try {
-        // Record left_at for join history (best-effort).
+          .eq('contest_id', contestId),
+        // Record left_at for join history.
         // Must be an update, not an upsert: the row is created on join, and the
         // uniqueness here is (user_id, contest_id) while the primary key is id,
         // so an upsert either raises 23505 or inserts a bogus history row with a
         // wrong joined_at and is_virtual.
-        const { error: leftAtErr } = await supabase
+        supabase
           .from('join_history')
           .update({ left_at: new Date().toISOString() })
           .eq('user_id', userId)
-          .eq('contest_id', contestId);
+          .eq('contest_id', contestId),
+      ]);
 
-        if (leftAtErr) {
-          console.error('Error recording join history left_at:', leftAtErr);
-        }
-      } catch (e) {
-        console.error('Join history left_at update failed:', e);
+      if (timerDelete.error) {
+        console.error('Error cleaning up expired countdown timer:', timerDelete.error);
       }
+      if (participantDelete.error) {
+        console.error('Error removing expired contest participant:', participantDelete.error);
+      }
+      if (leftAtUpdate.error) {
+        console.error('Error recording join history left_at:', leftAtUpdate.error);
+      }
+
       return { isActive: false };
     }
 

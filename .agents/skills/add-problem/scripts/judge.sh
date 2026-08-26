@@ -39,6 +39,10 @@ ENV_FILE="$REPO_ROOT/main/.env.local"
 MAX_CASES=200
 MAX_BYTES_PER_CASE=1000000
 MAX_CODE_BYTES=100000
+# Aggregate cap over code + checker + every input + every output. The judge
+# rejects the whole request with a 413 past this, so a problem can clear every
+# per-case check above and still be ungradeable without it.
+MAX_TOTAL_BYTES=16777216
 
 die() { printf 'judge.sh: %s\n' "$*" >&2; exit 1; }
 
@@ -135,6 +139,7 @@ cmd_check() {
   [ "$n" -le "$MAX_CASES" ] || die "$n cases exceeds the ${MAX_CASES}-case cap"
   [ "$max_in" -le "$MAX_BYTES_PER_CASE" ] || die "largest input ${max_in}B exceeds the 1MB per-case cap"
   [ "$max_out" -le "$MAX_BYTES_PER_CASE" ] || die "largest output ${max_out}B exceeds the 1MB per-case cap"
+  [ "$total" -le "$MAX_TOTAL_BYTES" ] || die "test data totals ${total}B, over the ${MAX_TOTAL_BYTES}B aggregate request cap"
 
   # Not a judge cap — a house rule. The biggest problem on WMOJ that actually
   # works totals ~1.2MB; past that the Render instance starts to struggle even

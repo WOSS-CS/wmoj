@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseServer';
+import { getAdminSupabase } from '@/lib/adminAuth';
 import { validateSlug } from '@/utils/validation';
+
+// TEMPORARY DUAL-WRITE (C4). The graded data (input/output/checker/generator_file)
+// now lives in `public.problem_tests`, which is staff-only. The four legacy columns
+// on `problems` still exist and the public submit path still falls back to them, so
+// every staff write updates BOTH tables and they must not be allowed to diverge.
+// EXPIRY: delete the `problems` half of these writes in the same change as the
+// migration that drops input/output/checker/generator_file from `problems`.
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,40 +84,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Try header bearer token first (explicit), fall back to cookie-based session.
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    const bearerToken = authHeader?.toLowerCase().startsWith('bearer ')
-      ? authHeader.substring(7).trim()
-      : null;
-
-    const supabase = bearerToken
-      ? getServerSupabaseFromToken(bearerToken)
-      : await getServerSupabase();
-
-    // Fetch current user (session context via cookies). If no user, reject.
-    const {
-      data: { user: authUser },
-      error: userErr,
-    } = await supabase.auth.getUser();
-
-    if (userErr || !authUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify admin membership explicitly to provide clearer feedback before hitting RLS.
-    const { data: adminRow, error: adminErr } = await supabase
-      .from('admins')
-      .select('id, is_active')
-      .eq('id', authUser.id)
-      .maybeSingle();
-
-    if (adminErr) {
-      console.error('Admin lookup error:', adminErr);
-      return NextResponse.json({ error: 'Authorization check failed' }, { status: 500 });
-    }
-    if (!adminRow || adminRow.is_active === false) {
-      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 });
-    }
+    const auth = await getAdminSupabase(request);
+    if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const { supabase, user } = auth;
 
     // Check uniqueness of problem ID
     const { data: existing } = await supabase.from('problems').select('id').eq('id', id).maybeSingle();
@@ -131,7 +107,7 @@ export async function POST(request: NextRequest) {
           time_limit: timeLimit || 5000,
           memory_limit: memoryLimit || 256,
           points: points,
-          created_by: authUser.id,
+          created_by: user.id,
           generator_file: generator_file ?? null,
           checker: checkerSource
         }
@@ -143,6 +119,30 @@ export async function POST(request: NextRequest) {
       console.error('Database error:', error);
       return NextResponse.json(
         { error: 'Failed to create problem' },
+        { status: 500 }
+      );
+    }
+
+    // Mirror the graded data into the staff-only side table. If this fails the
+    // problem would exist with no test data anywhere but the legacy columns, so
+    // undo the insert rather than leave the two tables disagreeing.
+    const { error: testsErr } = await supabase
+      .from('problem_tests')
+      .insert([
+        {
+          problem_id: id,
+          input,
+          output,
+          checker: checkerSource,
+          generator_file: generator_file ?? null,
+        }
+      ]);
+
+    if (testsErr) {
+      console.error('problem_tests insert error:', testsErr);
+      await supabase.from('problems').delete().eq('id', id);
+      return NextResponse.json(
+        { error: 'Failed to store problem test data' },
         { status: 500 }
       );
     }

@@ -1,0 +1,23 @@
+-- Restore the `users.last_login` UPDATE grant that the previous migration removed.
+--
+-- Why: `20260826214600_close_submission_and_user_write_holes.sql` revoked the table-level UPDATE on
+-- `public.users` and re-granted only `(username, about_me, profile_data, updated_at)`. That column
+-- list was wrong: `AuthContext.ensureUserSetup` stamps `users.last_login` on the user's OWN behalf
+-- on every sign-in for regular (non-staff) accounts —
+--     supabase.from('users').update({ last_login, updated_at }).eq('id', currentUser.id)
+-- — so from the moment that migration landed, the stamp failed for every regular user. It is a
+-- fire-and-forget write whose error is only logged, so sign-in still worked and nothing surfaced;
+-- `users.last_login` simply stopped advancing. Caught by an implementer reading the call site rather
+-- than by anything failing loudly, which is precisely the class of silent breakage this whole review
+-- was about.
+--
+-- `is_active`, `points`, `problems_solved` and `email` remain UNGRANTED and that is the point:
+-- `is_active` in particular must stay unwritable or a disabled user could re-enable themselves.
+--
+-- `last_login` is self-writable and therefore forgeable by its owner. That is accepted: it is a
+-- cosmetic timestamp on the user's own row, shown only in staff user management, and the alternative
+-- (routing the stamp through a SECURITY DEFINER RPC) buys nothing an attacker cares about.
+--
+-- History is append-only, so this corrects the earlier file rather than editing it.
+
+grant update (last_login) on public.users to authenticated;

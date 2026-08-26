@@ -21,6 +21,9 @@ export default function Loading() {
         <div className="bg-surface-2 px-4 py-3 border-b border-border">
           <Skeleton className="h-4 w-24" />
         </div>
+        <div className="px-4 py-2 border-b border-border">
+          <Skeleton variant="rounded" className="h-8 w-full" />
+        </div>
         <SkeletonTable rows={20} columns={6} />
       </div>
       <span className="sr-only">Loading…</span>

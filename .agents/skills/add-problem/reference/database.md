@@ -63,6 +63,23 @@ $gen$,
 );
 ```
 
+- **The graded data goes in `public.problem_tests`, not just `public.problems`.** The insert above
+  writes both, because the `problems` columns still exist and are still read as a fallback. When the
+  migration that drops `problems.input/output/checker/generator_file` lands, delete the `problems`
+  half of the write and keep the `problem_tests` half — a problem with no `problem_tests` row will
+  grade against an empty test set once the fallback is gone.
+
+  ```sql
+  insert into public.problem_tests (problem_id, input, output, checker, generator_file)
+  values ('ccc25j3', $tests$["1\n2", "3\n4"]$tests$::jsonb, $tests$["3", "7"]$tests$::jsonb,
+          null, $gen$...the same generator source...$gen$)
+  on conflict (problem_id) do update
+    set input = excluded.input, output = excluded.output,
+        checker = excluded.checker, generator_file = excluded.generator_file;
+  ```
+
+  `problem_tests` is **staff-readable only** — that is the whole point of it. `problems` is
+  world-readable, so anything left in those columns is public, including the expected outputs.
 - `input`/`output` must be **exactly** the arrays the live judge returned from `/generate-tests` —
   the same bytes you just verified. Do not reformat, re-indent, or regenerate them in between.
 - `is_active` is `true` because the ask is a visible, active problem. Leave it `false` only if the
@@ -151,7 +168,7 @@ With `stored-generator.cpp` in hand you can also prove the strongest property of
 workflow — that the generator you stored still reproduces the data you stored:
 
 ```bash
-.claude/skills/add-problem/scripts/judge.sh generate stored-generator.cpp regenerated.json
+.claude/skills/add-problem/scripts/judge-lock.sh generate stored-generator.cpp regenerated.json
 diff <(jq -S . stored-tests.json) <(jq -S . regenerated.json) && echo "reproduces exactly"
 ```
 

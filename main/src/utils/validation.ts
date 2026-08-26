@@ -1,6 +1,13 @@
+/**
+ * Mirrors the `users_username_format` check constraint on `public.users`:
+ * `username ~ '^[a-zA-Z0-9_.\-]{1,30}$'`. Keep the two in step.
+ */
 const USERNAME_REGEX = /^[a-zA-Z0-9_.\-]{1,30}$/;
 const SLUG_REGEX = /^[a-zA-Z0-9_\-]{1,60}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Longest username the database will accept. */
+export const USERNAME_MAX_LENGTH = 30;
 
 export function validateEmail(email: string): string | null {
   if (!email) return 'Email is required';
@@ -18,6 +25,27 @@ export function validateUsername(username: string): string | null {
     return 'Username must be 1-30 characters: letters, numbers, underscores, hyphens, or dots only';
   }
   return null;
+}
+
+/** True when `username` satisfies the database's format constraint. */
+export function isValidUsername(username: string): boolean {
+  return USERNAME_REGEX.test(username);
+}
+
+/**
+ * Coerce arbitrary text (auth metadata, an email local part) into something the
+ * `users_username_format` constraint will accept: drop every disallowed character
+ * and truncate to `maxLength`. Returns `'user'` when nothing usable survives, so
+ * the result is always a valid username.
+ *
+ * Without this, a signup whose desired username fails the constraint raises 23514
+ * and the `public.users` row is never created — leaving a verified auth user with
+ * no profile, permanently.
+ */
+export function sanitizeUsername(raw: string, maxLength: number = USERNAME_MAX_LENGTH): string {
+  const limit = Math.max(1, Math.min(maxLength, USERNAME_MAX_LENGTH));
+  const cleaned = raw.replace(/[^a-zA-Z0-9_.\-]/g, '').slice(0, limit);
+  return cleaned || 'user'.slice(0, limit);
 }
 
 export function validateSlug(slug: string, entityName: string): string | null {

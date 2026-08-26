@@ -30,17 +30,17 @@ interface UsePaginatedNavigationResult {
    */
   isLoading: boolean;
   /**
-   * Call this when the user clicks a page. It:
+   * Call this when the user clicks a page. Inside one startTransition it:
    *   1. Sets the optimistic page (immediate highlight).
-   *   2. Calls router.push(buildPageHref(currentParams, page)) inside startTransition.
+   *   2. Calls router.push(buildPageHref(currentParams, page)).
    *   3. isPending becomes true until the new server tree commits.
    * Out-of-range pages are clamped to [1, totalPages].
    */
   handlePageChange: (page: number) => void;
   /**
-   * Call this when a filter/search/sort changes. It:
+   * Call this when a filter/search/sort changes. Inside one startTransition it:
    *   1. Resets the optimistic page to 1 (filters change the result set).
-   *   2. Calls router.replace with the merged params + page=1 inside startTransition.
+   *   2. Calls router.replace with the merged params + page=1.
    *   3. isLoading becomes true — same skeleton as a page flip.
    * Pass ONLY the changed params (they're merged with currentParams).
    */
@@ -98,8 +98,12 @@ export function usePaginatedNavigation({
       // Clamp to a large upper bound; the server re-clamps via its own totalPages.
       const clamped = clampPage(page, Math.max(totalPages, 1));
       if (clamped === optimisticPage) return; // no-op if clicking the current page
-      setOptimisticPage(clamped);
+      // React requires an optimistic update to happen INSIDE the transition that
+      // owns the navigation; outside one it is scheduled on a revert lane that is
+      // not entangled with router.push, so the highlight can snap back before the
+      // new tree commits (and React warns). Same shape as useOptimisticPathname.
       startTransition(() => {
+        setOptimisticPage(clamped);
         router.push(buildPageHref(currentParams, clamped));
       });
     },
@@ -117,8 +121,8 @@ export function usePaginatedNavigation({
         currentKeys.length === mergedKeys.length &&
         currentKeys.every((k, i) => mergedKeys[i] === k && currentParams[k] === merged[mergedKeys[i]]);
       if (same && optimisticPage === 1) return;
-      setOptimisticPage(1); // filter change resets to page 1
       startTransition(() => {
+        setOptimisticPage(1); // filter change resets to page 1
         // buildPageHref with page=1 omits page=1 by default (clean URL)
         router.replace(buildPageHref(merged, 1));
       });

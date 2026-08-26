@@ -18,7 +18,7 @@ export default function Loading() {
       </div>
 
       <div className="space-y-8">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="space-y-3">
             <Skeleton variant="text" height={20} width="40%" />
             <Skeleton variant="text" height={14} width="100%" />

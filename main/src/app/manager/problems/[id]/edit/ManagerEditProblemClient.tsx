@@ -41,7 +41,7 @@ export default function ManagerEditProblemClient({ problem }: { problem: Problem
     timeLimit: String(problem.time_limit || 5000),
     memoryLimit: String(problem.memory_limit || 256),
     points: String(problem.points),
-    is_active: problem.is_active ?? true,
+    is_active: problem.is_active ?? false,
   });
   const initialGenerator = problem.generator_file ?? '';
   const [generatorCode, setGeneratorCode] = useState(initialGenerator);
@@ -123,7 +123,9 @@ export default function ManagerEditProblemClient({ problem }: { problem: Problem
         body: JSON.stringify(payload),
       });
       const json = await res.json();
-      if (res.ok) {
+      // A write filtered to zero rows comes back 200 with no problem; do not
+      // report that as saved.
+      if (res.ok && json.problem) {
         setSuccess('Problem updated successfully!');
         setTimeout(() => router.push('/manager/problems/manage'), 1500);
       } else { setError(json.error || 'Failed to update problem'); }

@@ -8,7 +8,7 @@ export default function Loading() {
         <Skeleton variant="text" className="mt-2" height={16} width={448} />
       </div>
 
-      <div className="glass-panel p-6 max-w-4xl space-y-6">
+      <div className="max-w-4xl space-y-5">
         <SkeletonForm fields={6} />
         <div className="space-y-2">
           <Skeleton variant="text" height={14} width="30%" />

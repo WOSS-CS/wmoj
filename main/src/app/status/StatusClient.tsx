@@ -11,42 +11,51 @@ interface JudgeStatus {
   latency?: number;
 }
 
+// The services probed, declared outside the component so the 30 s poller has
+// nothing to close over. The effect used to map over the `judges` state with
+// an empty dependency array, capturing the render-0 array forever — correct
+// only by accident, because that array has exactly one element.
+const SERVICES: { name: string; endpoint: string }[] = [
+  { name: 'Primary Judge', endpoint: '/api/status/health' },
+];
+
 export default function StatusClient() {
-  const [judges, setJudges] = useState<JudgeStatus[]>([
-    {
-      name: 'Primary Judge',
-      status: 'loading',
-    },
-  ]);
+  const [judges, setJudges] = useState<JudgeStatus[]>(
+    SERVICES.map((s) => ({ name: s.name, status: 'loading' as const })),
+  );
 
   useEffect(() => {
+    let cancelled = false;
+
     const checkHealth = async () => {
       setJudges((prev) =>
         prev.map((j) => ({ ...j, status: 'loading' as const }))
       );
 
       const results = await Promise.all(
-        judges.map(async (judge) => {
+        SERVICES.map(async (service): Promise<JudgeStatus> => {
           const start = Date.now();
           try {
-            const res = await fetch(`/api/status/health`, { cache: 'no-store' });
+            const res = await fetch(service.endpoint, { cache: 'no-store' });
             const latency = Date.now() - start;
             if (res.ok) {
-              return { ...judge, status: 'online' as const, latency };
+              return { name: service.name, status: 'online', latency };
             }
-            return { ...judge, status: 'offline' as const, latency: undefined };
+            return { name: service.name, status: 'offline', latency: undefined };
           } catch {
-            return { ...judge, status: 'offline' as const, latency: undefined };
+            return { name: service.name, status: 'offline', latency: undefined };
           }
         })
       );
-      setJudges(results);
+      if (!cancelled) setJudges(results);
     };
 
     checkHealth();
     const interval = setInterval(checkHealth, 30000);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   return (

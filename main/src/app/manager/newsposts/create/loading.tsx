@@ -8,7 +8,7 @@ export default function Loading() {
         <Skeleton className="h-4 w-72 mt-1" />
       </div>
 
-      <div className="glass-panel p-6 space-y-6 max-w-4xl">
+      <div className="space-y-5 max-w-4xl">
         <div className="space-y-1.5">
           <Skeleton className="h-4 w-20" />
           <Skeleton variant="rounded" className="h-10 w-full" />

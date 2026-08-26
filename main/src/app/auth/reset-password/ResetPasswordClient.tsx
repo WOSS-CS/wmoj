@@ -13,22 +13,42 @@ export default function ResetPasswordClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
+  const [linkFailed, setLinkFailed] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     // The PASSWORD_RECOVERY event may fire before this component mounts
     // (Supabase processes the token from the URL immediately on page load).
     // Check for an existing session first, then fall back to the event listener.
+    let cancelled = false;
+
+    // If Supabase rejects the recovery token no session is ever created and
+    // PASSWORD_RECOVERY never fires, so without this the page waits forever.
+    const timeout = setTimeout(() => {
+      if (!cancelled) setLinkFailed(true);
+    }, 5000);
+
+    const markReady = () => {
+      if (cancelled) return;
+      clearTimeout(timeout);
+      setReady(true);
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setReady(true);
+      if (session) markReady();
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
-        setReady(true);
+        markReady();
       }
     });
-    return () => subscription.unsubscribe();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,6 +60,9 @@ export default function ResetPasswordClient() {
       if (error) {
         setError(error.message);
       } else {
+        // The recovery link signed this user in. Without signing out, AuthGuard on
+        // the login page bounces them straight to `/` and they never see the form.
+        await supabase.auth.signOut();
         router.push('/auth/login');
       }
     } catch {
@@ -75,7 +98,16 @@ export default function ResetPasswordClient() {
             </div>
           )}
 
-          {!ready ? (
+          {!ready && linkFailed ? (
+            <div className="bg-error/10 border border-error/20 rounded-lg px-4 py-3 text-sm text-error">
+              <p className="font-medium">This reset link is invalid or has expired</p>
+              <p className="mt-1">
+                <Link href="/auth/forgot-password" className="font-medium underline hover:no-underline">
+                  Request a new reset link
+                </Link>
+              </p>
+            </div>
+          ) : !ready ? (
             <div className="text-sm text-text-muted text-center py-4">
               Verifying reset link... please wait
             </div>

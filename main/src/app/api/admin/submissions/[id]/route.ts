@@ -63,40 +63,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    try {
-        const { id } = await params;
 
-        const auth = await getAdminSupabase(request);
-        if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
-        const { supabase } = auth;
-
-        // Delete Submission
-        const { data: deleted, error } = await supabase
-            .from('submissions')
-            .delete()
-            .eq('id', id)
-            .select('user_id')
-            .maybeSingle();
-
-        if (error) {
-            console.error('Error deleting submission:', error);
-            return NextResponse.json({ error: 'Failed to delete submission' }, { status: 500 });
-        }
-
-        // Recalculate the affected user's stats now that one of their submissions
-        // is gone (points and problems_solved are derived from passed submissions).
-        if (deleted?.user_id) {
-            const { error: solvedErr } = await supabase.rpc('recalculate_problems_solved', { uid: deleted.user_id });
-            const { error: pointsErr } = await supabase.rpc('recalculate_user_points', { uid: deleted.user_id });
-            if (solvedErr) console.error('recalculate_problems_solved error:', solvedErr);
-            if (pointsErr) console.error('recalculate_user_points error:', pointsErr);
-        }
-
-        return NextResponse.json({ success: true });
-
-    } catch (error) {
-        console.error('API Error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-    }
-}
+// There is deliberately NO `DELETE` export here (H13). `public.submissions` has no
+// DELETE policy an active admin can satisfy — only `managers_all_submissions` — so a
+// handler would delete zero rows, skip the points recalculation and still answer
+// `{"success": true}`. Deleting submissions is a manager operation: the manager twin
+// at `api/manager/submissions/[id]` owns it, and no admin client renders a Delete
+// control. This mirrors `api/admin/users/toggle/route.ts`, which likewise refuses an
+// operation admins may not perform rather than pretending to carry it out.

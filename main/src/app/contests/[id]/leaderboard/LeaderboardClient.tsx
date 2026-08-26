@@ -51,14 +51,14 @@ export default function ContestLeaderboardClient({ error, contestName, initialLe
                     }`}>
                       #{entry.rank}
                     </div>
-                    <div>
-                      <div className="text-sm font-medium text-foreground">{entry.username}</div>
-                      <div className="text-xs text-text-muted">Rank {entry.rank}</div>
-                    </div>
+                    <div className="text-sm font-medium text-foreground">{entry.username}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-brand-primary font-mono">{entry.total_score} pts</div>
-                    <div className="text-xs text-text-muted font-mono">{entry.solved_problems}/{entry.total_problems}</div>
+                    {/* Not point-weighted: each problem contributes at most 1.0,
+                        so this is a raw score, never "pts". Partial scores are
+                        fractions and must be rounded for display. */}
+                    <div className="text-sm font-semibold text-brand-primary font-mono">{entry.total_score.toFixed(2)}</div>
+                    <div className="text-xs text-text-muted font-mono">{entry.solved_problems}/{entry.total_problems} solved</div>
                   </div>
                 </div>
               ))}

@@ -8,6 +8,20 @@ interface RegularOnlyGuardProps {
   children: React.ReactNode;
 }
 
+/**
+ * ⚠️ The name is a misnomer and the behaviour below is the contract.
+ *
+ * This does NOT restrict anything to "regular" users — it renders `children`
+ * for admins, managers, regular users and signed-out visitors alike. All it
+ * does is hold a skeleton while `AuthContext` is still resolving the role, so
+ * the wrapped tree does not flash a signed-out state first.
+ *
+ * Its one caller (`app/contests/[id]/ContestDetailClient.tsx`) reads as though
+ * the restriction were real. Renaming it is a one-line change *there*, not
+ * here; do not "fix" this by adding a role check without deciding what should
+ * happen to staff on a contest page.
+ */
+
 export function RegularOnlyGuard({ children }: RegularOnlyGuardProps) {
   const { userRole, loading, user } = useAuth();
 

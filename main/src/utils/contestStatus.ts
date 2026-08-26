@@ -33,6 +33,25 @@ export function formatTimeUntil(isoString: string): string {
   return `in ${days} day${days !== 1 ? 's' : ''}`;
 }
 
+/**
+ * Badge presentation for each contest status. Shared so that every surface
+ * showing a contest's state agrees — a hard-coded "Active" badge on one page
+ * while the next one over says "Virtual" is the bug this replaces.
+ */
+export const CONTEST_STATUS_VARIANT: Record<ContestStatus, 'success' | 'info' | 'warning' | 'neutral'> = {
+  ongoing: 'success',
+  upcoming: 'info',
+  virtual: 'warning',
+  inactive: 'neutral',
+};
+
+export const CONTEST_STATUS_LABEL: Record<ContestStatus, string> = {
+  ongoing: 'Ongoing',
+  upcoming: 'Upcoming',
+  virtual: 'Virtual',
+  inactive: 'Inactive',
+};
+
 interface ContestStatusInput {
   is_active: boolean;
   starts_at: string | null;

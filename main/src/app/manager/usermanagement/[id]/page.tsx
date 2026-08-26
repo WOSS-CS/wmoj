@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getServerSupabase } from '@/lib/supabaseServer';
+import { requireActiveManager } from '@/lib/staffAuth';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
 import ManagerUserDetailClient from './ManagerUserDetailClient';
 
@@ -30,19 +30,7 @@ export default async function ManagerUserDetailPage({
   searchParams: Promise<{ page?: string | string[] }>;
 }) {
   const { id: targetUserId } = await params;
-  const supabase = await getServerSupabase();
-
-  const { data: authData } = await supabase.auth.getUser();
-  const userId = authData?.user?.id;
-  if (!userId) redirect('/auth/login');
-
-  const { data: managerRow } = await supabase
-    .from('managers')
-    .select('id')
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (!managerRow) redirect('/');
+  const { supabase, userId } = await requireActiveManager();
 
   const [
     { data: targetUser },
@@ -72,17 +60,14 @@ export default async function ManagerUserDetailPage({
   const currentPage = parsePage(sp.page);
   const { from, to } = computeRange(currentPage, PAGE_SIZE);
 
-  const [{ count: totalSubmissions }, { count: acceptedSubmissions }] = await Promise.all([
-    supabase
-      .from('submissions')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', targetUserId),
-    supabase
-      .from('submissions')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', targetUserId)
-      .eq('status', 'passed'),
-  ]);
+  // The paged query below already carries `count: 'exact'` over exactly this
+  // predicate, so a separate total-submissions count was always the same number
+  // fetched twice. Only the "passed" subset needs its own query.
+  const { count: acceptedSubmissions } = await supabase
+    .from('submissions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', targetUserId)
+    .eq('status', 'passed');
 
   const { data: subs, count, error: subsErr } = await supabase
     .from('submissions')
@@ -145,7 +130,7 @@ export default async function ManagerUserDetailPage({
       currentPage={currentPage}
       totalPages={totalPages}
       totalCount={count ?? 0}
-      totalSubmissions={totalSubmissions ?? 0}
+      totalSubmissions={count ?? 0}
       acceptedSubmissions={acceptedSubmissions ?? 0}
     />
   );

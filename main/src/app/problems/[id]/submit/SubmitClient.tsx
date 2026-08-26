@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { CodeEditorLoading } from '@/components/LoadingStates';
 import { LoadingSpinner } from '@/components/AnimationWrapper';
-import { Problem } from '@/types/problem';
+import { ProblemSubmitTarget } from '@/types/problem';
 import { useCountdown } from '@/contexts/CountdownContext';
 
 const CodeEditor = dynamic(() => import('@/components/CodeEditor'), {
@@ -16,7 +16,13 @@ const CodeEditor = dynamic(() => import('@/components/CodeEditor'), {
 });
 
 interface SubmitClientProps {
-  problem: Problem;
+  /**
+   * Id and name only. The graded data (`input`, `output`, `checker`) must never
+   * reach this component: every prop of a client component is serialised into
+   * the RSC flight payload, so a prop is a publication — and this is the page
+   * students submit from.
+   */
+  problem: ProblemSubmitTarget;
   activeContestId: string | null;
   isVirtualContest?: boolean;
 }
@@ -51,17 +57,22 @@ const languages = [
   { value: 'cpp23', label: 'C++23 (GCC)' },
 ];
 
-// Per-verdict badge styling. AC=green, WA=red, TLE=amber, MLE=purple,
-// RE=dark-red, CE=gray, IE=black. We don't use the shared Badge component
-// for this because its palette doesn't include purple/dark-red/black.
+// Per-verdict badge styling, built entirely from the app's design tokens.
+// AC=green, WA=red, TLE=amber, MLE=purple, RE=red, CE/IE=neutral.
+//
+// The previous map used raw Tailwind palette colours picked for a dark theme
+// (`text-purple-400`, `text-red-400`, `bg-black/30`) on a light-only app, which
+// failed WCAG AA against the surface behind them. `--color-accent` and the
+// darkened success/error/warning tokens are contrast-verified; the verdict
+// string itself, not the hue, is what distinguishes WA from RE.
 const VERDICT_STYLES: Record<Verdict, string> = {
   AC: 'bg-success/10 text-success border border-success/20',
   WA: 'bg-error/10 text-error border border-error/20',
   TLE: 'bg-warning/10 text-warning border border-warning/20',
-  MLE: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
-  RE: 'bg-red-900/20 text-red-400 border border-red-900/30',
+  MLE: 'bg-accent/10 text-accent border border-accent/20',
+  RE: 'bg-error/10 text-error border border-error/20',
   CE: 'bg-surface-2 text-text-muted border border-border',
-  IE: 'bg-black/30 text-foreground border border-border',
+  IE: 'bg-surface-3 text-foreground border border-border',
 };
 
 function VerdictBadge({ verdict }: { verdict: Verdict }) {
@@ -75,15 +86,25 @@ function VerdictBadge({ verdict }: { verdict: Verdict }) {
   );
 }
 
-// Aggregate per-submission verdict derivation, matching the spec:
-// if compileError → 'CE'; else worst failure ranked TLE > MLE > RE > WA; else 'AC'.
+// Aggregate per-submission verdict derivation:
+// if compileError → 'CE'; else worst failure ranked IE > TLE > MLE > RE > WA; else 'AC'.
 function aggregateVerdict(
   results: TestResult[] | null | undefined,
   compileError?: string | null,
 ): Verdict {
   if (compileError) return 'CE';
   if (!results || results.length === 0) return 'IE';
-  const rank: Verdict[] = ['TLE', 'MLE', 'RE', 'WA'];
+  // 'IE' FIRST, ahead of the student's own failures. A per-case 'IE' means a custom checker could
+  // not answer for that case — a problem-configuration fault, never the student's. It was missing
+  // from this array entirely, so an all-'IE' submission fell through to the loop below and reported
+  // 'WA': a correct solution told it was wrong, with the real fault invisible in all three views.
+  //
+  // Note this is deliberately NOT the judge's own deriveVerdict order (TLE > MLE > RE > IE > WA).
+  // That order is precedence WITHIN one case, where 'IE' is only reachable once the program has
+  // already run cleanly. This array is precedence ACROSS cases, a different question — and
+  // custom-checkers/SKILL.md is explicit that a broken problem must stay visible, which ranking
+  // 'IE' below 'RE' would defeat whenever any other case also failed.
+  const rank: Verdict[] = ['IE', 'TLE', 'MLE', 'RE', 'WA'];
   for (const v of rank) {
     if (results.some((r) => r.verdict === v)) return v;
   }
@@ -91,6 +112,7 @@ function aggregateVerdict(
   // (should not happen for new judge traffic, but keeps the UI robust).
   for (const r of results) {
     if (!r.passed) {
+      if (r.verdict === 'IE') return 'IE';
       if (r.timedOut) return 'TLE';
       return 'WA';
     }
@@ -101,7 +123,7 @@ function aggregateVerdict(
 export default function SubmitClient({ problem, activeContestId, isVirtualContest }: SubmitClientProps) {
   const router = useRouter();
   const { user, session } = useAuth();
-  const { isActive, contestId } = useCountdown();
+  const { isActive, contestId, countdownLoaded } = useCountdown();
 
   const [selectedLanguage, setSelectedLanguage] = useState('python3');
   const [codeText, setCodeText] = useState('');
@@ -114,13 +136,22 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
   // compileError: this is a fault in how the problem is configured, not in the
   // submitted code, so it must never render as a CE against the student.
   const [checkerError, setCheckerError] = useState<string | null>(null);
+  // The route sets `stored: false` ONLY when it tried to persist the submission
+  // and the insert failed. Its absence means the row landed, or that the problem
+  // is inactive and was deliberately never stored — never treat absence as a
+  // failure.
+  const [storeFailed, setStoreFailed] = useState(false);
 
   useEffect(() => {
     if (!activeContestId || isVirtualContest) return;
-    const countdownResolved = isActive !== undefined && (contestId !== null || !isActive);
-    if (!countdownResolved) return;
+    // Gate on the context's explicit loaded flag, never on `isActive`/`contestId`.
+    // Their "not loaded yet" values (false / null) are indistinguishable from a
+    // legitimate "not in a contest", so the old expression was true on the very
+    // first commit and threw real participants off this page on every hard
+    // reload — taking the contents of the editor with it.
+    if (!countdownLoaded) return;
     if (!isActive || (contestId && contestId !== activeContestId)) router.replace('/contests');
-  }, [isActive, contestId, activeContestId, router, isVirtualContest]);
+  }, [isActive, contestId, countdownLoaded, activeContestId, router, isVirtualContest]);
 
   const handleSubmit = async () => {
     if (!problem || !user || !codeText.trim()) return;
@@ -130,6 +161,7 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
     setSummary(null);
     setCompileError(null);
     setCheckerError(null);
+    setStoreFailed(false);
     try {
       const resp = await fetch(`/api/problems/${problem.id}/submit`, {
         method: 'POST',
@@ -145,6 +177,7 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
       setSummary(data.summary || null);
       setCompileError(data.compileError || null);
       setCheckerError(data.checkerError || null);
+      setStoreFailed(data.stored === false);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Submission failed');
     } finally {
@@ -225,9 +258,31 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
           </button>
 
           {/* Results */}
-          {(submitting || summary || compileError || checkerError) && (
+          {(submitting || summary || compileError || checkerError || storeFailed) && (
             <div className="space-y-3">
               <div className="h-px bg-border" />
+              {/* Graded, but the row never landed. The judge work below is real and
+                  the student deserves to see it — but it will not appear in
+                  /submissions, will not count toward problems_solved and vanishes on
+                  reload, so saying nothing would leave them believing they solved it.
+                  Rendered above the verdict so it is read first. */}
+              {!submitting && storeFailed && (
+                <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-warning shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-warning">Graded but not recorded</span>
+                  </div>
+                  <p className="text-xs text-text-muted leading-relaxed">
+                    Your solution ran and the results below are real, but the submission
+                    could not be saved, so it will not appear in your submission history
+                    and no points were awarded.{' '}
+                    <strong className="text-foreground">This is not an error in your code</strong>{' '}
+                    — please contact a WMOJ admin.
+                  </p>
+                </div>
+              )}
               {submitting ? (
                 <div className="flex items-center gap-2 py-2">
                   <LoadingSpinner size="sm" />

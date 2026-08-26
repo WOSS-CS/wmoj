@@ -1,29 +1,11 @@
-import { NextResponse } from 'next/server';
-import { getServerSupabaseFromToken } from '@/lib/supabaseServer';
+import { NextRequest, NextResponse } from 'next/server';
+import { getAdminSupabase } from '@/lib/adminAuth';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const accessToken = authHeader.split(' ')[1];
-    const supabase = getServerSupabaseFromToken(accessToken);
-
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Ensure admin
-    const { data: adminRow, error: adminErr } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('id', authData.user.id)
-      .maybeSingle();
-    if (adminErr || !adminRow) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const auth = await getAdminSupabase(request);
+    if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const { supabase } = auth;
 
     // List all regular users (exclude admins)
     const { data: users, error: usersErr } = await supabase
@@ -43,5 +25,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-

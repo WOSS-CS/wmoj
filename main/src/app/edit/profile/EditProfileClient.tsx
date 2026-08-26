@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { MarkdownEditor } from '@/components/MarkdownEditor';
@@ -10,22 +10,28 @@ import { toast } from '@/components/ui/Toast';
 function EditProfileForm() {
   const { user, profile, refreshProfile } = useAuth();
   const [aboutMe, setAboutMe] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [seededProfileId, setSeededProfileId] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Cache-buster: fixed for the lifetime of the mount, and only moves when an
+  // upload actually replaces the object — so the avatar no longer re-fetches and
+  // flickers on every background token refresh.
+  const [avatarVersion, setAvatarVersion] = useState<number>(() => Date.now());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (profile) {
-      setAboutMe((profile as unknown as { about_me: string | null }).about_me || '');
-    }
-    if (user) {
-      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${user.id}/avatar?t=${Date.now()}`;
-      setAvatarUrl(url);
-      setAvatarError(false);
-    }
-  }, [profile, user]);
+  // Seed the editor ONCE per account, not on every `profile` identity change.
+  // AuthContext re-runs its setup (and so calls setProfile) on TOKEN_REFRESHED and
+  // USER_UPDATED — roughly hourly and on tab re-focus — and an effect keyed on
+  // `profile` would silently throw away whatever the user had typed since.
+  if (profile && profile.id !== seededProfileId) {
+    setSeededProfileId(profile.id);
+    setAboutMe(profile.about_me || '');
+  }
+
+  const avatarUrl = user
+    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${user.id}/avatar?t=${avatarVersion}`
+    : null;
 
   const initial = profile?.username?.charAt(0).toUpperCase() || '?';
 
@@ -59,7 +65,7 @@ function EditProfileForm() {
       if (error) throw error;
 
       // Refresh avatar display with cache-bust
-      setAvatarUrl(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${user.id}/avatar?t=${Date.now()}`);
+      setAvatarVersion(Date.now());
       setAvatarError(false);
       toast.success('Avatar updated successfully');
     } catch (err) {
@@ -106,6 +112,7 @@ function EditProfileForm() {
             type="button"
           >
             {avatarUrl && !avatarError ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={avatarUrl}
                 alt="Your avatar"

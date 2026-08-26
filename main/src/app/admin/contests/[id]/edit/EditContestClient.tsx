@@ -55,6 +55,13 @@ export default function EditContestClient({ contest, initialProblems = [] }: { c
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError(''); setSuccess('');
 
+    // `contests_window_paired` requires both timestamps or neither.
+    if (!!formData.starts_at !== !!formData.ends_at) {
+      setError('Set both a start and an end date/time, or neither');
+      setLoading(false);
+      return;
+    }
+
     if (formData.starts_at && formData.ends_at && new Date(formData.starts_at) >= new Date(formData.ends_at)) {
       setError('Start date/time must be before end date/time');
       setLoading(false);
@@ -76,7 +83,9 @@ export default function EditContestClient({ contest, initialProblems = [] }: { c
         })
       });
       const json = await res.json();
-      if (res.ok) {
+      // RLS filters rather than raising, so a write that matched no row still
+      // comes back 200. Trust the payload, not just the status.
+      if (res.ok && json.contest) {
         setSuccess('Contest updated successfully!');
         setTimeout(() => router.push('/admin/contests/manage'), 2000);
       } else { setError(json.error || 'Failed to update contest'); }

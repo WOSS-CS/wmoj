@@ -10,6 +10,9 @@ export function useOptimisticPathname() {
   const [, startTransition] = useTransition();
 
   const navigate = (href: string) => {
+    // Clicking the already-active nav item used to push a duplicate history
+    // entry, so Back appeared to do nothing.
+    if (href === pathname) return;
     startTransition(() => {
       setOptimisticPathname(href);
       router.push(href);

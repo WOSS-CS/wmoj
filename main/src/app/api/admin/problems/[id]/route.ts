@@ -1,56 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseServer';
+import { getAdminSupabase } from '@/lib/adminAuth';
 import { deleteProblemImages } from '@/utils/problemImages';
 
-async function getAdminSupabase(request: NextRequest) {
-  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-  const bearerToken = authHeader?.toLowerCase().startsWith('bearer ')
-    ? authHeader.substring(7).trim()
-    : null;
-  const supabase = bearerToken ? getServerSupabaseFromToken(bearerToken) : await getServerSupabase();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return { error: 'Unauthorized', status: 401 };
-  const { data: adminRow, error: adminErr } = await supabase
-    .from('admins')
-    .select('id, is_active')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (adminErr) return { error: 'Authorization check failed', status: 500 };
-  if (!adminRow || adminRow.is_active === false) return { error: 'Forbidden', status: 403 };
-  return { supabase };
-}
+// TEMPORARY DUAL-WRITE (C4). The graded data (input/output/checker/generator_file)
+// now lives in `public.problem_tests`, which is staff-only. The four legacy columns
+// on `problems` still exist and the public submit path still falls back to them, so
+// every staff write updates BOTH tables and they must not be allowed to diverge.
+// EXPIRY: delete the `problems` half of these writes in the same change as the
+// migration that drops input/output/checker/generator_file from `problems`.
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const auth = await getAdminSupabase(request);
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
-  const { supabase } = auth;
+  const { supabase, user } = auth;
+  // Admins only ever act on their own problems (the RLS write policies require
+  // created_by = auth.uid()), so scope the read the same way: a problem they can
+  // never edit must not open in the editor. Hidden resources 404, never 403.
   const { data, error } = await supabase
     .from('problems')
-    .select('id,name,content,is_active,time_limit,memory_limit,points,input,output,generator_file,checker,created_at,updated_at,contest_problems(contest_id)')
+    .select('id,name,content,is_active,time_limit,memory_limit,points,created_at,updated_at,contest_problems(contest_id)')
     .eq('id', id)
+    .eq('created_by', user.id)
     .maybeSingle();
   if (error) {
     console.error('Fetch admin problem error:', error);
     return NextResponse.json({ error: 'Failed to fetch problem' }, { status: 500 });
   }
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  const { data: tests, error: testsErr } = await supabase
+    .from('problem_tests')
+    .select('input,checker,generator_file')
+    .eq('problem_id', id)
+    .maybeSingle();
+  if (testsErr) {
+    console.error('Fetch admin problem tests error:', testsErr);
+    return NextResponse.json({ error: 'Failed to fetch problem' }, { status: 500 });
+  }
+
   // Return test case count instead of full arrays to keep payload small
-  const { input: _input, output: _output, contest_problems: _contestProblems, ...rest } = data;
-  const test_case_count = Array.isArray(_input) ? _input.length : 0;
+  const { contest_problems: _contestProblems, ...rest } = data;
+  const test_case_count = Array.isArray(tests?.input) ? tests.input.length : 0;
   // `problems` has no `contest` column — contest membership lives in the
   // contest_problems junction, which the embed returns as [{ contest_id }, ...].
   const contest_ids = (_contestProblems || []).map((r: { contest_id: string }) => r.contest_id);
-  return NextResponse.json({ problem: { ...rest, test_case_count, contest_ids } });
+  return NextResponse.json({
+    problem: {
+      ...rest,
+      checker: tests?.checker ?? null,
+      generator_file: tests?.generator_file ?? null,
+      test_case_count,
+      contest_ids,
+    },
+  });
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const auth = await getAdminSupabase(request);
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
-  const { supabase } = auth;
+  const { supabase, user } = auth;
   const body = await request.json();
   const updates: Record<string, unknown> = {};
+  // Set when the request changes any column that also lives in `problem_tests`,
+  // so the side table is only rewritten when the graded data actually moved.
+  let touchesTestData = false;
   if (body.name !== undefined) updates.name = body.name;
   if (body.content !== undefined) updates.content = body.content;
   if (body.points !== undefined) {
@@ -83,6 +98,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     updates.input = body.input;
     updates.output = body.output;
+    touchesTestData = true;
   }
   if (body.generator_file !== undefined) {
     if (body.input === undefined || body.output === undefined) {
@@ -92,6 +108,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'generator_file must be a string' }, { status: 400 });
     }
     updates.generator_file = body.generator_file;
+    touchesTestData = true;
   }
   // Unlike generator_file, the checker is independent of the stored test data,
   // so it can be updated on its own. Blank clears it back to NULL, which
@@ -101,20 +118,49 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'checker must be a string' }, { status: 400 });
     }
     updates.checker = typeof body.checker === 'string' && body.checker.trim().length > 0 ? body.checker : null;
+    touchesTestData = true;
   }
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
   }
+  // `.eq('created_by', user.id)` is load-bearing, not belt-and-braces: RLS FILTERS
+  // rather than raising, so without it an unowned target updates zero rows with
+  // error === null and this route would answer 200 with a green success banner.
   const { data, error } = await supabase
     .from('problems')
     .update(updates)
     .eq('id', id)
+    .eq('created_by', user.id)
     .select()
     .maybeSingle();
   if (error) {
     console.error('Update problem error:', error);
     return NextResponse.json({ error: 'Failed to update problem' }, { status: 500 });
   }
+  if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  if (touchesTestData) {
+    // Mirror into `problem_tests` from the row we just wrote, so a checker-only
+    // edit cannot blank the tests: every column is carried over, not just the
+    // ones this request happened to touch.
+    const { error: testsErr } = await supabase
+      .from('problem_tests')
+      .upsert(
+        {
+          problem_id: id,
+          input: data.input ?? [],
+          output: data.output ?? [],
+          checker: data.checker ?? null,
+          generator_file: data.generator_file ?? null,
+        },
+        { onConflict: 'problem_id' },
+      );
+    if (testsErr) {
+      console.error('Update problem_tests error:', testsErr);
+      return NextResponse.json({ error: 'Failed to update problem test data' }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ problem: data });
 }
 
@@ -122,25 +168,33 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const { id } = await params;
   const auth = await getAdminSupabase(request);
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
-  const { supabase } = auth;
+  const { supabase, user } = auth;
 
   // Fetch content before deletion so we can clean up associated images
   const { data: problem } = await supabase
     .from('problems')
     .select('content')
     .eq('id', id)
+    .eq('created_by', user.id)
     .maybeSingle();
 
-  const { error } = await supabase
+  // `problem_tests` cascades on the problem row.
+  const { data: deleted, error } = await supabase
     .from('problems')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('created_by', user.id)
+    .select('id')
+    .maybeSingle();
   if (error) {
     console.error('Delete problem error:', error);
     return NextResponse.json({ error: 'Failed to delete problem' }, { status: 500 });
   }
+  if (!deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Best-effort image cleanup after successful deletion
+  // Image cleanup is gated on an ACTUAL deletion, never on the content fetch:
+  // `problems` is world-readable, so `content` comes back for rows this admin
+  // cannot delete, and the storage removal is irreversible.
   if (problem?.content) {
     await deleteProblemImages(supabase, problem.content);
   }

@@ -1,43 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseServer';
+import { getAdminSupabase } from '@/lib/adminAuth';
 import { getJudgeSharedSecret } from '@/lib/env';
 
 export async function POST(request: NextRequest) {
   try {
-    // Try header bearer token first (explicit), fall back to cookie-based session.
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    const bearerToken = authHeader?.toLowerCase().startsWith('bearer ')
-      ? authHeader.substring(7).trim()
-      : null;
-
-    const supabase = bearerToken
-      ? getServerSupabaseFromToken(bearerToken)
-      : await getServerSupabase();
-
-    // Fetch current user (session context via cookies). If no user, reject.
-    const {
-      data: { user: authUser },
-      error: userErr,
-    } = await supabase.auth.getUser();
-
-    if (userErr || !authUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify admin membership explicitly to provide clearer feedback before hitting RLS.
-    const { data: adminRow, error: adminErr } = await supabase
-      .from('admins')
-      .select('id, is_active')
-      .eq('id', authUser.id)
-      .maybeSingle();
-
-    if (adminErr) {
-      console.error('Admin lookup error:', adminErr);
-      return NextResponse.json({ error: 'Authorization check failed' }, { status: 500 });
-    }
-    if (!adminRow || adminRow.is_active === false) {
-      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 });
-    }
+    const auth = await getAdminSupabase(request);
+    if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
     // Expect JSON body with code string
     const body = await request.json();
@@ -56,14 +24,28 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({ language: 'cpp', code: source }),
     });
-    const data = await resp.json();
 
+    // Check `resp.ok` BEFORE parsing. A judge 502/504, a proxy page or a cold
+    // start answers with HTML, and `.json()` would throw into the outer catch
+    // and surface as an opaque app 500 — telling the author their generator is
+    // broken when the judge is simply down.
     if (!resp.ok) {
-      // Surface judge errors with any available raw JSON for debugging on UI
+      const raw = await resp.text().catch(() => '');
+      let parsed: { error?: string; inputJson?: string; outputJson?: string } | null = null;
+      try { parsed = raw ? JSON.parse(raw) : null; } catch { parsed = null; }
       return NextResponse.json(
-        { error: data?.error || 'Judge error', inputRaw: data?.inputJson, outputRaw: data?.outputJson },
+        {
+          error: parsed?.error || `Judge error (HTTP ${resp.status})${raw && !parsed ? `: ${raw.slice(0, 500)}` : ''}`,
+          inputRaw: parsed?.inputJson,
+          outputRaw: parsed?.outputJson,
+        },
         { status: resp.status || 500 }
       );
+    }
+
+    const data = await resp.json().catch(() => null);
+    if (!data) {
+      return NextResponse.json({ error: 'Judge returned a malformed response' }, { status: 502 });
     }
 
     // Return both parsed arrays and unmodified raw strings for UI preview/debugging
@@ -78,5 +60,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-

@@ -1,58 +1,14 @@
 'use client';
 
-import { ReactNode } from 'react';
-
 /* ==========================================================================
-   AnimationWrapper — Simplified
-   
-   Kept for backward compatibility with landing page components that import it.
-   Non-landing pages should NOT use animation wrappers; content renders instantly.
+   LoadingSpinner — the only animation primitive this app actually uses.
+
+   This file used to also export AnimationWrapper, StaggeredAnimation and
+   HoverAnimation: three pass-through <div>s kept "for backward compatibility
+   with landing page components". Those landing components are gone and no JSX
+   ever rendered the wrappers, so they went with them. Nineteen files import
+   LoadingSpinner from here; the module name stays for their sake.
    ========================================================================== */
-
-interface AnimationWrapperProps {
-  children: ReactNode;
-  animation?: string;
-  delay?: number;
-  duration?: number;
-  trigger?: boolean;
-  className?: string;
-}
-
-export function AnimationWrapper({
-  children,
-  className = ''
-}: AnimationWrapperProps) {
-  return <div className={className}>{children}</div>;
-}
-
-interface StaggeredAnimationProps {
-  children: ReactNode[];
-  animation?: string;
-  staggerDelay?: number;
-  className?: string;
-}
-
-export function StaggeredAnimation({
-  children,
-  className = ''
-}: StaggeredAnimationProps) {
-  return <div className={className}>{children}</div>;
-}
-
-interface HoverAnimationProps {
-  children: ReactNode;
-  effect?: string;
-  className?: string;
-}
-
-export function HoverAnimation({
-  children,
-  className = ''
-}: HoverAnimationProps) {
-  return <div className={className}>{children}</div>;
-}
-
-/* --- LoadingSpinner — The one universally useful animation --- */
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -78,5 +34,3 @@ export function LoadingSpinner({
     />
   );
 }
-
-/* Removed: PulseEffect, ShimmerEffect — unnecessary wrappers */

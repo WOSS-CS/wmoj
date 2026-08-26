@@ -14,25 +14,35 @@ import CommentsSection from '@/components/CommentsSection';
 
 interface ProblemDetailClientProps {
   problem: Problem;
+  /**
+   * Server-computed. The test-case ARRAYS must never reach this component: they
+   * are the answer key, and every prop of a client component is serialised into
+   * the RSC flight payload. Only the count crosses the boundary.
+   */
+  testCaseCount: number;
   activeContestId: string | null;
   initialBestSummary: { total: number; passed: number; failed: number } | null;
   isVirtualContest?: boolean;
   initialComments: Comment[];
 }
 
-export default function ProblemDetailClient({ problem, activeContestId, initialBestSummary, isVirtualContest, initialComments }: ProblemDetailClientProps) {
+export default function ProblemDetailClient({ problem, testCaseCount, activeContestId, initialBestSummary, isVirtualContest, initialComments }: ProblemDetailClientProps) {
   const router = useRouter();
-  const { user, profile } = useAuth();
-  const { isActive, contestId } = useCountdown();
+  const { user } = useAuth();
+  const { isActive, contestId, countdownLoaded } = useCountdown();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const bestSummary = initialBestSummary;
 
   useEffect(() => {
     if (!activeContestId || isVirtualContest) return;
-    const countdownResolved = isActive !== undefined && (contestId !== null || !isActive);
-    if (!countdownResolved) return;
+    // Gate on the context's explicit loaded flag, never on `isActive`/`contestId`.
+    // Their "not loaded yet" values (false / null) are indistinguishable from a
+    // legitimate "not in a contest", so the old expression was true on the very
+    // first commit and threw real participants back to /contests on every hard
+    // reload — losing whatever they had typed.
+    if (!countdownLoaded) return;
     if (!isActive || (contestId && contestId !== activeContestId)) router.replace('/contests');
-  }, [isActive, contestId, activeContestId, router, isVirtualContest]);
+  }, [isActive, contestId, countdownLoaded, activeContestId, router, isVirtualContest]);
 
   const handleSubmitClick = () => {
     if (!user) { setShowAuthPrompt(true); return; }
@@ -81,7 +91,7 @@ export default function ProblemDetailClient({ problem, activeContestId, initialB
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
                   <span className="text-text-muted">Test Cases</span>
-                  <span className="text-foreground font-mono">{problem.input.length}</span>
+                  <span className="text-foreground font-mono">{testCaseCount}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-text-muted">Points</span>
@@ -106,12 +116,17 @@ export default function ProblemDetailClient({ problem, activeContestId, initialB
                   <h3 className="text-sm font-medium text-foreground mb-2">Best Submission</h3>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge variant={bestSummary.failed === 0 ? 'success' : 'warning'}>
+                      {/* Both guards are on `total > 0`: a compile-error summary is
+                          {0,0,0}, so `failed === 0` reads as a pass and the
+                          percentage divides by zero and renders the literal "NaN%".
+                          The server already skips zero-total summaries when picking
+                          the best one; this keeps the render honest regardless. */}
+                      <Badge variant={bestSummary.total > 0 && bestSummary.failed === 0 ? 'success' : 'warning'}>
                         {bestSummary.passed}/{bestSummary.total}
                       </Badge>
                     </div>
                     <span className="text-sm text-brand-primary font-mono font-medium">
-                      {Math.round((bestSummary.passed / bestSummary.total) * 100)}%
+                      {bestSummary.total > 0 ? Math.round((bestSummary.passed / bestSummary.total) * 100) : 0}%
                     </span>
                   </div>
                 </div>
@@ -130,9 +145,14 @@ export default function ProblemDetailClient({ problem, activeContestId, initialB
                   Submit Solution
                 </button>
 
+                {/* Both deep links pass ids, not free text. `?user=`/`?problem=` were
+                    resolved with an unanchored ilike, so "bob" matched "bobby" and a
+                    problem named "Sum" matched "Summation" — other people's
+                    submissions listed as your own. `?user_id=`/`?problem_id=` are
+                    matched with .eq(). */}
                 {user && (
                   <Link
-                    href={`/submissions?user=${encodeURIComponent(profile?.username ?? '')}&problem=${encodeURIComponent(problem.name)}`}
+                    href={`/submissions?user_id=${encodeURIComponent(user.id)}&problem_id=${encodeURIComponent(problem.id)}`}
                     className="w-full h-9 border border-border text-sm font-medium text-foreground rounded-lg hover:bg-surface-2 transition-colors flex items-center justify-center gap-2"
                   >
                     <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,7 +163,7 @@ export default function ProblemDetailClient({ problem, activeContestId, initialB
                 )}
 
                 <Link
-                  href={`/submissions?problem=${encodeURIComponent(problem.name)}`}
+                  href={`/submissions?problem_id=${encodeURIComponent(problem.id)}`}
                   className="w-full h-9 border border-border text-sm font-medium text-foreground rounded-lg hover:bg-surface-2 transition-colors flex items-center justify-center gap-2"
                 >
                   <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getJudgeSharedSecret } from '@/lib/env';
 
+// Unauthenticated proxy for the judge's /health probe. The browser must never
+// learn anything about the judge, so the judge's response body is deliberately
+// NOT forwarded: spreading it both overwrote this endpoint's own
+// `status: 'online'` with the judge's `status: 'ok'` and published the judge's
+// `version` — which is RENDER_GIT_COMMIT in production, i.e. the exact commit
+// that is live. Report reachability and nothing else.
 export async function GET() {
   const JUDGE_URL = process.env.NEXT_PUBLIC_JUDGE_URL || 'http://localhost:4001';
   try {
@@ -9,8 +15,7 @@ export async function GET() {
       headers: { 'X-Judge-Token': getJudgeSharedSecret() },
     });
     if (res.ok) {
-      const data = await res.json().catch(() => ({}));
-      return NextResponse.json({ status: 'online', ...data });
+      return NextResponse.json({ status: 'online' });
     }
     return NextResponse.json({ status: 'offline' }, { status: 502 });
   } catch {

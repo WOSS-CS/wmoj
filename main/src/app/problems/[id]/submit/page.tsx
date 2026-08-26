@@ -3,14 +3,24 @@ import SubmitClient from './SubmitClient';
 import { checkTimerExpiry } from '@/utils/timerCheck';
 import { getContestStatus } from '@/utils/contestStatus';
 import { canUserAccessProblem } from '@/lib/problemAccess';
+import { isActiveAdmin, isActiveManager } from '@/lib/staffAuth';
 import { notFound, redirect } from 'next/navigation';
+
+/**
+ * The only columns this page may select. `input`, `output` and `checker` are the
+ * answer key and this is the page students submit FROM — selecting them here put
+ * the expected stdout for every test case into the page source. Everything below
+ * is used server-side for the access gate; only `id` and `name` cross into the
+ * client. Never widen this to `*`.
+ */
+const PROBLEM_COLUMNS = 'id, name, is_active, created_by, time_limit, memory_limit';
 
 export default async function SubmitPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await getServerSupabase();
 
   const [problemResult, authResult, cpResult] = await Promise.all([
-    supabase.from('problems').select('*').eq('id', id).single(),
+    supabase.from('problems').select(PROBLEM_COLUMNS).eq('id', id).single(),
     supabase.auth.getUser(),
     supabase.from('contest_problems').select('contest_id').eq('problem_id', id),
   ]);
@@ -44,9 +54,23 @@ export default async function SubmitPage({ params }: { params: Promise<{ id: str
       .select('id, is_active, starts_at, ends_at')
       .in('id', contestIds);
 
-    const ongoingContests = (contests || []).filter(
-      c => getContestStatus(c as { is_active: boolean; starts_at: string | null; ends_at: string | null }) === 'ongoing'
-    );
+    const statusOf = (c: unknown) =>
+      getContestStatus(c as { is_active: boolean; starts_at: string | null; ends_at: string | null });
+
+    // A contest that has not started yet accepts no submissions from anyone —
+    // participation is impossible before the start bell, so there is nothing to
+    // check and a non-staff caller gets a hard 404 (hidden resources are 404,
+    // never 403). Without this, an entrant could solve and bank points for a
+    // scheduled contest's problems days early and walk in already finished.
+    if ((contests || []).some(c => statusOf(c) === 'upcoming')) {
+      const isStaff =
+        (await isActiveManager(supabase, user.id)) || (await isActiveAdmin(supabase, user.id));
+      if (!isStaff) {
+        notFound();
+      }
+    }
+
+    const ongoingContests = (contests || []).filter(c => statusOf(c) === 'ongoing');
 
     if (ongoingContests.length > 0) {
       isVirtualContest = false;
@@ -83,5 +107,14 @@ export default async function SubmitPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  return <SubmitClient problem={problem} activeContestId={activeContestId} isVirtualContest={isVirtualContest} />;
+  // Narrowed explicitly at the boundary: the client needs the id and the name and
+  // nothing else, and an explicit object here means a future column added to
+  // PROBLEM_COLUMNS for a server-side gate cannot drift into the browser.
+  return (
+    <SubmitClient
+      problem={{ id: problem.id as string, name: problem.name as string }}
+      activeContestId={activeContestId}
+      isVirtualContest={isVirtualContest}
+    />
+  );
 }

@@ -33,20 +33,37 @@ const INTENSITY_COLORS = [
   'rgba(5, 150, 105, 1)',
 ];
 
+// Every date helper here works in UTC end to end, and must keep doing so.
+//
+// `new Date('YYYY-MM-DDT00:00:00')` with no offset is parsed as LOCAL time per ES2015+, but
+// `toISOString()` reads back in UTC. At any non-negative UTC offset, local midnight of day N+1 is
+// still day N in UTC, so `addDays(d, 1)` returned `d` unchanged — and since that call is the week
+// loop's only advance step, the loop never terminated and grew `weeks` until the tab OOM'd. This is
+// a public page; it only ever worked because the school sits at UTC-4/-5. The server (Vercel, UTC)
+// renders correct HTML, so the hang appears on hydration.
+//
+// The submission rows are also bucketed by UTC day server-side, so a UTC calendar here is what makes
+// the tooltip label agree with the bucket it came from.
+
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const d = new Date(dateStr + 'T00:00:00Z');
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
 }
 
 function getDayOfWeek(dateStr: string): number {
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = new Date(dateStr + 'T00:00:00Z');
   // 0 = Monday, 6 = Sunday
-  return (d.getDay() + 6) % 7;
+  return (d.getUTCDay() + 6) % 7;
 }
 
 function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + 'T00:00:00');
-  d.setDate(d.getDate() + days);
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().split('T')[0];
 }
 
@@ -118,7 +135,7 @@ export function SubmissionHeatmap({ data, accountCreatedAt }: SubmissionHeatmapP
 
       // Track month transitions
       if (inRange) {
-        const month = new Date(currentDate + 'T00:00:00').getMonth();
+        const month = new Date(currentDate + 'T00:00:00Z').getUTCMonth();
         if (month !== lastMonth) {
           monthMarkers.push({ weekIndex: weeks.length, label: MONTH_LABELS[month] });
           lastMonth = month;
@@ -130,7 +147,12 @@ export function SubmissionHeatmap({ data, accountCreatedAt }: SubmissionHeatmapP
         currentWeek = [];
       }
 
-      currentDate = addDays(currentDate, 1);
+      // Structural backstop: never spin if the cursor fails to advance for any reason. The loop's
+      // only exit conditions both require `currentDate > endDate`, so a non-advancing cursor is an
+      // infinite loop inside a useMemo with no error boundary above it.
+      const nextDate = addDays(currentDate, 1);
+      if (nextDate === currentDate) break;
+      currentDate = nextDate;
     }
 
     if (currentWeek.length > 0) {

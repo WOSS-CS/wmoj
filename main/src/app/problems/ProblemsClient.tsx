@@ -7,7 +7,7 @@ import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
 import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
-import { Problem } from '@/types/problem';
+import { ProblemListItem } from '@/types/problem';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/Badge';
 import { HotProblem } from './page';
@@ -21,7 +21,7 @@ export default function ProblemsClient({
   currentPage,
   currentSearch,
 }: {
-  initialProblems: Problem[],
+  initialProblems: ProblemListItem[],
   hotProblems: HotProblem[],
   totalPages: number,
   currentPage: number,
@@ -64,14 +64,20 @@ export default function ProblemsClient({
     return map;
   };
 
-  const { data: statusMap } = useSWR(
-    user?.id && initialProblems.length > 0 ? `problems-status-${user.id}` : null,
-    fetcher
-  );
+  // The fetcher builds its map from THIS page's problem ids, so the page's
+  // identity has to be in the key. Paging and searching are soft navigations:
+  // `initialProblems` changes but the component is never remounted, so a key of
+  // just the user id serves the cached page-1 map forever and every row on
+  // page 2 renders as the grey "not attempted" dash.
+  const statusKey = user?.id && initialProblems.length > 0
+    ? `problems-status-${user.id}-${initialProblems.map(p => p.id).join(',')}`
+    : null;
+
+  const { data: statusMap } = useSWR(statusKey, fetcher);
 
   const statusByProblem = statusMap || {};
 
-  const columns: Array<DataTableColumn<Problem>> = [
+  const columns: Array<DataTableColumn<ProblemListItem>> = [
     { key: 'name', header: 'Problem', className: 'w-[50%]', sortable: true, sortAccessor: (r) => r.name.toLowerCase(), render: (r) => <span className="text-foreground font-medium text-sm">{r.name}</span> },
     {
       key: 'points', header: 'Points', className: 'w-[15%]', sortable: true, sortAccessor: (r) => r.points,
@@ -127,7 +133,7 @@ export default function ProblemsClient({
                     onPageChange={handlePageChange}
                   />
                 </div>
-                <DataTable<Problem> columns={columns} rows={initialProblems} rowKey={(r) => r.id} headerVariant="gray" loading={isLoading} skeletonRowCount={PAGE_SIZE} />
+                <DataTable<ProblemListItem> columns={columns} rows={initialProblems} rowKey={(r) => r.id} headerVariant="gray" loading={isLoading} skeletonRowCount={PAGE_SIZE} />
               </>
             )}
           </div>

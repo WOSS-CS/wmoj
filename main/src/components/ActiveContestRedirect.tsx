@@ -21,9 +21,8 @@ export function ActiveContestRedirect() {
 
     const isOnContestArea = pathname.startsWith(`/contests/${contestId}`);
     const isOnProblemPage = pathname.startsWith('/problems/');
-    const isOnPoopthrower = pathname.startsWith('/poopthrower');
 
-    if (!isOnContestArea && !isOnProblemPage && !isOnPoopthrower) {
+    if (!isOnContestArea && !isOnProblemPage) {
       router.replace(`/contests/${contestId}`);
     }
   }, [isActive, contestId, pathname, router]);

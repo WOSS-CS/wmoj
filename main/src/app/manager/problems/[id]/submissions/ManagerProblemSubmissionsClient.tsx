@@ -69,12 +69,23 @@ function VerdictBadge({ verdict }: { verdict: Verdict }) {
 function aggregateVerdictFromResults(results: TestResult[], compileError: string | null): Verdict {
   if (compileError) return 'CE';
   if (results.length === 0) return 'IE';
-  const rank: Verdict[] = ['TLE', 'MLE', 'RE', 'WA'];
+  // 'IE' FIRST, ahead of the student's own failures. A per-case 'IE' means a custom checker could
+  // not answer for that case — a problem-configuration fault, never the student's. It was missing
+  // from this array entirely, so an all-'IE' submission fell through to the loop below and reported
+  // 'WA': a correct solution told it was wrong, with the real fault invisible in all three views.
+  //
+  // Note this is deliberately NOT the judge's own deriveVerdict order (TLE > MLE > RE > IE > WA).
+  // That order is precedence WITHIN one case, where 'IE' is only reachable once the program has
+  // already run cleanly. This array is precedence ACROSS cases, a different question — and
+  // custom-checkers/SKILL.md is explicit that a broken problem must stay visible, which ranking
+  // 'IE' below 'RE' would defeat whenever any other case also failed.
+  const rank: Verdict[] = ['IE', 'TLE', 'MLE', 'RE', 'WA'];
   for (const v of rank) {
     if (results.some((r) => r.verdict === v)) return v;
   }
   for (const r of results) {
     if (!r.passed) {
+      if (r.verdict === 'IE') return 'IE';
       if (r.timedOut) return 'TLE';
       return 'WA';
     }
@@ -87,6 +98,22 @@ function listBadgeFromRow(r: ProblemSubmissionRow): ListBadge {
   if (r.compileError) return 'CE';
   if (r.status === 'passed') return 'AC';
   return 'Failed';
+}
+
+// The list query deliberately omits `results` (AGENTS.md: never select code/results
+// in a submission-list query), so at this point TLE, MLE, RE and WA are genuinely
+// indistinguishable. Render the neutral "Failed" the dashboards already use rather
+// than asserting a verdict we do not have — the row's modal derives the real one
+// from `results`, fetched on demand, and the two must not contradict each other.
+function FailedBadge() {
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-semibold ${VERDICT_STYLES.WA}`}
+      title="Failed"
+    >
+      Failed
+    </span>
+  );
 }
 
 export default function ManagerProblemSubmissionsClient({
@@ -154,7 +181,7 @@ export default function ManagerProblemSubmissionsClient({
         const badge = listBadgeFromRow(r);
         if (badge === 'CE') return <VerdictBadge verdict="CE" />;
         if (badge === 'AC') return <VerdictBadge verdict="AC" />;
-        return <VerdictBadge verdict="WA" />;
+        return <FailedBadge />;
       }
     },
     { key: 'score', header: 'Score', className: 'w-2/12', render: (r) => <span className="text-text-muted font-mono">{r.summary?.passed ?? 0}/{r.summary?.total ?? 0}</span> },

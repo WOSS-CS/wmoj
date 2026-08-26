@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import MDEditor, { commands } from '@uiw/react-md-editor';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { toast } from '@/components/ui/Toast';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import '@uiw/react-md-editor/markdown-editor.css';
@@ -38,7 +39,10 @@ export function MarkdownEditor({
     event.preventDefault();
 
     if (imageFile.size > 5 * 1024 * 1024) {
-      alert('Image too large. Maximum size is 5MB.');
+      // toast.* is the repo-wide feedback convention, and a blocking browser
+      // dialog additionally destroys the textarea's selection — which is what
+      // the caret position captured just below depends on.
+      toast.error('Image too large', 'Maximum size is 5 MB.');
       return;
     }
 
@@ -51,7 +55,7 @@ export function MarkdownEditor({
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       if (!token) {
-        alert('You must be logged in to upload images.');
+        toast.error('Not signed in', 'You must be logged in to upload images.');
         return;
       }
 
@@ -67,15 +71,19 @@ export function MarkdownEditor({
       const json = await res.json();
 
       if (!res.ok) {
-        alert(json.error || 'Failed to upload image.');
+        toast.error('Upload failed', json.error || 'Failed to upload image.');
         return;
       }
 
-      const imgTag = `<img size="100" src="${json.url}" />`;
+      // Always emit an alt: reference/figures.md is explicit about it, and a
+      // figure without one is invisible to every screen-reader user reading the
+      // statement. The filename is a starting point the author should replace.
+      const altText = imageFile.name.replace(/\.[^.]+$/, '').replace(/["<>]/g, '').trim() || 'Figure';
+      const imgTag = `<img size="100" src="${json.url}" alt="${altText}" />`;
       const newValue = value.slice(0, cursorPos) + imgTag + value.slice(cursorPos);
       onChange(newValue);
     } catch {
-      alert('Unexpected error uploading image.');
+      toast.error('Upload failed', 'Unexpected error uploading image.');
     } finally {
       setIsUploading(false);
     }

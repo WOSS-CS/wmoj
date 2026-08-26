@@ -1,6 +1,15 @@
 import { NextRequest } from 'next/server';
 import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseServer';
 
+/**
+ * The single manager auth preamble for `app/api/manager/**` route handlers.
+ * Accepts a Bearer token (scheme compared case-insensitively, per RFC 7235)
+ * and falls back to the cookie session.
+ *
+ * Membership alone is not authorization: the row must have `is_active = true`,
+ * matching the `is_manager()` RLS helper and `lib/staffAuth.ts`. A SQL `NULL`
+ * therefore reads as inactive here, exactly as it does in the database.
+ */
 export async function getManagerSupabase(request: NextRequest) {
     const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
     const bearerToken = authHeader?.toLowerCase().startsWith('bearer ')
@@ -12,13 +21,13 @@ export async function getManagerSupabase(request: NextRequest) {
 
     const { data: managerRow, error: managerErr } = await supabase
         .from('managers')
-        .select('id, is_active')
+        .select('id')
         .eq('id', user.id)
+        .eq('is_active', true)
         .maybeSingle();
 
     if (managerErr) return { error: 'Authorization check failed', status: 500 };
     if (!managerRow) return { error: 'Forbidden', status: 403 };
-    if (managerRow.is_active === false) return { error: 'Forbidden', status: 403 };
 
     return { supabase, user };
 }
