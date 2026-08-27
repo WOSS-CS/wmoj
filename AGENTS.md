@@ -24,6 +24,8 @@ Load these rather than re-derive what they cover; their `.claude/skills/…` pat
 
 - **`add-problem`** — publishing problems end to end: statement, figures, the `generator.cpp` house
   style, the test-case budget, custom checkers, live-judge verification, the database insert.
+- **`local-dev`** — running the whole stack on a laptop: Supabase CLI, a local database whose schema
+  matches prod, pointing the app at it, the parity check, staff bootstrap, what cannot be tested.
 
 ## Commands
 
@@ -40,8 +42,7 @@ npx tsc --noEmit # the typecheck — no npm script exists for it
 does not run ESLint during `build`, so run `npm run lint` yourself — it is currently at **zero**
 problems and must stay there. `npm run build` *is* the typecheck gate.
 
-Node ≥20.9. Tailwind v4 is CSS-first, so there is **no `tailwind.config.*`** — tokens live in
-`app/globals.css`. Exact versions are pinned in `main/package.json`; read them there.
+Node ≥20.9. Tailwind v4 is CSS-first: **no `tailwind.config.*`**, tokens live in `app/globals.css`.
 
 **Seven env vars, none validated at boot** — see `.env.example`, which is the list. `SUPABASE_SECRET_KEY`
 is server-only and bypasses RLS.
@@ -94,11 +95,10 @@ The deltas are deliberate and must survive any sync:
 
 ## Database
 
-Live Supabase project **`WMOJ`** (ref `usltyqkrptaaktnmjeyf`, us-east-2, Postgres 17): 14 tables,
-RLS on all of them. Inspect it with the Supabase MCP. There is no local Supabase and no drift
-detection — live and `supabase/migrations/` agree only because you keep them agreeing.
-
-Two public storage buckets: `avatars` and `problem_images` (statement figures, 5 MB per object).
+Live Supabase project **`WMOJ`** (ref `usltyqkrptaaktnmjeyf`, us-east-2, Postgres 17): 14 tables, RLS
+on all of them, two public buckets (`avatars`, `problem_images`, 5 MB per object). Inspect it with the
+Supabase MCP. No drift detection — live and `supabase/migrations/` agree only because you keep them
+agreeing; `local-dev` replays them onto an empty database and fingerprints the result against prod.
 
 ### Every schema change must be a new migration file
 
