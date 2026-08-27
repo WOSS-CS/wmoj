@@ -112,7 +112,11 @@ export default async function ContestLeaderboardPage({ params }: { params: Promi
         let query = supabase
           .from('submissions')
           .select('user_id, problem_id, summary, created_at')
-          .in('problem_id', problemIds);
+          .in('problem_id', problemIds)
+          // Only the participants can be ranked, and `windows` is already the
+          // complete set — so bound the rows in the database instead of
+          // fetching every practice solve and discarding it below.
+          .in('user_id', Array.from(windows.keys()));
 
         let earliest = Number.POSITIVE_INFINITY;
         let latest = Number.NEGATIVE_INFINITY;

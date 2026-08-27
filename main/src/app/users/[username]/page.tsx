@@ -64,13 +64,24 @@ export default async function UserProfilePage({
     ? Math.min(accountCreatedMs, trailingWindowStartMs)
     : trailingWindowStartMs;
 
-  const { data: submissions, error: heatmapError } = await supabase
-    .from('submissions')
-    .select('created_at')
-    .eq('user_id', user.id)
-    .gte('created_at', new Date(heatmapSinceMs).toISOString())
-    .order('created_at', { ascending: false })
-    .limit(HEATMAP_ROW_LIMIT);
+  // Both key only on `user.id` and neither reads the other, so they go together.
+  const [
+    { data: submissions, error: heatmapError },
+    { count: contestsWritten },
+  ] = await Promise.all([
+    supabase
+      .from('submissions')
+      .select('created_at')
+      .eq('user_id', user.id)
+      .gte('created_at', new Date(heatmapSinceMs).toISOString())
+      .order('created_at', { ascending: false })
+      .limit(HEATMAP_ROW_LIMIT),
+    // Distinct contests the user has joined.
+    supabase
+      .from('join_history')
+      .select('contest_id', { count: 'exact', head: true })
+      .eq('user_id', user.id),
+  ]);
 
   if (heatmapError) {
     console.error('[UserProfilePage] Failed to fetch heatmap submissions:', heatmapError);
@@ -88,12 +99,6 @@ export default async function UserProfilePage({
     date,
     count,
   }));
-
-  // Count distinct contests the user has joined
-  const { count: contestsWritten } = await supabase
-    .from('join_history')
-    .select('contest_id', { count: 'exact', head: true })
-    .eq('user_id', user.id);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const avatarUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${user.id}/avatar`;

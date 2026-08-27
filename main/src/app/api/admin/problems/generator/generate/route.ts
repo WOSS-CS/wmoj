@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/adminAuth';
-import { getJudgeSharedSecret } from '@/lib/env';
+import { getJudgeSharedSecret, getJudgeUrl } from '@/lib/env';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call judge service using existing env var pattern
-    const JUDGE_URL = process.env.NEXT_PUBLIC_JUDGE_URL || 'http://localhost:4001';
+    const JUDGE_URL = getJudgeUrl();
     const resp = await fetch(`${JUDGE_URL}/generate-tests`, {
       method: 'POST',
       headers: {

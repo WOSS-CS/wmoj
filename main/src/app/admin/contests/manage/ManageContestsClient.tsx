@@ -11,24 +11,18 @@ import { Badge } from '@/components/ui/Badge';
 import Pagination from '@/components/Pagination';
 import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
 import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
-import { getContestStatus } from '@/utils/contestStatus';
-import type { ContestStatus } from '@/types/contest';
+import {
+  getContestStatus,
+  CONTEST_STATUS_VARIANT,
+  CONTEST_STATUS_LABEL,
+  CONTEST_STATUS_SORT_ORDER,
+} from '@/utils/contestStatus';
 
 interface ContestRow {
   id: string; name: string; length: number | null;
   is_active: boolean | null; created_at: string; updated_at: string;
   starts_at: string | null; ends_at: string | null; is_rated: boolean;
 }
-
-const STATUS_VARIANT: Record<ContestStatus, 'success' | 'info' | 'warning' | 'neutral'> = {
-  ongoing: 'success', upcoming: 'info', virtual: 'warning', inactive: 'neutral',
-};
-const STATUS_LABEL: Record<ContestStatus, string> = {
-  ongoing: 'Ongoing', upcoming: 'Upcoming', virtual: 'Virtual', inactive: 'Inactive',
-};
-const STATUS_SORT_ORDER: Record<ContestStatus, number> = {
-  ongoing: 3, upcoming: 2, virtual: 1, inactive: 0,
-};
 
 export default function ManageContestsClient({
   rows,
@@ -81,10 +75,10 @@ export default function ManageContestsClient({
     { key: 'length', header: 'Length', className: 'w-[12%]', sortable: true, sortAccessor: (r) => r.length ?? 0, render: (r) => <span className="text-text-muted font-mono">{r.length ? `${r.length} min` : '-'}</span> },
     {
       key: 'status', header: 'Status', className: 'w-[14%]', sortable: true,
-      sortAccessor: (r) => STATUS_SORT_ORDER[getContestStatus({ is_active: !!r.is_active, starts_at: r.starts_at, ends_at: r.ends_at })],
+      sortAccessor: (r) => CONTEST_STATUS_SORT_ORDER[getContestStatus({ is_active: !!r.is_active, starts_at: r.starts_at, ends_at: r.ends_at })],
       render: (r) => {
         const s = getContestStatus({ is_active: !!r.is_active, starts_at: r.starts_at, ends_at: r.ends_at });
-        return <Badge variant={STATUS_VARIANT[s]}>{STATUS_LABEL[s]}</Badge>;
+        return <Badge variant={CONTEST_STATUS_VARIANT[s]}>{CONTEST_STATUS_LABEL[s]}</Badge>;
       }
     },
     { key: 'updated', header: 'Updated', className: 'w-[15%]', sortable: true, sortAccessor: (r) => new Date(r.updated_at).getTime(), render: (r) => <span className="text-text-muted text-sm font-mono">{new Date(r.updated_at).toLocaleDateString()}</span> },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,7 +8,7 @@ import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { AuthPromptModal } from '@/components/AuthPromptModal';
 import { Problem } from '@/types/problem';
 import { Comment } from '@/types/comment';
-import { useCountdown } from '@/contexts/CountdownContext';
+import { useContestMembershipGuard } from '@/hooks/useContestMembershipGuard';
 import { Badge } from '@/components/ui/Badge';
 import CommentsSection from '@/components/CommentsSection';
 
@@ -29,20 +29,10 @@ interface ProblemDetailClientProps {
 export default function ProblemDetailClient({ problem, testCaseCount, activeContestId, initialBestSummary, isVirtualContest, initialComments }: ProblemDetailClientProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const { isActive, contestId, countdownLoaded } = useCountdown();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const bestSummary = initialBestSummary;
 
-  useEffect(() => {
-    if (!activeContestId || isVirtualContest) return;
-    // Gate on the context's explicit loaded flag, never on `isActive`/`contestId`.
-    // Their "not loaded yet" values (false / null) are indistinguishable from a
-    // legitimate "not in a contest", so the old expression was true on the very
-    // first commit and threw real participants back to /contests on every hard
-    // reload — losing whatever they had typed.
-    if (!countdownLoaded) return;
-    if (!isActive || (contestId && contestId !== activeContestId)) router.replace('/contests');
-  }, [isActive, contestId, countdownLoaded, activeContestId, router, isVirtualContest]);
+  useContestMembershipGuard(activeContestId, isVirtualContest);
 
   const handleSubmitClick = () => {
     if (!user) { setShowAuthPrompt(true); return; }

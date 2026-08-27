@@ -35,20 +35,22 @@ export default async function ContestsPage({
     // so "current" is `starts_at is not null and (starts_at > now or ends_at >= now)`
     // and the past bucket below is its exact complement. Half-set windows
     // (only a start, or only an end) are legal in the schema, and each used to
-    // fall through both queries or be fetched and then filtered away.
-    const { data: activeRaw, error: activeErr } = await supabase
-      .from('contests')
-      .select('*')
-      .eq('is_active', true)
-      .not('starts_at', 'is', null)
-      .or(`starts_at.gt.${isoNow},ends_at.gte.${isoNow}`)
-      .order('starts_at', { ascending: true });
-
-    if (activeErr) {
-      fetchError = 'Failed to fetch contests';
-    } else {
+    // fall through both queries or be fetched and then filtered away. Being
+    // exact complements, neither query reads the other's result — so both go
+    // out together.
+    const [
+      { data: activeRaw, error: activeErr },
+      { data: pastRaw, count: pastCount, error: pastErr },
+    ] = await Promise.all([
+      supabase
+        .from('contests')
+        .select('*')
+        .eq('is_active', true)
+        .not('starts_at', 'is', null)
+        .or(`starts_at.gt.${isoNow},ends_at.gte.${isoNow}`)
+        .order('starts_at', { ascending: true }),
       // Past contests: everything getContestStatus() calls virtual.
-      const { data: pastRaw, count: pastCount, error: pastErr } = await supabase
+      supabase
         .from('contests')
         .select('*', { count: 'exact' })
         .eq('is_active', true)
@@ -58,69 +60,69 @@ export default async function ContestsPage({
           `and(starts_at.lte.${isoNow},ends_at.lt.${isoNow})`
         )
         .order('ends_at', { ascending: false, nullsFirst: false })
-        .range(from, to);
+        .range(from, to),
+    ]);
 
-      if (pastErr) {
-        fetchError = 'Failed to fetch contests';
+    if (activeErr || pastErr) {
+      fetchError = 'Failed to fetch contests';
+    } else {
+      pastTotalPages = computeTotalPages(pastCount, PAST_PAGE_SIZE);
+
+      const effectivePage = clampPage(pastCurrentPage, pastTotalPages);
+      if (effectivePage !== pastCurrentPage) {
+        // Out-of-range ?page — send the user to the real last page instead of
+        // rendering an empty table under a paginator pointing at nothing.
+        redirectTo = buildPageHref({}, effectivePage);
       } else {
-        pastTotalPages = computeTotalPages(pastCount, PAST_PAGE_SIZE);
+        const allContests = [...(activeRaw || []), ...(pastRaw || [])];
+        const contestIds = allContests.map(c => c.id);
 
-        const effectivePage = clampPage(pastCurrentPage, pastTotalPages);
-        if (effectivePage !== pastCurrentPage) {
-          // Out-of-range ?page — send the user to the real last page instead of
-          // rendering an empty table under a paginator pointing at nothing.
-          redirectTo = buildPageHref({}, effectivePage);
-        } else {
-          const allContests = [...(activeRaw || []), ...(pastRaw || [])];
-          const contestIds = allContests.map(c => c.id);
+        const participantsCountMap: Record<string, number> = {};
+        const problemsCountMap: Record<string, number> = {};
 
-          const participantsCountMap: Record<string, number> = {};
-          const problemsCountMap: Record<string, number> = {};
+        if (contestIds.length > 0) {
+          const [participantsResult, problemsResult] = await Promise.all([
+            supabase
+              .from('contest_participants')
+              .select('contest_id')
+              .in('contest_id', contestIds),
+            // `problems` has no `contest` column — membership lives in the
+            // contest_problems junction, so count junction rows and use an
+            // inner embed to keep only the active problems.
+            supabase
+              .from('contest_problems')
+              .select('contest_id, problems!inner(is_active)')
+              .in('contest_id', contestIds)
+              .eq('problems.is_active', true),
+          ]);
 
-          if (contestIds.length > 0) {
-            const [participantsResult, problemsResult] = await Promise.all([
-              supabase
-                .from('contest_participants')
-                .select('contest_id')
-                .in('contest_id', contestIds),
-              // `problems` has no `contest` column — membership lives in the
-              // contest_problems junction, so count junction rows and use an
-              // inner embed to keep only the active problems.
-              supabase
-                .from('contest_problems')
-                .select('contest_id, problems!inner(is_active)')
-                .in('contest_id', contestIds)
-                .eq('problems.is_active', true),
-            ]);
-
-            const { data: participantsRaw, error: participantsErr } = participantsResult;
-            if (!participantsErr) {
-              interface ParticipantRow { contest_id: string }
-              (participantsRaw as ParticipantRow[] | null | undefined)?.forEach(({ contest_id }) => {
-                if (!contest_id) return;
-                participantsCountMap[contest_id] = (participantsCountMap[contest_id] || 0) + 1;
-              });
-            }
-
-            const { data: problemsRaw, error: problemsErr } = problemsResult;
-            if (!problemsErr) {
-              interface ContestProblemRow { contest_id: string }
-              (problemsRaw as ContestProblemRow[] | null | undefined)?.forEach(({ contest_id }) => {
-                if (!contest_id) return;
-                problemsCountMap[contest_id] = (problemsCountMap[contest_id] || 0) + 1;
-              });
-            }
+          const { data: participantsRaw, error: participantsErr } = participantsResult;
+          if (!participantsErr) {
+            interface ParticipantRow { contest_id: string }
+            (participantsRaw as ParticipantRow[] | null | undefined)?.forEach(({ contest_id }) => {
+              if (!contest_id) return;
+              participantsCountMap[contest_id] = (participantsCountMap[contest_id] || 0) + 1;
+            });
           }
 
-          const enrich = (c: Contest) => ({
-            ...c,
-            participants_count: participantsCountMap[c.id] || 0,
-            problems_count: problemsCountMap[c.id] || 0,
-          });
-
-          activeContests = (activeRaw || []).map(enrich);
-          pastContests = (pastRaw || []).map(enrich);
+          const { data: problemsRaw, error: problemsErr } = problemsResult;
+          if (!problemsErr) {
+            interface ContestProblemRow { contest_id: string }
+            (problemsRaw as ContestProblemRow[] | null | undefined)?.forEach(({ contest_id }) => {
+              if (!contest_id) return;
+              problemsCountMap[contest_id] = (problemsCountMap[contest_id] || 0) + 1;
+            });
+          }
         }
+
+        const enrich = (c: Contest) => ({
+          ...c,
+          participants_count: participantsCountMap[c.id] || 0,
+          problems_count: problemsCountMap[c.id] || 0,
+        });
+
+        activeContests = (activeRaw || []).map(enrich);
+        pastContests = (pastRaw || []).map(enrich);
       }
     }
   } catch (err) {

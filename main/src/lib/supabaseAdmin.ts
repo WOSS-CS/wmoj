@@ -57,8 +57,12 @@ function warnMissingSecretKey(): void {
  * Returns `null` rather than throwing so that a missing key degrades to a clean,
  * loud 500 on the one route that needs it, instead of taking down every page
  * that happens to import this module at build time.
+ *
+ * Deliberately NOT exported: the "exactly one service-role client" rule is then
+ * enforced by the module boundary rather than by review. Add a reader below
+ * instead of handing the raw client out.
  */
-export function getSupabaseAdmin(): SupabaseClient | null {
+function getSupabaseAdmin(): SupabaseClient | null {
   if (cachedAdmin !== undefined) {
     if (cachedAdmin === null) warnMissingSecretKey();
     return cachedAdmin;

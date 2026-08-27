@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { CodeEditorLoading } from '@/components/LoadingStates';
 import { LoadingSpinner } from '@/components/AnimationWrapper';
 import { ProblemSubmitTarget } from '@/types/problem';
-import { useCountdown } from '@/contexts/CountdownContext';
+import { useContestMembershipGuard } from '@/hooks/useContestMembershipGuard';
 
 const CodeEditor = dynamic(() => import('@/components/CodeEditor'), {
   ssr: false,
@@ -121,9 +120,7 @@ function aggregateVerdict(
 }
 
 export default function SubmitClient({ problem, activeContestId, isVirtualContest }: SubmitClientProps) {
-  const router = useRouter();
   const { user, session } = useAuth();
-  const { isActive, contestId, countdownLoaded } = useCountdown();
 
   const [selectedLanguage, setSelectedLanguage] = useState('python3');
   const [codeText, setCodeText] = useState('');
@@ -142,16 +139,7 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
   // failure.
   const [storeFailed, setStoreFailed] = useState(false);
 
-  useEffect(() => {
-    if (!activeContestId || isVirtualContest) return;
-    // Gate on the context's explicit loaded flag, never on `isActive`/`contestId`.
-    // Their "not loaded yet" values (false / null) are indistinguishable from a
-    // legitimate "not in a contest", so the old expression was true on the very
-    // first commit and threw real participants off this page on every hard
-    // reload — taking the contents of the editor with it.
-    if (!countdownLoaded) return;
-    if (!isActive || (contestId && contestId !== activeContestId)) router.replace('/contests');
-  }, [isActive, contestId, countdownLoaded, activeContestId, router, isVirtualContest]);
+  useContestMembershipGuard(activeContestId, isVirtualContest);
 
   const handleSubmit = async () => {
     if (!problem || !user || !codeText.trim()) return;

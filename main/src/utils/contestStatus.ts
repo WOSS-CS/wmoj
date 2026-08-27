@@ -52,6 +52,14 @@ export const CONTEST_STATUS_LABEL: Record<ContestStatus, string> = {
   inactive: 'Inactive',
 };
 
+/** Descending interest order, for sorting a status column most-relevant first. */
+export const CONTEST_STATUS_SORT_ORDER: Record<ContestStatus, number> = {
+  ongoing: 3,
+  upcoming: 2,
+  virtual: 1,
+  inactive: 0,
+};
+
 interface ContestStatusInput {
   is_active: boolean;
   starts_at: string | null;
@@ -67,22 +75,6 @@ interface ContestStatusInput {
  * - ongoing:   is_active = true, starts_at <= now <= ends_at
  * - virtual:   is_active = true, now > ends_at  (or no time window set)
  */
-/**
- * Checks whether a contest is currently in virtual status by fetching it from the database.
- * Useful on server-side to gate access for contest problems.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function isContestVirtual(supabase: any, contestId: string): Promise<boolean> {
-  const { data } = await supabase
-    .from('contests')
-    .select('is_active, starts_at, ends_at')
-    .eq('id', contestId)
-    .single();
-  if (!data) return false;
-  const status = getContestStatus(data);
-  return status === 'virtual' || status === 'inactive';
-}
-
 export function getContestStatus(contest: ContestStatusInput): ContestStatus {
   if (!contest.is_active) return 'inactive';
 

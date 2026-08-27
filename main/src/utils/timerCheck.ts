@@ -104,11 +104,15 @@ export async function getTimerStatus(
         // uniqueness here is (user_id, contest_id) while the primary key is id,
         // so an upsert either raises 23505 or inserts a bogus history row with a
         // wrong joined_at and is_virtual.
+        // `.select()` is what makes a refusal visible: an UPDATE filtered away
+        // by RLS reports no error, just zero rows. Checking only `.error` is
+        // how left_at silently stayed NULL for every row in the first place.
         supabase
           .from('join_history')
           .update({ left_at: new Date().toISOString() })
           .eq('user_id', userId)
-          .eq('contest_id', contestId),
+          .eq('contest_id', contestId)
+          .select('id'),
       ]);
 
       if (timerDelete.error) {
@@ -119,6 +123,11 @@ export async function getTimerStatus(
       }
       if (leftAtUpdate.error) {
         console.error('Error recording join history left_at:', leftAtUpdate.error);
+      } else if ((leftAtUpdate.data ?? []).length === 0) {
+        console.error(
+          '[timerCheck] join_history left_at matched no row for',
+          { userId, contestId },
+        );
       }
 
       return { isActive: false };

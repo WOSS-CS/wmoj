@@ -205,7 +205,7 @@ judge's body. Never import `lib/env.ts` or `lib/supabaseAdmin.ts` from a client 
 - Reuse `getAdminSupabase`/`getManagerSupabase` rather than re-inlining the Bearer/cookie preamble.
   Staff page guards go through `lib/staffAuth.ts`; API routes use those two helpers. No fifth spelling.
 - **Check for callers before "fixing" an API route.** Server components query Supabase directly, so
-  many of the 44 routes are dead. Grep for importers first — and prefer deleting to fixing.
+  routes die quietly — 9 of 43 were, and were deleted. Grep `fetch(` before touching the 34 left.
 - **Don't use `useSearchParams` in a client component** — derive filter state from server props,
   which avoids the Next 16 `<Suspense>` boundary requirement.
 - **Lists paginate on the server.** `page.tsx` fetches one page (`parsePage` → `.range(computeRange(…))`

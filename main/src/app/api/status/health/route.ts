@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getJudgeSharedSecret } from '@/lib/env';
+import { getJudgeSharedSecret, getJudgeUrl } from '@/lib/env';
 
 // Unauthenticated proxy for the judge's /health probe. The browser must never
 // learn anything about the judge, so the judge's response body is deliberately
@@ -8,7 +8,7 @@ import { getJudgeSharedSecret } from '@/lib/env';
 // `version` — which is RENDER_GIT_COMMIT in production, i.e. the exact commit
 // that is live. Report reachability and nothing else.
 export async function GET() {
-  const JUDGE_URL = process.env.NEXT_PUBLIC_JUDGE_URL || 'http://localhost:4001';
+  const JUDGE_URL = getJudgeUrl();
   try {
     const res = await fetch(`${JUDGE_URL}/health`, {
       cache: 'no-store',

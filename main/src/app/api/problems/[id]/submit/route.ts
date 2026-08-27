@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabaseFromToken } from '@/lib/supabaseServer';
-import { getJudgeSharedSecret } from '@/lib/env';
+import { getJudgeSharedSecret, getJudgeUrl } from '@/lib/env';
 import { checkTimerExpiry } from '@/utils/timerCheck';
 import { getContestStatus } from '@/utils/contestStatus';
 import { canUserAccessProblem } from '@/lib/problemAccess';
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         : null;
 
     // Call judge service
-    const JUDGE_URL = process.env.NEXT_PUBLIC_JUDGE_URL || 'http://localhost:4001';
+    const JUDGE_URL = getJudgeUrl();
     const resp = await fetch(`${JUDGE_URL}/submit`, {
       method: 'POST',
       headers: {

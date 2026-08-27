@@ -136,6 +136,11 @@ export default async function SubmissionsPage({
       const filteredUserIds = userFilter.ids;
       const filteredProblemIds = problemFilter.ids;
 
+      // The page query below carries `count: 'exact'` over precisely the filter
+      // predicate the statistics block wants a total for, so it is captured here
+      // rather than counted a second time.
+      let matchingTotal = 0;
+
       // If filter terms produced no matches, short-circuit
       const noResults =
         (filteredUserIds !== null && filteredUserIds.length === 0) ||
@@ -166,6 +171,7 @@ export default async function SubmissionsPage({
           console.error('[SubmissionsPage] Failed to fetch submissions:', subsError);
           fetchError = 'Failed to fetch submissions';
         } else {
+          matchingTotal = count ?? 0;
           totalPages = computeTotalPages(count, PAGE_SIZE);
 
           const effectivePage = clampPage(currentPage, totalPages);
@@ -225,8 +231,7 @@ export default async function SubmissionsPage({
           return q;
         };
 
-        const [totalRes, passedRes, compileErrorRes, timeoutRes] = await Promise.all([
-          countQuery(),
+        const [passedRes, compileErrorRes, timeoutRes] = await Promise.all([
           countQuery().eq('status', 'passed'),
           // A compile error is stored as summary {total: 0, passed: 0, failed: 0}.
           countQuery().eq('summary->>total', '0'),
@@ -236,12 +241,12 @@ export default async function SubmissionsPage({
           countQuery().neq('status', 'passed').contains('results', '[{"timedOut":true}]'),
         ]);
 
-        const statsErr = totalRes.error || passedRes.error || compileErrorRes.error || timeoutRes.error;
+        const statsErr = passedRes.error || compileErrorRes.error || timeoutRes.error;
         if (statsErr) {
           console.error('[SubmissionsPage] Failed to compute statistics:', statsErr);
           statsError = true;
         } else {
-          stats.total = totalRes.count ?? 0;
+          stats.total = matchingTotal;
           stats.passed = passedRes.count ?? 0;
           stats.compile_error = compileErrorRes.count ?? 0;
           stats.timeout = timeoutRes.count ?? 0;

@@ -24,14 +24,20 @@ export async function POST(
     // created on join, and the uniqueness here is (user_id, contest_id) while
     // the primary key is id, so an upsert either raises 23505 or inserts a
     // bogus history row with a wrong joined_at and is_virtual.
-    const { error: historyErr } = await supabase
+    // `.select()` is what makes a refusal visible: an UPDATE filtered away by
+    // RLS reports no error, just zero rows. Checking only `.error` is how
+    // left_at silently stayed NULL for every row in the first place.
+    const { data: historyRows, error: historyErr } = await supabase
       .from('join_history')
       .update({ left_at: new Date().toISOString() })
       .eq('user_id', userId)
-      .eq('contest_id', id);
+      .eq('contest_id', id)
+      .select('id');
 
     if (historyErr) {
       console.error('Join history error:', historyErr);
+    } else if ((historyRows ?? []).length === 0) {
+      console.error('[leave] join_history left_at matched no row for', { userId, contestId: id });
     }
 
     // Remove user from contest

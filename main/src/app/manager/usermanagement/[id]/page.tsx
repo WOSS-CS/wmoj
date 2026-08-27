@@ -63,18 +63,22 @@ export default async function ManagerUserDetailPage({
   // The paged query below already carries `count: 'exact'` over exactly this
   // predicate, so a separate total-submissions count was always the same number
   // fetched twice. Only the "passed" subset needs its own query.
-  const { count: acceptedSubmissions } = await supabase
-    .from('submissions')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', targetUserId)
-    .eq('status', 'passed');
-
-  const { data: subs, count, error: subsErr } = await supabase
-    .from('submissions')
-    .select('id, created_at, language, status, summary, problem_id', { count: 'exact' })
-    .eq('user_id', targetUserId)
-    .order('created_at', { ascending: false })
-    .range(from, to);
+  const [
+    { count: acceptedSubmissions },
+    { data: subs, count, error: subsErr },
+  ] = await Promise.all([
+    supabase
+      .from('submissions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', targetUserId)
+      .eq('status', 'passed'),
+    supabase
+      .from('submissions')
+      .select('id, created_at, language, status, summary, problem_id', { count: 'exact' })
+      .eq('user_id', targetUserId)
+      .order('created_at', { ascending: false })
+      .range(from, to),
+  ]);
 
   if (subsErr) {
     console.error('Manager user detail submissions error:', subsErr);
