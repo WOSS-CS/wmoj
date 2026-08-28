@@ -7,12 +7,7 @@ import { AuthGuard } from '@/components/AuthGuard';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { LoadingSpinner } from '@/components/AnimationWrapper';
 
-interface LoginClientProps {
-  /** True when the visitor was signed out because their account is disabled. */
-  accountDisabled?: boolean;
-}
-
-export default function LoginClient({ accountDisabled = false }: LoginClientProps) {
+export default function LoginClient() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -58,19 +53,6 @@ export default function LoginClient({ accountDisabled = false }: LoginClientProp
           <p className="text-sm text-text-muted mb-8">Sign in to continue to your dashboard</p>
 
           <div className="space-y-5">
-            {accountDisabled && (
-              <div
-                role="status"
-                className="bg-warning/10 border border-warning/20 rounded-lg px-4 py-3 text-sm text-foreground"
-              >
-                <p className="font-medium">This account is currently disabled</p>
-                <p className="mt-1 text-text-muted">
-                  You have been signed out. If you think this is a mistake, contact a WMOJ organizer
-                  and they can re-enable it.
-                </p>
-              </div>
-            )}
-
             {error && (
               <div className="bg-error/10 border border-error/20 rounded-lg px-4 py-3 text-sm text-error">
                 {error}

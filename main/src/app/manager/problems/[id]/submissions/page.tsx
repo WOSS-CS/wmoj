@@ -12,8 +12,8 @@ export type ProblemSubmissionRow = {
   email: string;
   language: string;
   status: string;
-  summary: { total: number; passed: number; failed: number; compileError?: string };
-  compileError: string | null;
+  summary: { total: number; passed: number; failed: number };
+  isCompileError: boolean;
   created_at: string;
 };
 
@@ -84,11 +84,11 @@ export default async function ManagerProblemSubmissionsPage({
   }
 
   const formattedSubmissions: ProblemSubmissionRow[] = pageRows.map((sub) => {
-    const summary = sub.summary as { total?: number; passed?: number; failed?: number; compileError?: string } | null;
+    const summary = sub.summary as { total?: number; passed?: number; failed?: number; verdict?: string } | null;
     const total = Number(summary?.total ?? 0);
     const passed = Number(summary?.passed ?? 0);
     const failed = Number(summary?.failed ?? 0);
-    const compileError = summary?.compileError ?? null;
+    const isCompileError = summary?.verdict === 'CE';
     const userInfo = userMap[sub.user_id] || { username: 'Unknown', email: 'Unknown' };
     return {
       id: sub.id,
@@ -97,8 +97,8 @@ export default async function ManagerProblemSubmissionsPage({
       email: userInfo.email,
       language: sub.language,
       status: sub.status || 'failed',
-      summary: { total, passed, failed, compileError: summary?.compileError },
-      compileError,
+      summary: { total, passed, failed },
+      isCompileError,
       created_at: sub.created_at,
     };
   });

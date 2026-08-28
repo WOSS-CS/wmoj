@@ -55,10 +55,15 @@ function problemLabel(index: number): string {
 
 export default function ContestViewClient({ error, initialContest, problems = [] }: ContestViewClientProps) {
   const router = useRouter();
-  const { user, session, userRole } = useAuth();
+  const { user, session } = useAuth();
   const { startCountdown } = useCountdown();
 
-  const isOwnContest = (userRole === 'admin' || userRole === 'manager') && user?.id === initialContest?.created_by;
+  // Mirrors the server rule exactly. `api/contests/[id]/join` refuses the
+  // creator UNCONDITIONALLY — it no longer re-checks whether they are still
+  // staff, because a creator who has since been demoted or deactivated has
+  // still seen the answers. Keeping the role test here would render an enabled
+  // Join button for exactly that person and then 403 them on click.
+  const isOwnContest = !!user?.id && user.id === initialContest?.created_by;
   const isInactive = initialContest ? initialContest.is_active === false : false;
 
   const status: ContestStatus = initialContest

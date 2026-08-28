@@ -76,22 +76,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         supabase.from('users').select('*').eq('id', currentUser.id).maybeSingle(),
       ]);
 
-      // A disabled account cannot authenticate at all. This runs before any role
-      // or profile state is published, so a disabled staff member never sees the
-      // panel flash. It is the UX half only — an already-issued JWT keeps working
-      // against PostgREST until it expires, so the RLS policies carry the same
-      // `users.is_active` predicate and are the actual boundary.
-      if (userResult.data && userResult.data.is_active !== true) {
-        await supabase.auth.signOut();
-        // Hard navigation, so no stale client cache survives. Compared against the
-        // full target so a failed sign-out cannot turn this into a redirect loop.
-        const target = '/auth/login?disabled=1';
-        if (typeof window !== 'undefined' && window.location.pathname + window.location.search !== target) {
-          window.location.replace(target);
-        }
-        return;
-      }
-
       // Derive role and path immediately from Round 1 — no extra queries needed.
       // Manager is the higher tier and wins precedence over admin when a user
       // is present in both tables.

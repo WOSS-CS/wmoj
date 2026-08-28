@@ -8,6 +8,7 @@ import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
 import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
 import { SubmissionCodeBlock } from '@/components/SubmissionCodeBlock';
 import { toast } from '@/components/ui/Toast';
+import type { TestResult } from '@/types/judge';
 import type { SubmissionRow, SubmissionStats } from './page';
 
 interface Props {
@@ -62,20 +63,6 @@ function languageLabel(lang: string): string {
 
 // ─── Submission detail (own-code modal) ────────────────────────────────────────
 // Mirrors the submission-detail popup used on the admin/manager dashboards.
-
-interface TestResult {
-  index: number;
-  passed: boolean;
-  stdout: string;
-  stderr: string;
-  exitCode: number | null;
-  timedOut: boolean;
-  expected: string;
-  received: string;
-  // Present only on problems with a custom checker: the checker's own
-  // explanation of why it accepted or rejected this case.
-  checkerMessage?: string;
-}
 
 // Shape returned by GET /api/user/submissions/[id] (the caller's own submission).
 interface SubmissionDetail {

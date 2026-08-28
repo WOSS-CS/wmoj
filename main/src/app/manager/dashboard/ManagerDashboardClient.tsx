@@ -12,15 +12,10 @@ import Pagination from '@/components/Pagination';
 import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
 import { useViewCode, type ViewCodeSubmission } from '@/hooks/useViewCode';
 import { toast } from '@/components/ui/Toast';
+import type { TestResult } from '@/types/judge';
 import type { ManagerSubmissionRow } from './page';
 
 type Row = ManagerSubmissionRow;
-
-type TestResult = {
-  index: number; passed: boolean; stdout: string; stderr: string;
-  exitCode: number | null; timedOut: boolean; expected: string; received: string;
-  verdict?: string; timeMs?: number; cpuMs?: number; memKb?: number;
-};
 
 export default function ManagerDashboardClient({
   initialSubmissions,
@@ -151,7 +146,7 @@ export default function ManagerDashboardClient({
       sortable: true,
       sortAccessor: (r) => (r.passed ? 1 : 0),
       render: (r) => {
-        if (r.compileError) return <Badge variant="neutral">CE</Badge>;
+        if (r.isCompileError) return <Badge variant="neutral">CE</Badge>;
         return <Badge variant={r.passed ? 'success' : 'error'}>{r.passed ? 'Accepted' : 'Failed'}</Badge>;
       },
     },

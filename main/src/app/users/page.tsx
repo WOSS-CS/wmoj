@@ -35,7 +35,6 @@ export default async function UsersPage({
     let query = supabase
       .from('users')
       .select('id, username, problems_solved, points', { count: 'exact' })
-      .eq('is_active', true)
       .order(orderCol, { ascending: false })
       // Most users sit at points = 0, and without a unique tiebreaker Postgres
       // gives no stable order across separate LIMIT/OFFSET queries — paging

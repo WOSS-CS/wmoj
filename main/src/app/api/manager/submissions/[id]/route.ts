@@ -10,9 +10,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
         const { supabase } = auth;
 
+        // `code` is no longer a column on `submissions` — it moved to
+        // `public.submission_private` along with the full per-case array and any
+        // compile error. The public `results` here is redacted to five keys.
         const { data: submission, error: subErr } = await supabase
             .from('submissions')
-            .select('id, problem_id, user_id, language, code, results, summary, status, created_at')
+            .select('id, problem_id, user_id, language, summary, status, created_at')
             .eq('id', id)
             .maybeSingle();
 
@@ -21,6 +24,32 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json({ error: 'Failed to fetch submission' }, { status: 500 });
         }
         if (!submission) {
+            return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+        }
+
+        // Read the private half under the CALLER'S OWN token, never the service
+        // role: `submission_private_select_own_or_staff` grants it via
+        // `public.is_manager()`, which pins `is_active = true`. A deactivated manager is
+        // therefore refused by the database rather than by this route, and the
+        // null comes back as a 404 — hidden resources are 404, never 403.
+        const { data: priv, error: privErr } = await supabase
+            .from('submission_private')
+            .select('code, results_full, compile_error')
+            .eq('submission_id', id)
+            .maybeSingle();
+
+        if (privErr) {
+            console.error('Error fetching submission_private:', privErr);
+            return NextResponse.json({ error: 'Failed to fetch submission' }, { status: 500 });
+        }
+        if (!priv) {
+            // Not a permissions miss — staff can read every row. An orphaned
+            // public row can only come from a failed compensating delete in the
+            // submit route.
+            console.error(
+                `Submission ${id} has a public row but no submission_private row. ` +
+                    `The private write failed and was not compensated — investigate.`,
+            );
             return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
         }
 
@@ -35,7 +64,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             passed?: number;
             failed?: number;
             verdict?: string;
-            compileError?: string;
         };
 
         return NextResponse.json({
@@ -45,14 +73,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 problem_name: problem?.name || 'Unknown Problem',
                 user_id: submission.user_id,
                 language: submission.language,
-                code: submission.code,
-                results: submission.results ?? [],
+                code: priv.code,
+                results: priv.results_full ?? [],
                 summary: {
                     total: Number(summary.total ?? 0),
                     passed: Number(summary.passed ?? 0),
                     failed: Number(summary.failed ?? 0),
                 },
-                compileError: summary.compileError ?? null,
+                compileError: priv.compile_error ?? null,
                 status: submission.status,
                 created_at: submission.created_at,
             },
@@ -88,6 +116,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         if (!deleted) {
             return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
         }
+
+        // DO NOT add a manual `submission_private` delete here. The FK
+        // `submission_private.submission_id → submissions(id) ON DELETE CASCADE`
+        // has already removed it, and referential actions run as the TABLE OWNER,
+        // not under the deleter's RLS — which is the only reason it works, since
+        // `submission_private` has no DELETE policy at all. An explicit delete
+        // from this client would match zero rows and, checked, would turn every
+        // successful deletion into a spurious 500.
 
         // Recalculate the affected user's stats now that one of their submissions
         // is gone (points and problems_solved are derived from passed submissions).

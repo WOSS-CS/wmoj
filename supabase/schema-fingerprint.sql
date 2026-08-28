@@ -12,22 +12,43 @@
 -- re-run `supabase db reset`. `md5_ok` is advisory, because a different Postgres or
 -- Supabase version can render a default or an index definition slightly differently.
 --
--- KNOWN: `functions` reports md5_ok = false with a matching count. Five function bodies
--- differ from production in ways that do not change behaviour (keyword case, a stray
--- space, one SQL comment) plus `::text` casts that the repo added to join_contest and
--- leave_contest, which are dead code with no caller in main/src. Production is the one
--- that drifted; the migrations are correct.
+-- The expected values below are generated from a clean `supabase db reset`, so they describe what
+-- the MIGRATION HISTORY produces. A local reset currently reports count_ok AND md5_ok true on all
+-- eight rows.
+--
+-- KNOWN production differences, both explained, neither a local failure:
+--
+--   1. `functions` md5 differs (count matches at 14). SIX bodies differ, and they differ for two
+--      different reasons. Five drifted in production in ways that do not change behaviour —
+--      keyword case, a stray space, one SQL comment, plus `::text` casts the repo added to
+--      join_contest/leave_contest, which are dead code with no caller in main/src. There the
+--      migrations are correct and production is the side that drifted.
+--      The sixth is `top_submitted_problems`, and it is the other way round: production stores a
+--      267-character body against the migration's 991 because the apply path strips `--` comments.
+--      Signature, STABLE, SECURITY INVOKER, search_path, ACL and the COMMENT all match, so there is
+--      no functional or security difference — but it cannot be made to converge by re-applying,
+--      since re-applying strips the comments again. It is a permanent, benign digest mismatch.
+--
+--   2. ⚠️ TEMPORARY — REMOVE THIS ITEM ONCE PRODUCTION CATCHES UP.
+--      `20260827203300_remove_user_is_active.sql` is deliberately NOT YET APPLIED to production. It
+--      must be applied only AFTER the app deploy that stops reading `users.is_active`: the
+--      currently-deployed build tests `is_active !== true`, and `undefined !== true` is TRUE, so
+--      applying it first force-signs-out every user to /auth/login?disabled=1.
+--      Until it is applied, production reports `columns = 99` (vs 98), `policies = 65` (vs 64),
+--      `grants = 282` (vs 273) and different column/policy/grant digests. Every one of those deltas
+--      is exactly that migration: one column, one dropped DELETE policy plus three rewritten INSERT
+--      policies, and nine revoked table privileges on `users`.
 --
 -- After a schema change, update the expected values below in the same PR as the migration.
 
 with expected(k, n, d) as (values
-  ('columns',      96, 'd55489f32b83d77697541b59a5fccc35'),
-  ('policies',     65, '76e1fbb7b787998e3e977c4e341a582d'),
-  ('functions',    13, '2a32a1440f0aba581a3881612563bbb5'),
+  ('columns',      98, 'c6db0181eff27c8dcfc5eeaf1e7a0c27'),
+  ('policies',     64, '786b46a0bc53f0a19572caf6f6d468f4'),
+  ('functions',    14, 'c1064df3f23aefead2e8204c1f02a077'),
   ('triggers',     10, 'fb14cea26ce078f409af7c7189feb5ad'),
-  ('indexes',      44, '8e25fcfa779dd5b4c0eff87f2bd31033'),
-  ('constraints',  47, 'c842db34ddb8e1d32c666ae79cc15ae2'),
-  ('grants',      281, '92a4f214581f2e91e1e0f24e759ed0a1'),
+  ('indexes',      46, 'd12c1a0bdb158da06de3bf5bf9fdfb22'),
+  ('constraints',  49, 'e9515ed5807694e45584db4624cb04ee'),
+  ('grants',      273, '90a2e475b6e22f34d9f0c9edc56dfe22'),
   ('buckets',       2, 'cb85db38e41795c393bb4fafd45d840c')
 ), cols as (
   select string_agg(format('%s.%s %s %s %s', table_name, column_name, data_type, is_nullable, coalesce(column_default,'-')), E'\n' order by table_name, column_name) t, count(*) n

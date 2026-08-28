@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getManagerSupabase } from '@/lib/managerAuth';
-import { buildContestUpdates, checkContestProblemEligibility } from '@/lib/contestValidation';
+import {
+  applyContestProblemChanges,
+  buildContestUpdates,
+  planContestProblemChanges,
+  type ContestProblemChanges,
+} from '@/lib/contestValidation';
 
 /**
  * `join_history` is `ON DELETE RESTRICT` on purpose — it is the permanent record
@@ -62,39 +67,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   // ---- Everything below is validation; the first write happens after it. ----
-  let toAdd: string[] = [];
-  let toRemove: string[] = [];
+  // No `ownerId`: the manager `contest_problems` policies cover every problem,
+  // so the admin twin's ownership gate is deliberately absent here.
+  let changes: ContestProblemChanges = { toAdd: [], toRemove: [] };
 
   if (Array.isArray(body.problem_ids)) {
-    const problemIds: string[] = body.problem_ids;
-
-    const { data: current, error: currentError } = await supabase
-      .from('contest_problems')
-      .select('problem_id')
-      .eq('contest_id', id);
-    if (currentError) {
-      console.error('Fetch contest problems error:', currentError);
-      return NextResponse.json({ error: 'Failed to load contest problems' }, { status: 500 });
-    }
-    const currentIds = (current || []).map((r: { problem_id: string }) => r.problem_id);
-    const currentSet = new Set(currentIds);
-
-    toRemove = currentIds.filter((pid: string) => !problemIds.includes(pid));
-    toAdd = problemIds.filter(pid => !currentSet.has(pid));
-
-    // Flipping is_rated false → true must re-validate the problems already
-    // attached, not just the new ones — otherwise Invariant 3 is bypassable by
-    // ticking "Rated" without touching the problem list.
-    const isRatedAfter = body.is_rated !== undefined ? !!body.is_rated : !!existing.is_rated;
-    const becameRated = isRatedAfter && !existing.is_rated;
-    const idsToValidate = becameRated ? [...new Set([...currentIds, ...toAdd])] : toAdd;
-
-    const eligibility = await checkContestProblemEligibility(supabase, {
+    const planned = await planContestProblemChanges(supabase, {
       contestId: id,
-      problemIds: idsToValidate,
-      isRated: isRatedAfter,
+      problemIds: body.problem_ids as string[],
+      isRated: body.is_rated !== undefined ? !!body.is_rated : !!existing.is_rated,
+      wasRated: !!existing.is_rated,
     });
-    if (eligibility) return NextResponse.json({ error: eligibility.error }, { status: eligibility.status });
+    if ('error' in planned) {
+      const { status, ...payload } = planned;
+      return NextResponse.json(payload, { status });
+    }
+    changes = planned.changes;
   }
 
   // ---- Writes ----
@@ -114,31 +102,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     data = result.data;
   }
 
-  if (toRemove.length > 0) {
-    const { error: removeError } = await supabase
-      .from('contest_problems')
-      .delete()
-      .eq('contest_id', id)
-      .in('problem_id', toRemove);
-    if (removeError) {
-      console.error('Remove contest problems error:', removeError);
-      return NextResponse.json({ error: 'Failed to update contest problems' }, { status: 500 });
-    }
-  }
-
-  if (toAdd.length > 0) {
-    const rows = toAdd.map(pid => ({ contest_id: id, problem_id: pid }));
-    const { data: inserted, error: cpError } = await supabase
-      .from('contest_problems')
-      .insert(rows)
-      .select('problem_id');
-    if (cpError) {
-      console.error('Problem assignment error:', cpError);
-      return NextResponse.json({ error: 'Failed to update contest problems' }, { status: 500 });
-    }
-    if ((inserted || []).length !== rows.length) {
-      return NextResponse.json({ error: 'Failed to update contest problems' }, { status: 500 });
-    }
+  const applyError = await applyContestProblemChanges(supabase, id, changes);
+  if (applyError) {
+    return NextResponse.json({ error: applyError.error }, { status: applyError.status });
   }
 
   // A problem-list-only PATCH performs no `contests` UPDATE, so re-read the row

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { requireActiveManager } from '@/lib/staffAuth';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
+import { fetchContestNamesByProblem } from '@/lib/contestNames';
 import ManagerManageProblemsClient from './ManagerManageProblemsClient';
 
 const PAGE_SIZE = 20;
@@ -50,41 +51,10 @@ export default async function ManagerManageProblemsPage({
 
   const problems = problemsData || [];
 
-  const problemIds = problems.map((p) => p.id);
-  const problemContestNamesMap: Record<string, string[]> = {};
-
-  if (problemIds.length > 0) {
-    const { data: cpRows } = await supabase
-      .from('contest_problems')
-      .select('problem_id, contest_id')
-      .in('problem_id', problemIds);
-
-    const contestIdSet = new Set<string>();
-    const problemContestMap: Record<string, string[]> = {};
-    for (const row of cpRows || []) {
-      contestIdSet.add(row.contest_id);
-      if (!problemContestMap[row.problem_id]) problemContestMap[row.problem_id] = [];
-      problemContestMap[row.problem_id].push(row.contest_id);
-    }
-
-    if (contestIdSet.size > 0) {
-      const { data: contestsData } = await supabase
-        .from('contests')
-        .select('id,name')
-        .in('id', Array.from(contestIdSet));
-      const contestNameMap = (contestsData || []).reduce(
-        (acc: Record<string, string>, c: { id: string; name: string }) => {
-          acc[c.id] = c.name;
-          return acc;
-        },
-        {},
-      );
-
-      for (const [pid, cids] of Object.entries(problemContestMap)) {
-        problemContestNamesMap[pid] = cids.map((cid) => contestNameMap[cid] || cid);
-      }
-    }
-  }
+  const problemContestNamesMap = await fetchContestNamesByProblem(
+    supabase,
+    problems.map((p) => p.id),
+  );
 
   const enrichedProblems = problems.map((p) => ({
     ...p,

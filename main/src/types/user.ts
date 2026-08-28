@@ -7,7 +7,6 @@ export interface UserProfile {
   created_at: string;
   updated_at: string;
   last_login: string;
-  is_active: boolean;
   profile_data: Record<string, unknown>;
   about_me: string | null;
   problems_solved: number;

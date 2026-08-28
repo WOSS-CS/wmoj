@@ -20,12 +20,11 @@ wmoj-app/          ← repo root. NOT the Next.js project.
 
 ## Skills
 
-Load these rather than re-derive what they cover; their `.claude/skills/…` paths are correct.
-
-- **`add-problem`** — publishing problems end to end: statement, figures, the `generator.cpp` house
-  style, the test-case budget, custom checkers, live-judge verification, the database insert.
-- **`local-dev`** — running the whole stack on a laptop: Supabase CLI, a local database whose schema
-  matches prod, pointing the app at it, the parity check, staff bootstrap, what cannot be tested.
+Load these rather than re-derive what they cover. **`add-problem`** — publishing problems end to end:
+statement, figures, the `generator.cpp` house style, the test-case budget, custom checkers,
+live-judge verification, the database insert. **`local-dev`** — the whole stack on a laptop: Supabase
+CLI, a local database whose schema matches prod, the parity check, staff bootstrap, what cannot be
+tested.
 
 ## Commands
 
@@ -63,15 +62,14 @@ Commits are Conventional Commits, lowercase after the colon. **Never add an agen
 - **No `middleware.ts`** — deliberate. Auth = SSR checks in `page.tsx` via `lib/staffAuth.ts`
   (`requireActiveManager()`/`requireActiveAdmin()`) plus `lib/adminAuth.ts`/`lib/managerAuth.ts` in
   API routes, with **RLS as the real boundary**.
-- **Exactly ONE service-role client**, `lib/supabaseAdmin.ts`, with two callers: `problems/[id]/submit`
-  (test data) and `problems/[id]/page.tsx` (case count), both on `problem_tests`. It bypasses RLS and
-  is `server-only`, so a client-component import is a build error — and **never let its result become
-  a client-component prop**. No `SUPABASE_SECRET_KEY` ⇒ nothing grades. Do not add a third caller.
+- **Exactly ONE service-role client**, `lib/supabaseAdmin.ts`: READS `problem_tests`, WRITES
+  `submission_private` (that table has no write policy). The raw client is **not exported — add a
+  named function there, never a new caller of it**. Bypasses RLS, `server-only` (client import =
+  build error), **never a client prop**. No `SUPABASE_SECRET_KEY` ⇒ nothing grades.
 - **No generated Supabase types.** Clients are untyped and queries inline, so nothing in the type
   system catches a bad `.select()`. Check column names against the schema by hand.
-- **Every route has a `loading.tsx`** (42; only `app/auth/*` lack one), built from
-  `components/SkeletonLoader.tsx` + `loading-shimmer`, in `role="status" aria-busy="true"` with
-  `sr-only` text. It must mirror the real page's chrome. Add one per route.
+- **Every route has a `loading.tsx`** (only `app/auth/*` lack one) — **add one per new route**:
+  `SkeletonLoader.tsx` + `loading-shimmer`, `role="status" aria-busy="true"`, `sr-only`, page chrome.
 - State: `AuthContext`, `CountdownContext`, `ThemeContext`. No Redux. SWR in two components only.
 
 **Roles: manager > admin > regular.** Admin-created problems and contests land *pending*
@@ -125,14 +123,17 @@ changes get **no file**, however many rows: publishing a problem, editing a stat
 - **`submissions.problem_id`/`user_id` have no FKs.** Orphans are possible.
 - **Contest status is never stored** — always compute it with `getContestStatus()`. Both timestamps
   null means `virtual`, not `inactive`.
-- **Compile errors live in the `summary` JSON** (`{verdict:'CE', compileError}`); no `verdict` column.
+- **Compile errors:** `summary.verdict='CE'` is public, the message is not. No `verdict` column.
 - Scoring lives in `recalculate_problems_solved(uid)` / `recalculate_user_points(uid)` (top-100
   problems, `points * 0.95^i`, plus a `150*(1-0.997^n)` bonus). Both are now **revoked from `anon`
   and `authenticated`** — call the guarded wrapper `recalc_user_stats(target)` instead. The
   `/pointsystem` page mirrors the formula — change both together.
-- RLS is broadly permissive on **reads**: `submissions` (**including `code`**), `users` (including
-  `email`) and `problems` are world-readable. Every *write* policy is tight — never read this as
-  blessing a permissive write policy.
+- **Reads are permissive and RLS filters ROWS, NOT COLUMNS — so private data is SPLIT OFF, never
+  policy-hidden.** `submissions.code`/`input`/`output` are DROPPED; source, the full per-case array
+  and the compile message live in owner+staff-only `submission_private`. Public `results` keeps only
+  an ALLOWLIST (`lib/submissionRedaction.ts`); a denylist would republish `checkerMessage`, which
+  quotes the answer. `anon` also lost `users.email`/`last_login`/`profile_data` — never name them
+  anon-side. Writes stay tight; permissive reads never bless a loose write policy.
 - **The graded data lives in `problem_tests`, not `problems`.** `input`, `output` (the answer key),
   `checker` and `generator_file` moved to a staff-only side table — RLS filters rows, not columns, so
   on world-readable `problems` they were public — and were then DROPPED from `problems`. One copy,
@@ -164,7 +165,7 @@ never the student's. Only then does it branch on `compileError`. A 4xx/5xx means
 judge is wrong, never the user's code; the judge never emits `CE` — this app synthesizes it. **This
 app writes the verdict; the judge never touches Supabase.** Rows are inserted only
 `if (problem.is_active)`, and a failed insert must surface as `stored: false`, never as a silent AC.
-The three `aggregateVerdict*` functions must rank the **full** verdict set, `IE` first — a per-case
+`aggregateVerdict` (`components/VerdictBadge.tsx`) ranks the **full** verdict set, `IE` first — a per-case
 `IE` is a broken problem, not a wrong answer.
 
 `NEXT_PUBLIC_JUDGE_URL` is read **server-side only**; the browser must never learn the judge URL
@@ -205,7 +206,7 @@ judge's body. Never import `lib/env.ts` or `lib/supabaseAdmin.ts` from a client 
 - Reuse `getAdminSupabase`/`getManagerSupabase` rather than re-inlining the Bearer/cookie preamble.
   Staff page guards go through `lib/staffAuth.ts`; API routes use those two helpers. No fifth spelling.
 - **Check for callers before "fixing" an API route.** Server components query Supabase directly, so
-  routes die quietly — 9 of 43 were, and were deleted. Grep `fetch(` before touching the 34 left.
+  routes die quietly — 12 have been deleted for that. Grep `fetch(` before touching the 31 left.
 - **Don't use `useSearchParams` in a client component** — derive filter state from server props,
   which avoids the Next 16 `<Suspense>` boundary requirement.
 - **Lists paginate on the server.** `page.tsx` fetches one page (`parsePage` → `.range(computeRange(…))`
@@ -218,9 +219,8 @@ judge's body. Never import `lib/env.ts` or `lib/supabaseAdmin.ts` from a client 
 
 ## Related repo
 
-`wmoj-judge` has its own `AGENTS.md` covering the sandbox, the resource limits, and the full API
-contract. Any change to the `/submit` or `/generate-tests` shape is a **cross-repo breaking
-change** — coordinate both sides.
+`wmoj-judge` has its own `AGENTS.md` (sandbox, resource limits, full API contract). Any change to the
+`/submit` or `/generate-tests` shape is a **cross-repo breaking change** — coordinate both sides.
 
 ---
 

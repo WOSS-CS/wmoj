@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabaseFromToken } from '@/lib/supabaseServer';
 import { getJudgeSharedSecret, getJudgeUrl } from '@/lib/env';
-import { checkTimerExpiry } from '@/utils/timerCheck';
-import { getContestStatus } from '@/utils/contestStatus';
 import { canUserAccessProblem } from '@/lib/problemAccess';
-import { readProblemTestData } from '@/lib/supabaseAdmin';
-import { isActiveAdmin, isActiveManager } from '@/lib/staffAuth';
+import { checkContestGate, getContestIdsForProblem } from '@/lib/contestGate';
+import {
+  compensateFailedSubmission,
+  readProblemTestData,
+  writeSubmissionPrivate,
+} from '@/lib/supabaseAdmin';
+import { redactSummary, redactTestResults } from '@/lib/submissionRedaction';
 
 // The exact set the `submissions_language_check` constraint accepts. The judge
 // enumerates the same six current values and accepts `python`/`cpp` as legacy
@@ -84,70 +87,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Problem not found' }, { status: 404 });
     }
 
-    // Check if problem is part of any ongoing contest
-    const { data: cpRows } = await supabase
-      .from('contest_problems')
-      .select('contest_id')
-      .eq('problem_id', id);
-
-    const contestIds = (cpRows || []).map((r: { contest_id: string }) => r.contest_id);
-
-    if (contestIds.length > 0) {
-      const { data: contests } = await supabase
-        .from('contests')
-        .select('id, is_active, starts_at, ends_at')
-        .in('id', contestIds);
-
-      const statusOf = (c: unknown) =>
-        getContestStatus(c as { is_active: boolean; starts_at: string | null; ends_at: string | null });
-
-      // An UPCOMING contest's problems must not be submittable before the start
-      // bell. Every gate in this app compared against 'ongoing' only, so a
-      // scheduled contest's problems were treated as ordinary standalone
-      // problems right up to the start: they were listed publicly, readable,
-      // and — here — accepted and SCORED, with rows persisted and points
-      // awarded, because `problem.is_active` is true. An organiser preparing a
-      // contest ahead of time (exactly what they are supposed to do) opened
-      // that window themselves.
-      //
-      // Participation is impossible before a contest starts, so there is no
-      // participant check to make: a non-staff caller gets a hard 404, matching
-      // this repo's rule that hidden resources are 404 and never 403. Staff
-      // keep access so they can test their own problems.
-      if ((contests || []).some((c) => statusOf(c) === 'upcoming')) {
-        const isStaff =
-          (await isActiveManager(supabase, userId)) || (await isActiveAdmin(supabase, userId));
-        if (!isStaff) {
-          return NextResponse.json({ error: 'Problem not found' }, { status: 404 });
-        }
-      }
-
-      const ongoingContests = (contests || []).filter((c) => statusOf(c) === 'ongoing');
-
-      if (ongoingContests.length > 0) {
-        let hasAccess = false;
-        for (const contest of ongoingContests) {
-          const { data: participant } = await supabase
-            .from('contest_participants')
-            .select('user_id')
-            .eq('user_id', userId)
-            .eq('contest_id', contest.id)
-            .maybeSingle();
-
-          if (participant) {
-            const { expired } = await checkTimerExpiry(supabase, userId, contest.id);
-            if (expired) {
-              return NextResponse.json({ error: 'Contest time has expired' }, { status: 403 });
-            }
-            hasAccess = true;
-            break;
-          }
-        }
-
-        if (!hasAccess) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-        }
-      }
+    // The contest gate. This is the last line between a scheduled contest's
+    // problem set and a submission that would be accepted and SCORED against
+    // it, so the `hidden` arm below is a 404 and not a 403: this repo's rule is
+    // that a hidden resource is indistinguishable from one that does not exist.
+    // The rules themselves, and why each is load-bearing, live in
+    // `lib/contestGate.ts` alongside the two pages that share them.
+    const contestIds = await getContestIdsForProblem(supabase, id);
+    const gate = await checkContestGate(supabase, { contestIds, userId });
+    if (gate.kind === 'hidden') {
+      return NextResponse.json({ error: 'Problem not found' }, { status: 404 });
+    }
+    if (gate.kind === 'notParticipant') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    if (gate.kind === 'expired') {
+      return NextResponse.json({ error: 'Contest time has expired' }, { status: 403 });
     }
 
     // The answer key. Read only now, once every access gate above has passed —
@@ -272,24 +227,68 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // after a reload is the worst possible outcome.
     let insertFailed = false;
     if (problem.is_active) {
-      // `input`/`output` are deliberately NOT stored. They are a verbatim copy
-      // of the problem's entire test set — ~98% of every row's payload — and
-      // nothing reads them back. Both columns are NOT NULL DEFAULT '[]'::jsonb,
-      // so omitting them writes the empty default.
-      const { error: insertErr } = await supabase
+      // THE SPLIT. `public.submissions` is world-readable (its SELECT policy is
+      // `using (true)` to anon), and RLS filters rows, not columns — so every
+      // column written here is published to every visitor. The public row
+      // therefore carries only the REDACTED per-case array and a summary with
+      // no compiler diagnostics; the source code, the full judge array and the
+      // compile error go to `public.submission_private`, which only the owner
+      // and active staff can read.
+      //
+      // `.select('id').single()` is new and required: the private row is keyed
+      // by the public row's id, and the insert previously returned nothing.
+      const { data: inserted, error: insertErr } = await supabase
         .from('submissions')
         .insert({
           problem_id: problem.id,
           user_id: userId,
           language,
-          code,
-          results: data.results,
-          summary: summaryForStorage,
-        });
+          results: redactTestResults(data.results),
+          summary: redactSummary(summaryForStorage),
+        })
+        .select('id, created_at')
+        .single();
 
-      if (insertErr) {
+      if (insertErr || !inserted) {
         insertFailed = true;
         console.error('Submission insert error:', insertErr);
+      } else {
+        // PUBLIC ROW FIRST is forced by the FK: `submission_private.submission_id`
+        // references `submissions(id)`, so the private row cannot exist before
+        // its parent.
+        const privateWritten = await writeSubmissionPrivate({
+          submission_id: inserted.id,
+          user_id: userId,
+          code,
+          results_full: data.results,
+          compile_error: hasCompileError ? (data.compileError as string) : null,
+          created_at: inserted.created_at ?? new Date().toISOString(),
+        });
+
+        if (!privateWritten) {
+          // Compensate. A public row whose private half is missing is a
+          // submission whose own author can never see their code or per-case
+          // feedback — worse than no row at all, and it would still be scored.
+          //
+          // The compensating delete MUST go through the service role:
+          // `submissions` has no owner DELETE policy, so the student's own
+          // token would remove zero rows and report success, leaving exactly
+          // the orphan this is meant to clean up. Check the result — a failed
+          // compensation is the one case a human has to know about.
+          const removed = await compensateFailedSubmission(inserted.id, userId);
+          if (!removed) {
+            console.error(
+              `ORPHANED SUBMISSION ${inserted.id}: the private half failed to write and the ` +
+                `compensating delete removed no row. The public row exists with no code and no ` +
+                `per-case detail, and it will be counted by the stat RPCs. Remove it by hand.`,
+            );
+          }
+          // `stored: false` covers both outcomes, and they differ: a successful
+          // compensation leaves no row, a failed one leaves a public row with no
+          // code. The client's banner is worded for that ambiguity rather than
+          // asserting a history state the server could not establish.
+          insertFailed = true;
+        }
       }
 
       // Points and problems_solved recalculate only on a first solve, and only
@@ -297,7 +296,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       // was never stored would silently score a solve that has no row behind
       // it. `recalc_user_stats` does both recalculations in one guarded call
       // and raises 42501 when the caller is neither the target nor a manager.
-      if (!insertErr && isFirstSolve) {
+      if (!insertFailed && isFirstSolve) {
         const { error: recalcErr } = await supabase.rpc('recalc_user_stats', { target: userId });
         if (recalcErr) {
           console.error(`recalc_user_stats failed for user ${userId}:`, recalcErr);
@@ -306,6 +305,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     return NextResponse.json({
+      // THE FULL ARRAY, deliberately — do NOT return the redacted row that was
+      // just inserted. The caller is the submitter, this is their own code and
+      // their own per-case output, and `SubmitClient` renders the expected vs
+      // received detail straight from this response. A naive "return the
+      // inserted row" would strip the owner's own feedback and make every
+      // submission page show five keys and nothing to read.
       results: data.results,
       summary: summaryForStorage,
       // No row, no solve. Reporting a first solve for a submission that failed

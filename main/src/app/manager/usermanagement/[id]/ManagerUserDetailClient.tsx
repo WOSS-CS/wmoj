@@ -12,13 +12,8 @@ import { SubmissionCodeBlock } from '@/components/SubmissionCodeBlock';
 import Pagination from '@/components/Pagination';
 import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
 import { useViewCode, type ViewCodeSubmission } from '@/hooks/useViewCode';
+import type { TestResult } from '@/types/judge';
 import type { UserSubmissionRow } from './page';
-
-type TestResult = {
-  index: number; passed: boolean; stdout: string; stderr: string;
-  exitCode: number | null; timedOut: boolean; expected: string; received: string;
-  verdict?: string; timeMs?: number; cpuMs?: number; memKb?: number;
-};
 
 type Row = UserSubmissionRow;
 
@@ -26,7 +21,6 @@ interface UserInfo {
   id: string;
   username: string;
   email: string;
-  is_active: boolean;
   created_at: string;
 }
 
@@ -210,7 +204,7 @@ export default function ManagerUserDetailClient({
       sortable: true,
       sortAccessor: (r) => (r.passed ? 1 : 0),
       render: (r) => {
-        if (r.compileError) return <Badge variant="neutral">CE</Badge>;
+        if (r.isCompileError) return <Badge variant="neutral">CE</Badge>;
         return <Badge variant={r.passed ? 'success' : 'error'}>{r.passed ? 'Accepted' : 'Failed'}</Badge>;
       },
     },
@@ -274,9 +268,6 @@ export default function ManagerUserDetailClient({
                 <Badge variant={isManager ? 'accent' : isAdmin ? 'info' : 'neutral'}>
                   {isManager ? 'Manager' : isAdmin ? 'Admin' : 'User'}
                 </Badge>
-                <Badge variant={user.is_active ? 'success' : 'warning'}>
-                  {user.is_active ? 'Active' : 'Disabled'}
-                </Badge>
                 <span className="text-xs text-text-muted">
                   Member since {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
@@ -317,7 +308,7 @@ export default function ManagerUserDetailClient({
                   <button
                     onClick={() => handlePromoteManager(true)}
                     disabled={promotingManager}
-                    className="px-3 py-1.5 rounded-md text-sm font-medium bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 rounded-md text-sm font-medium bg-accent/10 text-accent hover:bg-accent/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {promotingManager ? 'Updating...' : 'Promote to Manager'}
                   </button>

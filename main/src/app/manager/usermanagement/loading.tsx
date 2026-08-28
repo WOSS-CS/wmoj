@@ -8,14 +8,7 @@ export default function Loading() {
         <Skeleton className="h-4 w-72 mt-1" />
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center gap-3">
-        <Skeleton variant="rounded" className="h-9 flex-1" />
-        <div className="flex items-center gap-1.5">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} variant="rounded" className="h-9 w-20" />
-          ))}
-        </div>
-      </div>
+      <Skeleton variant="rounded" className="h-9 w-full" />
 
       <div className="glass-panel overflow-hidden">
         <div className="bg-surface-2 px-4 py-3 border-b border-border">
@@ -24,7 +17,7 @@ export default function Loading() {
         <div className="px-4 py-2 border-b border-border">
           <Skeleton variant="rounded" className="h-8 w-full" />
         </div>
-        <SkeletonTable rows={20} columns={6} />
+        <SkeletonTable rows={20} columns={5} />
       </div>
       <span className="sr-only">Loading…</span>
     </div>

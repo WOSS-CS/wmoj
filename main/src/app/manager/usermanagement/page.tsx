@@ -15,8 +15,6 @@ export default async function ManagerUserManagementPage({
   const sp = await searchParams;
   const page = parsePage(sp.page);
   const search = typeof sp.search === 'string' ? sp.search.trim() : '';
-  const filterRaw = typeof sp.filter === 'string' ? sp.filter : 'all';
-  const filter = filterRaw === 'active' || filterRaw === 'disabled' ? filterRaw : 'all';
 
   const { from, to } = computeRange(page, PAGE_SIZE);
 
@@ -41,18 +39,15 @@ export default async function ManagerUserManagementPage({
         currentPage={1}
         totalPages={1}
         currentSearch={search}
-        currentFilter={filter}
       />
     );
   }
 
   let query = supabase
     .from('users')
-    .select('id, username, email, is_active, created_at, updated_at', { count: 'exact' })
+    .select('id, username, email, created_at, updated_at', { count: 'exact' })
     .order('created_at', { ascending: false });
 
-  if (filter === 'active') query = query.eq('is_active', true);
-  if (filter === 'disabled') query = query.eq('is_active', false);
   if (filteredUserIds !== null) query = query.in('id', filteredUserIds);
 
   const [usersRes, adminsRes, managersRes] = await Promise.all([
@@ -67,12 +62,7 @@ export default async function ManagerUserManagementPage({
 
   const effectivePage = clampPage(page, totalPages);
   if (effectivePage !== page) {
-    redirect(
-      buildPageHref(
-        { search: search || undefined, filter: filter !== 'all' ? filter : undefined },
-        effectivePage,
-      ),
-    );
+    redirect(buildPageHref({ search: search || undefined }, effectivePage));
   }
 
   const adminIds = new Set((adminsRes.data || []).map((a: { id: string }) => a.id));
@@ -108,7 +98,6 @@ export default async function ManagerUserManagementPage({
       currentPage={page}
       totalPages={totalPages}
       currentSearch={search}
-      currentFilter={filter}
     />
   );
 }

@@ -10,15 +10,10 @@ import { SubmissionCodeBlock } from '@/components/SubmissionCodeBlock';
 import Pagination from '@/components/Pagination';
 import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
 import { useViewCode, type ViewCodeSubmission } from '@/hooks/useViewCode';
+import type { TestResult } from '@/types/judge';
 import type { AdminSubmissionRow } from './page';
 
 type Row = AdminSubmissionRow;
-
-type TestResult = {
-  index: number; passed: boolean; stdout: string; stderr: string;
-  exitCode: number | null; timedOut: boolean; expected: string; received: string;
-  verdict?: string; timeMs?: number; cpuMs?: number; memKb?: number;
-};
 
 export default function AdminDashboardClient({
   initialSubmissions,
@@ -130,7 +125,7 @@ export default function AdminDashboardClient({
       sortable: true,
       sortAccessor: (r) => (r.passed ? 1 : 0),
       render: (r) => {
-        if (r.compileError) return <Badge variant="neutral">CE</Badge>;
+        if (r.isCompileError) return <Badge variant="neutral">CE</Badge>;
         return <Badge variant={r.passed ? 'success' : 'error'}>{r.passed ? 'Accepted' : 'Failed'}</Badge>;
       },
     },

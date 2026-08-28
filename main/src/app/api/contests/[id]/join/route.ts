@@ -50,20 +50,18 @@ export async function POST(
       return NextResponse.json({ error: 'Contest has not started yet' }, { status: 403 });
     }
 
-    // Creators cannot join their own contest. Check BOTH staff tables: the UI
-    // (ContestViewClient) blocks admins and managers alike, so checking only
-    // `admins` let a manager-creator join by POSTing directly.
+    // Creators cannot join their own contest — unconditionally. Do not
+    // reintroduce a staff-table lookup here: the contest INSERT policies both
+    // require an active staff row, so `created_by` was staff at creation time,
+    // and re-asking whether they still are failed open. `is_admin()`/
+    // `is_manager()` hide the row from a demoted or deactivated caller's own
+    // client, and the discarded `error` fields hid the rest. The creator has
+    // seen the answers regardless of their current role.
     if (contest.created_by === userId) {
-      const [{ data: adminRow }, { data: managerRow }] = await Promise.all([
-        supabase.from('admins').select('id').eq('id', userId).maybeSingle(),
-        supabase.from('managers').select('id').eq('id', userId).maybeSingle(),
-      ]);
-      if (adminRow || managerRow) {
-        return NextResponse.json(
-          { error: 'You cannot join a contest you created' },
-          { status: 403 }
-        );
-      }
+      return NextResponse.json(
+        { error: 'You cannot join a contest you created' },
+        { status: 403 }
+      );
     }
 
     // Parallelize multiple checks for better performance

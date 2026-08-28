@@ -14,7 +14,7 @@ export type AdminSubmissionRow = {
   status: string;
   score: string;
   passed: boolean;
-  compileError: string | null;
+  isCompileError: boolean;
 };
 
 type RawSub = {
@@ -87,7 +87,7 @@ export default async function AdminDashboardPage({
   }
 
   const rows: AdminSubmissionRow[] = pageRows.map((s) => {
-    const summary = s.summary as { total?: number; passed?: number; failed?: number; compileError?: string } | null;
+    const summary = s.summary as { total?: number; passed?: number; failed?: number; verdict?: string } | null;
     const total = Number(summary?.total ?? 0);
     const passed = Number(summary?.passed ?? 0);
     return {
@@ -99,7 +99,7 @@ export default async function AdminDashboardPage({
       status: s.status || 'failed',
       score: total > 0 ? `${passed}/${total}` : '—',
       passed: s.status === 'passed',
-      compileError: summary?.compileError ?? null,
+      isCompileError: summary?.verdict === 'CE',
     };
   });
 

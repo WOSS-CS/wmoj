@@ -8,6 +8,8 @@ import { CodeEditorLoading } from '@/components/LoadingStates';
 import { LoadingSpinner } from '@/components/AnimationWrapper';
 import { ProblemSubmitTarget } from '@/types/problem';
 import { useContestMembershipGuard } from '@/hooks/useContestMembershipGuard';
+import { VerdictBadge, aggregateVerdict, caseVerdict } from '@/components/VerdictBadge';
+import type { TestResult, Verdict } from '@/types/judge';
 
 const CodeEditor = dynamic(() => import('@/components/CodeEditor'), {
   ssr: false,
@@ -26,27 +28,6 @@ interface SubmitClientProps {
   isVirtualContest?: boolean;
 }
 
-type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RE' | 'CE' | 'IE';
-
-interface TestResult {
-  index: number;
-  exitCode: number | null;
-  timedOut: boolean;
-  stdout: string;
-  stderr: string;
-  passed: boolean;
-  expected: string;
-  received: string;
-  // New optional fields from the rewritten judge (additive):
-  verdict?: Verdict;
-  timeMs?: number;
-  cpuMs?: number;
-  memKb?: number;
-  // Present only on problems with a custom checker: the checker's own
-  // explanation of why it accepted or rejected this case.
-  checkerMessage?: string;
-}
-
 const languages = [
   { value: 'python3', label: 'Python 3' },
   { value: 'pypy3', label: 'PyPy 3' },
@@ -55,69 +36,6 @@ const languages = [
   { value: 'cpp20', label: 'C++20 (GCC)' },
   { value: 'cpp23', label: 'C++23 (GCC)' },
 ];
-
-// Per-verdict badge styling, built entirely from the app's design tokens.
-// AC=green, WA=red, TLE=amber, MLE=purple, RE=red, CE/IE=neutral.
-//
-// The previous map used raw Tailwind palette colours picked for a dark theme
-// (`text-purple-400`, `text-red-400`, `bg-black/30`) on a light-only app, which
-// failed WCAG AA against the surface behind them. `--color-accent` and the
-// darkened success/error/warning tokens are contrast-verified; the verdict
-// string itself, not the hue, is what distinguishes WA from RE.
-const VERDICT_STYLES: Record<Verdict, string> = {
-  AC: 'bg-success/10 text-success border border-success/20',
-  WA: 'bg-error/10 text-error border border-error/20',
-  TLE: 'bg-warning/10 text-warning border border-warning/20',
-  MLE: 'bg-accent/10 text-accent border border-accent/20',
-  RE: 'bg-error/10 text-error border border-error/20',
-  CE: 'bg-surface-2 text-text-muted border border-border',
-  IE: 'bg-surface-3 text-foreground border border-border',
-};
-
-function VerdictBadge({ verdict }: { verdict: Verdict }) {
-  return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-semibold ${VERDICT_STYLES[verdict]}`}
-      title={verdict}
-    >
-      {verdict}
-    </span>
-  );
-}
-
-// Aggregate per-submission verdict derivation:
-// if compileError → 'CE'; else worst failure ranked IE > TLE > MLE > RE > WA; else 'AC'.
-function aggregateVerdict(
-  results: TestResult[] | null | undefined,
-  compileError?: string | null,
-): Verdict {
-  if (compileError) return 'CE';
-  if (!results || results.length === 0) return 'IE';
-  // 'IE' FIRST, ahead of the student's own failures. A per-case 'IE' means a custom checker could
-  // not answer for that case — a problem-configuration fault, never the student's. It was missing
-  // from this array entirely, so an all-'IE' submission fell through to the loop below and reported
-  // 'WA': a correct solution told it was wrong, with the real fault invisible in all three views.
-  //
-  // Note this is deliberately NOT the judge's own deriveVerdict order (TLE > MLE > RE > IE > WA).
-  // That order is precedence WITHIN one case, where 'IE' is only reachable once the program has
-  // already run cleanly. This array is precedence ACROSS cases, a different question — and
-  // custom-checkers/SKILL.md is explicit that a broken problem must stay visible, which ranking
-  // 'IE' below 'RE' would defeat whenever any other case also failed.
-  const rank: Verdict[] = ['IE', 'TLE', 'MLE', 'RE', 'WA'];
-  for (const v of rank) {
-    if (results.some((r) => r.verdict === v)) return v;
-  }
-  // Fall back to derived verdicts for rows without an explicit verdict field
-  // (should not happen for new judge traffic, but keeps the UI robust).
-  for (const r of results) {
-    if (!r.passed) {
-      if (r.verdict === 'IE') return 'IE';
-      if (r.timedOut) return 'TLE';
-      return 'WA';
-    }
-  }
-  return 'AC';
-}
 
 export default function SubmitClient({ problem, activeContestId, isVirtualContest }: SubmitClientProps) {
   const { user, session } = useAuth();
@@ -263,9 +181,9 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
                     <span className="text-xs font-semibold text-warning">Graded but not recorded</span>
                   </div>
                   <p className="text-xs text-text-muted leading-relaxed">
-                    Your solution ran and the results below are real, but the submission
-                    could not be saved, so it will not appear in your submission history
-                    and no points were awarded.{' '}
+                    Your solution ran and the results below are real, but it was not
+                    recorded correctly and no points were awarded. It may be missing from
+                    your submission history, or appear there without your code.{' '}
                     <strong className="text-foreground">This is not an error in your code</strong>{' '}
                     — please contact a WMOJ admin.
                   </p>
@@ -341,15 +259,7 @@ export default function SubmitClient({ problem, activeContestId, isVirtualContes
                   {results && results.length > 0 && (
                     <div className="space-y-1.5 max-h-[40vh] overflow-y-auto pr-1">
                       {results.map((r) => {
-                        // Prefer the judge-reported verdict; fall back to
-                        // pass/fail + timedOut when missing (legacy rows).
-                        const v: Verdict = r.verdict
-                          ? r.verdict
-                          : r.passed
-                          ? 'AC'
-                          : r.timedOut
-                          ? 'TLE'
-                          : 'WA';
+                        const v = caseVerdict(r);
                         return (
                           <div key={r.index} className="p-2.5 rounded-lg bg-surface-2">
                             <div className="flex items-center justify-between gap-2 flex-wrap">

@@ -9,7 +9,7 @@ export default function UserNotFound() {
         </div>
         <div className="p-8 flex flex-col items-center gap-6 text-center">
           <p className="text-sm text-text-muted">
-            This user doesn&apos;t exist or their account has been disabled.
+            This user doesn&apos;t exist.
           </p>
           <Link
             href="/users"

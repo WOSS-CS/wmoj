@@ -51,7 +51,6 @@ export default async function UserProfilePage({
     .from('users')
     .select('id, username, created_at, about_me, problems_solved, points')
     .ilike('username', pattern)
-    .eq('is_active', true)
     .maybeSingle();
 
   // 404, not a 200 with an inline panel — otherwise crawlers index nonexistent

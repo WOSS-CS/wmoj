@@ -10,24 +10,14 @@ import { SubmissionCodeBlock } from '@/components/SubmissionCodeBlock';
 import Pagination from '@/components/Pagination';
 import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
 import { useViewCode, type ViewCodeSubmission } from '@/hooks/useViewCode';
+import {
+  VERDICT_STYLES,
+  VerdictBadge,
+  aggregateVerdict,
+  caseVerdict,
+} from '@/components/VerdictBadge';
+import type { TestResult } from '@/types/judge';
 import type { ProblemSubmissionRow } from './page';
-
-type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RE' | 'CE' | 'IE';
-
-interface TestResult {
-  index: number;
-  passed: boolean;
-  stdout: string;
-  stderr: string;
-  exitCode: number;
-  timedOut: boolean;
-  expected: string;
-  received: string;
-  verdict?: Verdict;
-  timeMs?: number;
-  cpuMs?: number;
-  memKb?: number;
-}
 
 const LANGUAGE_DISPLAY: Record<string, string> = {
   python: 'Python',
@@ -43,57 +33,9 @@ function displayLanguage(code: string): string {
   return LANGUAGE_DISPLAY[code] || code.toUpperCase();
 }
 
-const VERDICT_STYLES: Record<Verdict, string> = {
-  AC: 'bg-success/10 text-success border border-success/20',
-  WA: 'bg-error/10 text-error border border-error/20',
-  TLE: 'bg-warning/10 text-warning border border-warning/20',
-  MLE: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
-  RE: 'bg-red-900/20 text-red-400 border border-red-900/30',
-  CE: 'bg-surface-2 text-text-muted border border-border',
-  IE: 'bg-black/30 text-foreground border border-border',
-};
-
-function VerdictBadge({ verdict }: { verdict: Verdict }) {
-  return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-semibold ${VERDICT_STYLES[verdict]}`}
-      title={verdict}
-    >
-      {verdict}
-    </span>
-  );
-}
-
-function aggregateVerdictFromResults(results: TestResult[], compileError: string | null): Verdict {
-  if (compileError) return 'CE';
-  if (results.length === 0) return 'IE';
-  // 'IE' FIRST, ahead of the student's own failures. A per-case 'IE' means a custom checker could
-  // not answer for that case — a problem-configuration fault, never the student's. It was missing
-  // from this array entirely, so an all-'IE' submission fell through to the loop below and reported
-  // 'WA': a correct solution told it was wrong, with the real fault invisible in all three views.
-  //
-  // Note this is deliberately NOT the judge's own deriveVerdict order (TLE > MLE > RE > IE > WA).
-  // That order is precedence WITHIN one case, where 'IE' is only reachable once the program has
-  // already run cleanly. This array is precedence ACROSS cases, a different question — and
-  // custom-checkers/SKILL.md is explicit that a broken problem must stay visible, which ranking
-  // 'IE' below 'RE' would defeat whenever any other case also failed.
-  const rank: Verdict[] = ['IE', 'TLE', 'MLE', 'RE', 'WA'];
-  for (const v of rank) {
-    if (results.some((r) => r.verdict === v)) return v;
-  }
-  for (const r of results) {
-    if (!r.passed) {
-      if (r.verdict === 'IE') return 'IE';
-      if (r.timedOut) return 'TLE';
-      return 'WA';
-    }
-  }
-  return 'AC';
-}
-
 type ListBadge = 'CE' | 'AC' | 'Failed';
 function listBadgeFromRow(r: ProblemSubmissionRow): ListBadge {
-  if (r.compileError) return 'CE';
+  if (r.isCompileError) return 'CE';
   if (r.status === 'passed') return 'AC';
   return 'Failed';
 }
@@ -243,7 +185,7 @@ export default function ProblemSubmissionsClient({
 
 function SubmissionModalBody({ selected }: { selected: ViewCodeSubmission }) {
   const results = (selected.results || []) as TestResult[];
-  const verdict = aggregateVerdictFromResults(results, selected.compileError);
+  const verdict = aggregateVerdict(results, selected.compileError);
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-4">
       <div className="grid grid-cols-3 gap-3">
@@ -274,13 +216,7 @@ function SubmissionModalBody({ selected }: { selected: ViewCodeSubmission }) {
         <h3 className="text-sm font-medium text-foreground mb-1.5">Test Case Results</h3>
         <div className="space-y-1.5">
           {results.map((r, i) => {
-            const v: Verdict = r.verdict
-              ? r.verdict
-              : r.passed
-              ? 'AC'
-              : r.timedOut
-              ? 'TLE'
-              : 'WA';
+            const v = caseVerdict(r);
             return (
               <div key={i} className={`p-2.5 rounded-md border ${r.passed ? 'bg-success/5 border-success/20' : 'bg-error/5 border-error/20'}`}>
                 <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">

@@ -14,6 +14,11 @@ import { getContestStatus } from '@/utils/contestStatus';
  *      400 with a real message instead of a raw constraint violation.
  *   2. Contest-problem eligibility (Invariant 3), which needs only the problem
  *      ids and the target's rated flag — both available up front.
+ *
+ * It also owns the `contest_problems` membership diff for the two `[id]` PATCH
+ * twins: `planContestProblemChanges` (everything before the first write) and
+ * `applyContestProblemChanges` (the writes). Those handlers differed only by the
+ * admin ownership gate, so the delta is a parameter rather than a second copy.
  */
 
 /** Mirrors `contests_length_range` on `public.contests`. */
@@ -268,6 +273,152 @@ export async function checkContestProblemEligibility(
       error: 'Rated contests can only include standalone problems not already in another contest',
       status: 400,
     };
+  }
+
+  return null;
+}
+
+/** The membership delta a PATCH implies, measured against the contest's current rows. */
+export interface ContestProblemChanges {
+  toAdd: string[];
+  toRemove: string[];
+}
+
+/**
+ * A rejection from the contest-problem pipeline. `problem_ids` is present only on
+ * the ownership 403, which names the problems the caller does not own.
+ */
+export interface ContestProblemError extends ContestValidationError {
+  problem_ids?: string[];
+}
+
+/**
+ * Everything a `contests/[id]` PATCH must settle **before its first write**:
+ * read the current membership, diff the submitted list against it, and validate
+ * the result.
+ *
+ * `ownerId` is the one admin/manager delta. Pass the admin's id to run the
+ * ownership gate — the `contest_problems` write policies key on the *problem's*
+ * `created_by`, so an unowned id is rejected on INSERT and silently filtered to
+ * zero rows on DELETE. Omit it for managers, whose policies cover every problem.
+ *
+ * `wasRated` is the contest's stored flag and `isRated` the flag it will have
+ * after this PATCH: flipping false → true must re-validate the problems already
+ * attached, not just the new ones, or Invariant 3 is bypassable by ticking
+ * "Rated" without touching the problem list.
+ */
+export async function planContestProblemChanges(
+  supabase: SupabaseClient,
+  {
+    contestId,
+    problemIds,
+    isRated,
+    wasRated,
+    ownerId,
+  }: {
+    contestId: string;
+    problemIds: string[];
+    isRated: boolean;
+    wasRated: boolean;
+    ownerId?: string;
+  },
+): Promise<{ changes: ContestProblemChanges } | ContestProblemError> {
+  const { data: current, error: currentError } = await supabase
+    .from('contest_problems')
+    .select('problem_id')
+    .eq('contest_id', contestId);
+  if (currentError) {
+    console.error('Fetch contest problems error:', currentError);
+    return { error: 'Failed to load contest problems', status: 500 };
+  }
+
+  const currentIds = (current || []).map((r: { problem_id: string }) => r.problem_id);
+  const currentSet = new Set(currentIds);
+
+  const toRemove = currentIds.filter((pid: string) => !problemIds.includes(pid));
+  const toAdd = problemIds.filter(pid => !currentSet.has(pid));
+
+  if (ownerId !== undefined) {
+    const ownership = await findUnownedProblems(supabase, [...new Set([...toAdd, ...toRemove])], ownerId);
+    if ('error' in ownership) return { error: ownership.error, status: 500 };
+    if (ownership.unowned.length > 0) {
+      return {
+        error: 'You can only add or remove problems you created',
+        problem_ids: ownership.unowned,
+        status: 403,
+      };
+    }
+  }
+
+  const becameRated = isRated && !wasRated;
+  const idsToValidate = becameRated ? [...new Set([...currentIds, ...toAdd])] : toAdd;
+
+  const eligibility = await checkContestProblemEligibility(supabase, {
+    contestId,
+    problemIds: idsToValidate,
+    isRated,
+  });
+  if (eligibility) return eligibility;
+
+  return { changes: { toAdd, toRemove } };
+}
+
+/**
+ * Applies a planned membership diff. Returns `null` when both writes landed in
+ * full, or the rejection to return.
+ *
+ * Both writes are row-counted, because neither reports a partial application on
+ * its own. RLS **filters** a DELETE rather than raising, so a removal the admin
+ * policy rejects comes back `{ data: [], error: null }` — checking only `.error`
+ * reports success for a removal that did not happen. (An INSERT the policy
+ * rejects does raise `42501`, but the count is cheap and the two paths should
+ * fail the same way.) `contest_problems` is world-readable, so the `.select()`
+ * returns exactly the rows written — never a short count from a read filter.
+ *
+ * Authorisation has already succeeded upstream by the time this runs, so a short
+ * write is a failed dependent write — **500**, not the 404 used where the write
+ * *is* the authorisation check.
+ */
+export async function applyContestProblemChanges(
+  supabase: SupabaseClient,
+  contestId: string,
+  { toAdd, toRemove }: ContestProblemChanges,
+): Promise<ContestValidationError | null> {
+  if (toRemove.length > 0) {
+    const { data: removed, error: removeError } = await supabase
+      .from('contest_problems')
+      .delete()
+      .eq('contest_id', contestId)
+      .in('problem_id', toRemove)
+      .select('problem_id');
+    if (removeError) {
+      console.error('Remove contest problems error:', removeError);
+      return { error: 'Failed to update contest problems', status: 500 };
+    }
+    if ((removed || []).length !== toRemove.length) {
+      console.error(
+        `Remove contest problems removed ${(removed || []).length} of ${toRemove.length} rows from contest ${contestId}`,
+      );
+      return { error: 'Failed to update contest problems', status: 500 };
+    }
+  }
+
+  if (toAdd.length > 0) {
+    const rows = toAdd.map(problem_id => ({ contest_id: contestId, problem_id }));
+    const { data: inserted, error: addError } = await supabase
+      .from('contest_problems')
+      .insert(rows)
+      .select('problem_id');
+    if (addError) {
+      console.error('Problem assignment error:', addError);
+      return { error: 'Failed to update contest problems', status: 500 };
+    }
+    if ((inserted || []).length !== rows.length) {
+      console.error(
+        `Problem assignment inserted ${(inserted || []).length} of ${rows.length} rows into contest ${contestId}`,
+      );
+      return { error: 'Failed to update contest problems', status: 500 };
+    }
   }
 
   return null;

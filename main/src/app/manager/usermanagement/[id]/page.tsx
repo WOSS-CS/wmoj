@@ -13,7 +13,7 @@ export type UserSubmissionRow = {
   status: string;
   score: string;
   passed: boolean;
-  compileError: string | null;
+  isCompileError: boolean;
 };
 
 type RawSub = {
@@ -39,7 +39,7 @@ export default async function ManagerUserDetailPage({
   ] = await Promise.all([
     supabase
       .from('users')
-      .select('id, username, email, is_active, created_at')
+      .select('id, username, email, created_at')
       .eq('id', targetUserId)
       .maybeSingle(),
     supabase
@@ -103,7 +103,7 @@ export default async function ManagerUserDetailPage({
   }
 
   const submissions: UserSubmissionRow[] = pageRows.map((s) => {
-    const summary = s.summary as { total?: number; passed?: number; failed?: number; compileError?: string } | null;
+    const summary = s.summary as { total?: number; passed?: number; failed?: number; verdict?: string } | null;
     const total = Number(summary?.total ?? 0);
     const passed = Number(summary?.passed ?? 0);
     return {
@@ -114,7 +114,7 @@ export default async function ManagerUserDetailPage({
       status: s.status || 'failed',
       score: total > 0 ? `${passed}/${total}` : '—',
       passed: s.status === 'passed',
-      compileError: summary?.compileError ?? null,
+      isCompileError: summary?.verdict === 'CE',
     };
   });
 
@@ -124,7 +124,6 @@ export default async function ManagerUserDetailPage({
         id: targetUser.id,
         username: targetUser.username,
         email: targetUser.email,
-        is_active: targetUser.is_active,
         created_at: targetUser.created_at,
       }}
       initialIsAdmin={!!adminRow}
