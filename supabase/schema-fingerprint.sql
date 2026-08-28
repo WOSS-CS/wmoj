@@ -16,28 +16,18 @@
 -- the MIGRATION HISTORY produces. A local reset currently reports count_ok AND md5_ok true on all
 -- eight rows.
 --
--- KNOWN production differences, both explained, neither a local failure:
+-- KNOWN production difference, explained, not a local failure:
 --
---   1. `functions` md5 differs (count matches at 14). SIX bodies differ, and they differ for two
---      different reasons. Five drifted in production in ways that do not change behaviour —
---      keyword case, a stray space, one SQL comment, plus `::text` casts the repo added to
---      join_contest/leave_contest, which are dead code with no caller in main/src. There the
---      migrations are correct and production is the side that drifted.
---      The sixth is `top_submitted_problems`, and it is the other way round: production stores a
---      267-character body against the migration's 991 because the apply path strips `--` comments.
---      Signature, STABLE, SECURITY INVOKER, search_path, ACL and the COMMENT all match, so there is
---      no functional or security difference — but it cannot be made to converge by re-applying,
---      since re-applying strips the comments again. It is a permanent, benign digest mismatch.
---
---   2. ⚠️ TEMPORARY — REMOVE THIS ITEM ONCE PRODUCTION CATCHES UP.
---      `20260827203300_remove_user_is_active.sql` is deliberately NOT YET APPLIED to production. It
---      must be applied only AFTER the app deploy that stops reading `users.is_active`: the
---      currently-deployed build tests `is_active !== true`, and `undefined !== true` is TRUE, so
---      applying it first force-signs-out every user to /auth/login?disabled=1.
---      Until it is applied, production reports `columns = 99` (vs 98), `policies = 65` (vs 64),
---      `grants = 282` (vs 273) and different column/policy/grant digests. Every one of those deltas
---      is exactly that migration: one column, one dropped DELETE policy plus three rewritten INSERT
---      policies, and nine revoked table privileges on `users`.
+--   `functions` md5 differs (count matches at 14). SIX bodies differ, and they differ for two
+--    different reasons. Five drifted in production in ways that do not change behaviour —
+--    keyword case, a stray space, one SQL comment, plus `::text` casts the repo added to
+--    join_contest/leave_contest, which are dead code with no caller in main/src. There the
+--    migrations are correct and production is the side that drifted.
+--    The sixth is `top_submitted_problems`, and it is the other way round: production stores a
+--    267-character body against the migration's 991 because the apply path strips `--` comments.
+--    Signature, STABLE, SECURITY INVOKER, search_path, ACL and the COMMENT all match, so there is
+--    no functional or security difference — but it cannot be made to converge by re-applying,
+--    since re-applying strips the comments again. It is a permanent, benign digest mismatch.
 --
 -- After a schema change, update the expected values below in the same PR as the migration.
 
