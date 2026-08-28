@@ -20,31 +20,31 @@ wmoj-app/          ← repo root. NOT the Next.js project.
 
 ## Skills
 
-Load these rather than re-derive what they cover. **`add-problem`** — publishing problems end to end:
-statement, figures, the `generator.cpp` house style, the test-case budget, custom checkers,
+Load these rather than re-derive what they cover. **`add-problem`** — publishing problems end to
+end: statement, figures, the `generator.cpp` house style, the test-case budget, custom checkers,
 live-judge verification, the database insert. **`local-dev`** — the whole stack on a laptop: Supabase
-CLI, a local database whose schema matches prod, the parity check, staff bootstrap, what cannot be
-tested.
+CLI, a local database matching prod, the parity check, staff bootstrap, what cannot be tested.
 
 ## Commands
 
 ```bash
 cd main
-npm install
 npm run dev      # next dev --turbopack → :3000
 npm run build    # next build --turbopack
 npm run lint     # bare eslint; leave the files you touch clean
 npx tsc --noEmit # the typecheck — no npm script exists for it
+npm test         # node --test via tsx; pure functions only
 ```
 
-**No tests, no test tooling, no CI.** Never invent `npm test`; verify by running the app. Next 16
-does not run ESLint during `build`, so run `npm run lint` yourself — it is currently at **zero**
-problems and must stay there. `npm run build` *is* the typecheck gate.
+`npm test` runs `node --test` via tsx over `src/**/*.test.ts` — pure functions only, beside their
+module, imported through `@/`. Anything taking a Supabase client is verified by running the app.
+Run `npm run lint` yourself — it is at **zero** problems and must stay there. `npx tsc --noEmit` is
+the typecheck gate; `next build` typechecks only route-reachable code.
 
 Node ≥20.9. Tailwind v4 is CSS-first: **no `tailwind.config.*`**, tokens live in `app/globals.css`.
 
-**Seven env vars, none validated at boot** — see `.env.example`, which is the list. `SUPABASE_SECRET_KEY`
-is server-only and bypasses RLS.
+**Seven env vars, none validated at boot** — `.env.example` is the list. `SUPABASE_SECRET_KEY` is
+server-only and bypasses RLS. `CONTEXT.md` (repo root) defines the domain terms modules are named after.
 
 Commits are Conventional Commits, lowercase after the colon. **Never add an agent co-author trailer.**
 
@@ -55,19 +55,20 @@ Commits are Conventional Commits, lowercase after the colon. **Never add an agen
 - **No Server Actions anywhere** (`'use server'` = 0). Every mutation goes through an
   `app/api/**/route.ts` handler, called with `fetch` from a client component.
 - **Next 16 async params**: every dynamic route and every page taking `searchParams` types them
-  `Promise<{…}>` and awaits — 48 files, zero violations. Keep it that way.
-- **Three Supabase clients** in `src/lib/`, all on the publishable (anon) key: `supabase.ts`
-  (browser), `supabaseServer.ts` → `getServerSupabase()` (cookies, 49 sites) /
-  `getServerSupabaseFromToken()` (Bearer, 25 sites).
+  `Promise<{…}>` and awaits — zero violations. Keep it that way.
+- **Three Supabase clients** in `src/lib/`, all on the publishable (anon) key: `supabase.ts` (browser),
+  `supabaseServer.ts` → `getServerSupabase()` (cookies) / `getServerSupabaseFromToken()` (Bearer).
 - **No `middleware.ts`** — deliberate. Auth = SSR checks in `page.tsx` via `lib/staffAuth.ts`
   (`requireActiveManager()`/`requireActiveAdmin()`) plus `lib/adminAuth.ts`/`lib/managerAuth.ts` in
   API routes, with **RLS as the real boundary**.
-- **Exactly ONE service-role client**, `lib/supabaseAdmin.ts`: READS `problem_tests`, WRITES
-  `submission_private` (that table has no write policy). The raw client is **not exported — add a
-  named function there, never a new caller of it**. Bypasses RLS, `server-only` (client import =
-  build error), **never a client prop**. No `SUPABASE_SECRET_KEY` ⇒ nothing grades.
-- **No generated Supabase types.** Clients are untyped and queries inline, so nothing in the type
-  system catches a bad `.select()`. Check column names against the schema by hand.
+- **Exactly ONE service-role client**, `lib/supabaseAdmin.ts`: READS `problem_tests`, nothing else.
+  The raw client is **not exported — add a named function there, never a new caller of it**. Bypasses
+  RLS, `server-only` (client import = build error), **never a client prop**. No `SUPABASE_SECRET_KEY`
+  ⇒ nothing grades. Submissions are written by the `record_submission` RPC (security definer, one
+  transaction) via `lib/submissionRecord.ts`, the only importer of `redactTestResults`/`redactSummary`.
+- **Generated types:** `src/types/database.types.ts`, from `npm run gen:types`; all three clients
+  carry `<Database>`. Regenerate after every migration and commit the diff; never hand-edit it.
+  Annotate client parameters `AppSupabaseClient` (`types/supabase.ts`), never bare `SupabaseClient`.
 - **Every route has a `loading.tsx`** (only `app/auth/*` lack one) — **add one per new route**:
   `SkeletonLoader.tsx` + `loading-shimmer`, `role="status" aria-busy="true"`, `sr-only`, page chrome.
 - State: `AuthContext`, `CountdownContext`, `ThemeContext`. No Redux. SWR in two components only.
@@ -78,22 +79,19 @@ manage users, or edit an already-activated contest.
 
 ## `admin/*` and `manager/*` are twin trees — edit both
 
-Nearly every `app/api/admin/**` route has an `app/api/manager/**` twin, and the page/client trees
-mirror them too. Changing one and not the other is the most common defect in this repo — grep the
-twin path first. Manager also owns `newsposts` and `users/[id]/*`, which have no admin twin.
+The create/edit forms and the help guide's shared sections live in `components/staff/`, parameterised
+by `tree` (`lib/staffPolicy.ts`); their `*Client.tsx` files are thin adapters (the help ones pass in
+only their divergent prose). Everything else — the `manage` screens, dashboards, submission lists and
+every `api/**` route — is still a twin: grep the twin path first, edit both. Manager alone owns
+`newsposts` and `users/[id]/*`.
 
-The deltas are deliberate and must survive any sync:
-
-- `is_active` — admin creations land pending; manager-created contests go live immediately.
-- The activated-contest PATCH/DELETE guard exists on the **admin** side only — it blocks admins from
-  touching a live contest, which is what "only managers edit an already-activated contest" requires.
-- `created_by` ownership scoping is **admin** only; managers see everything.
-- The manager `submissions/[id]` DELETE calls `recalc_user_stats`. **The admin one was deleted** — no
-  `submissions` DELETE policy fits an admin, so it silently deleted 0 rows. Do not reintroduce it.
+The deltas are data in `lib/staffPolicy.ts` (`STAFF_POLICY`) and every twinned route reads them —
+never inline `is_active: false` or `.eq('created_by', …)` again. The manager `submissions/[id]`
+DELETE calls `recalc_user_stats`; the admin one was deleted (no policy fits) — do not reintroduce it.
 
 ## Database
 
-Live Supabase project **`WMOJ`** (ref `usltyqkrptaaktnmjeyf`, us-east-2, Postgres 17): 14 tables, RLS
+Live Supabase project **`WMOJ`** (ref `usltyqkrptaaktnmjeyf`, us-east-2, Postgres 17): 15 tables, RLS
 on all of them, two public buckets (`avatars`, `problem_images`, 5 MB per object). Inspect it with the
 Supabase MCP. No drift detection — live and `supabase/migrations/` agree only because you keep them
 agreeing; `local-dev` replays them onto an empty database and fingerprints the result against prod.
@@ -111,8 +109,8 @@ changes get **no file**, however many rows: publishing a problem, editing a stat
 - Name files `YYYYMMDDHHMMSS_short_snake_case_description.sql` with the real current timestamp.
 - One logical change per file, opening with a comment saying what it does and why. Idempotent where
   practical (`if not exists`, `or replace`), matching the baseline's style.
-- Apply the SQL to the live project **and** commit the file in the same change — never one without
-  the other, or the history silently drifts from reality.
+- Apply the SQL to the live project, commit the file, update `supabase/schema-fingerprint.sql` and
+  regenerate types — all in one change, never one without the others, or history drifts from reality.
 
 ### Easy to get wrong
 
@@ -135,15 +133,16 @@ changes get **no file**, however many rows: publishing a problem, editing a stat
   quotes the answer. `anon` also lost `users.email`/`last_login`/`profile_data` — never name them
   anon-side. Writes stay tight; permissive reads never bless a loose write policy.
 - **The graded data lives in `problem_tests`, not `problems`.** `input`, `output` (the answer key),
-  `checker` and `generator_file` moved to a staff-only side table — RLS filters rows, not columns, so
-  on world-readable `problems` they were public — and were then DROPPED from `problems`. One copy,
-  no fallback. Staff read it through the ordinary client, the submit route through
-  `lib/supabaseAdmin.ts`. **Never select it into anything a browser receives.**
+  `checker` and `generator_file` live in a staff-only side table (RLS filters rows, not columns, so on
+  world-readable `problems` they were public) and were DROPPED from `problems`. One copy, no fallback.
+  Staff read it through the ordinary client, the submit route through `lib/supabaseAdmin.ts`.
+  `input`/`output` never reach a browser; the staff editor gets `generator_file`, `checker`, a count.
 
 ## Judge integration
 
-Four **server-side-only** call sites, each a single synchronous `fetch` — no retries, no timeout, no
-queue. The browser's submit blocks until every test case has run. The auth header is
+All judge traffic goes through `lib/judge.ts` (`judgeSubmit`, `judgeGenerateTests`, `judgeHealthy`) —
+one synchronous `fetch`, no retries, no timeout, no queue; the four routes never call `fetch`
+themselves. The browser's submit blocks until every test case has run. The auth header is
 **`X-Judge-Token`** (not `Authorization`), carrying `JUDGE_SHARED_SECRET`.
 
 | App route | Judge endpoint |
@@ -151,9 +150,6 @@ queue. The browser's submit blocks until every test case has run. The auth heade
 | `api/problems/[id]/submit` | `POST /submit` |
 | `api/{admin,manager}/problems/generator/generate` | `POST /generate-tests` |
 | `api/status/health` | `GET /health` |
-
-Those two `generate` routes differ only in their two auth lines. Changing one alone is the classic
-miss.
 
 `POST /submit` sends `{language, code, input, output, timeLimit, memoryLimit, checker?}` — `checker`
 **omitted entirely** when null or blank — and returns
@@ -163,14 +159,14 @@ miss.
 returns early, and stores **no submission row**: a broken checker is a problem-configuration fault,
 never the student's. Only then does it branch on `compileError`. A 4xx/5xx means the request or the
 judge is wrong, never the user's code; the judge never emits `CE` — this app synthesizes it. **This
-app writes the verdict; the judge never touches Supabase.** Rows are inserted only
-`if (problem.is_active)`, and a failed insert must surface as `stored: false`, never as a silent AC.
-`aggregateVerdict` (`components/VerdictBadge.tsx`) ranks the **full** verdict set, `IE` first — a per-case
-`IE` is a broken problem, not a wrong answer.
+app writes the verdict; the judge never touches Supabase.** `recordSubmission` stores rows only for
+active problems and returns `writeFailed` — surfaced as `stored: false`, never a silent AC — when
+the RPC raises. `aggregateVerdict` (`components/VerdictBadge.tsx`) ranks the **full** verdict set,
+`IE` first — a per-case `IE` is a broken problem, not a wrong answer.
 
 `NEXT_PUBLIC_JUDGE_URL` is read **server-side only**; the browser must never learn the judge URL
 (hence `/status` proxying through `api/status/health`), and `api/status/health` must not forward the
-judge's body. Never import `lib/env.ts` or `lib/supabaseAdmin.ts` from a client component.
+judge's body. Never import `lib/judge.ts` or `lib/supabaseAdmin.ts` from a client component.
 
 ## Invariants
 
@@ -180,12 +176,14 @@ judge's body. Never import `lib/env.ts` or `lib/supabaseAdmin.ts` from a client 
 2. **Points/solved recalculate only on a first solve**, or when a manager deletes a submission.
 3. **Contest-problem eligibility**: a problem in a *rated* contest that is ongoing or upcoming can't
    be added elsewhere; a *rated* target contest accepts only problems not already in another contest.
-4. **`checkTimerExpiry` fails closed** (any error ⇒ expired). `getTimerStatus` is *destructive*:
-   reading an expired timer deletes the timer and participant rows and stamps `left_at` on
-   `join_history`. Stamp it with `.update()` on `(user_id, contest_id)`, never `.upsert()` — the
-   default conflict target is the `id` PK, so it raises `23505`. `countdown_timers` has the same
-   PK/UNIQUE split; `api/contests/[id]/join` now passes `onConflict` on both writes.
-5. Contest leaderboards are **not point-weighted** — each problem contributes at most 1.0.
+4. **Timers are read-only to read.** `readTimer` fails closed (error, missing row or null `started_at`
+   ⇒ expired). A participation ends only via `expireParticipation` (`POST /leave`) or
+   `sweep_expired_participation()`, which `POST /join` and `POST /leave` call first; `GET /timer` never
+   writes. Stamp `left_at` with `.update()` on `(user_id, contest_id)` filtered `is null` — never
+   `.upsert()` (PK is `id` ⇒ `23505`), never unfiltered (it would overwrite the sweep's true end
+   instant). `countdown_timers` has the same PK/UNIQUE split; `join` passes `onConflict` on both writes.
+5. Contest leaderboards are **not point-weighted** — each problem contributes at most 1.0
+   (`scoreParticipants`, `lib/contestScoring.ts`, tested).
 6. The generator staleness guard is deliberate: on create it blocks submit, on edit one state blocks
    and another only warns, so `generator_file` always matches the stored tests.
 
@@ -203,19 +201,22 @@ judge's body. Never import `lib/env.ts` or `lib/supabaseAdmin.ts` from a client 
 - **Dark mode does not exist**: `<html className="light">` is hardcoded, `ThemeContext` is a frozen
   `{theme:'light'}`, `ThemeToggle` is `=> null`. Design tokens are contrast-checked for light only.
 - Hidden resources return **404, not 403** (`canUserAccessProblem`/`canUserAccessContest`).
-- Reuse `getAdminSupabase`/`getManagerSupabase` rather than re-inlining the Bearer/cookie preamble.
-  Staff page guards go through `lib/staffAuth.ts`; API routes use those two helpers. No fifth spelling.
-- **Check for callers before "fixing" an API route.** Server components query Supabase directly, so
-  routes die quietly — 12 have been deleted for that. Grep `fetch(` before touching the 31 left.
-- **Don't use `useSearchParams` in a client component** — derive filter state from server props,
-  which avoids the Next 16 `<Suspense>` boundary requirement.
+- Reuse `getAdminSupabase`/`getManagerSupabase` rather than re-inlining the Bearer/cookie preamble; for
+  non-staff bearer routes use `requireUser(request)` (`lib/requestAuth.ts`); `parseBearerHeader` is the
+  one token parser. Page guards go through `lib/staffAuth.ts`. No fifth spelling of either.
+- Routes die quietly (server components query Supabase directly) — grep `fetch(` for callers first.
+- **Don't use `useSearchParams` in a client component** — derive filter state from server props.
 - **Lists paginate on the server.** `page.tsx` fetches one page (`parsePage` → `.range(computeRange(…))`
   with `{ count: 'exact' }` → `clampPage` + `redirect`); the client uses `usePaginatedNavigation` +
   `<Pagination>` + `<DataTable>`. Copy `app/admin/problems/manage/`, don't invent a variant. Never
-  client-paginate a DB-backed list; never `setRows(prev => …)` after a mutation
-  (`startTransition(() => router.refresh())`); never enrich beyond the current page's ids; and
-  **never select `code`/`results` in a submission-list query** — `useViewCode` fetches them on
-  demand. `DataTable` sorting is deliberately disabled: it only ever sorted the current page.
+  client-paginate a DB-backed list; never `setRows(prev => …)` after a mutation (`startTransition(() =>
+  router.refresh())`); never enrich beyond the current page's ids (submission pages:
+  `resolveSubmissionNames`); and **never select `code`/`results` in a submission-list query** —
+  `useViewCode` + `SubmissionDetailModal` fetch and render them on demand. `DataTable` sorting is
+  disabled (page-local). Any unbounded `.select()` that feeds an aggregate goes through
+  `lib/fetchAllRows.ts` (PostgREST answers 206 past its cap and `postgrest-js` calls that success).
+- Column lists live in `lib/queries/<table>.ts` beside their `Pick<Row<…>>` types; spell a `.select()`
+  list inline only for a one-off scalar.
 
 ## Related repo
 
@@ -226,9 +227,8 @@ judge's body. Never import `lib/env.ts` or `lib/supabaseAdmin.ts` from a client 
 
 ## Maintenance
 
-Keep this file current — when you find something here outdated, wrong, or missing, fix it as part of
-your change; letting it go stale is leaving the work unfinished. And keep it **at or under 250
-lines**.
+Keep this file current — fix anything here that is outdated, wrong or missing as part of your change;
+letting it go stale is leaving the work unfinished. And keep it **at or under 250 lines**.
 
 ⚠️ **Maintenance here is ZERO-SUM.** The line budget is the point, not an accident: a file nobody
 finishes reading is a file that does not guide anything. So the test for whether something belongs

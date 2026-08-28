@@ -1,4 +1,5 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { CONTEST_PROBLEM_LINK_COLUMNS } from '@/lib/queries/contestProblems';
+import type { AppSupabaseClient } from '@/types/supabase';
 
 /**
  * The contests each problem belongs to, by name, keyed by problem id.
@@ -15,7 +16,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * server and must never enrich beyond that page.
  */
 export async function fetchContestNamesByProblem(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   problemIds: string[],
 ): Promise<Record<string, string[]>> {
   const problemContestNamesMap: Record<string, string[]> = {};
@@ -23,7 +24,7 @@ export async function fetchContestNamesByProblem(
 
   const { data: cpRows } = await supabase
     .from('contest_problems')
-    .select('problem_id, contest_id')
+    .select(CONTEST_PROBLEM_LINK_COLUMNS)
     .in('problem_id', problemIds);
 
   const contestIdSet = new Set<string>();

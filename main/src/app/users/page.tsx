@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabaseServer';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
+import { USER_RANKING_COLUMNS } from '@/lib/queries/users';
 import UsersClient from './UsersClient';
 
 export interface UserRow {
@@ -34,7 +35,7 @@ export default async function UsersPage({
     const orderCol = sort === 'problems' ? 'problems_solved' : 'points';
     let query = supabase
       .from('users')
-      .select('id, username, problems_solved, points', { count: 'exact' })
+      .select(USER_RANKING_COLUMNS, { count: 'exact' })
       .order(orderCol, { ascending: false })
       // Most users sit at points = 0, and without a unique tiebreaker Postgres
       // gives no stable order across separate LIMIT/OFFSET queries — paging

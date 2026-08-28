@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getManagerSupabase } from '@/lib/managerAuth';
-import { getJudgeSharedSecret, getJudgeUrl } from '@/lib/env';
+import { judgeGenerateTests } from '@/lib/judge';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,52 +8,43 @@ export async function POST(request: NextRequest) {
     if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
     // Expect JSON body with code string
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     const source = body?.code;
     if (!source || typeof source !== 'string' || source.trim().length === 0) {
       return NextResponse.json({ error: 'code field is required' }, { status: 400 });
     }
 
-    // Call judge service using existing env var pattern
-    const JUDGE_URL = getJudgeUrl();
-    const resp = await fetch(`${JUDGE_URL}/generate-tests`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Judge-Token': getJudgeSharedSecret(),
-      },
-      body: JSON.stringify({ language: 'cpp', code: source }),
-    });
+    const outcome = await judgeGenerateTests(source);
 
-    // Check `resp.ok` BEFORE parsing. A judge 502/504, a proxy page or a cold
-    // start answers with HTML, and `.json()` would throw into the outer catch
-    // and surface as an opaque app 500 — telling the author their generator is
-    // broken when the judge is simply down.
-    if (!resp.ok) {
-      const raw = await resp.text().catch(() => '');
-      let parsed: { error?: string; inputJson?: string; outputJson?: string } | null = null;
-      try { parsed = raw ? JSON.parse(raw) : null; } catch { parsed = null; }
-      return NextResponse.json(
-        {
-          error: parsed?.error || `Judge error (HTTP ${resp.status})${raw && !parsed ? `: ${raw.slice(0, 500)}` : ''}`,
-          inputRaw: parsed?.inputJson,
-          outputRaw: parsed?.outputJson,
-        },
-        { status: resp.status || 500 }
-      );
-    }
-
-    const data = await resp.json().catch(() => null);
-    if (!data) {
+    if (!outcome.ok) {
+      // A judge that answered, however badly, gets its own status and its own
+      // error text forwarded — the author needs to see why their generator was
+      // rejected. Anything else is a 502: the judge is down or unintelligible,
+      // which is never a fault of the source they just pasted.
+      if (outcome.kind === 'httpError') {
+        const parsedError = typeof outcome.parsed?.error === 'string' ? outcome.parsed.error : '';
+        const rawTail = !outcome.parsed && outcome.detail ? `: ${outcome.detail.slice(0, 500)}` : '';
+        return NextResponse.json(
+          {
+            error: parsedError || `Judge error (HTTP ${outcome.status})${rawTail}`,
+            inputRaw: outcome.parsed?.inputJson,
+            outputRaw: outcome.parsed?.outputJson,
+          },
+          { status: outcome.status || 500 },
+        );
+      }
       return NextResponse.json({ error: 'Judge returned a malformed response' }, { status: 502 });
     }
 
     // Return both parsed arrays and unmodified raw strings for UI preview/debugging
     return NextResponse.json({
-      input: data?.input,
-      output: data?.output,
-      inputRaw: data?.inputJson,
-      outputRaw: data?.outputJson,
+      input: outcome.value.input,
+      output: outcome.value.output,
+      inputRaw: outcome.value.inputJson,
+      outputRaw: outcome.value.outputJson,
     });
   } catch (error) {
     console.error('Generator generate error:', error);

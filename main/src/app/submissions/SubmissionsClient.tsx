@@ -6,10 +6,12 @@ import { TableBodySkeleton } from '@/components/TableBodySkeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
 import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
-import { SubmissionCodeBlock } from '@/components/SubmissionCodeBlock';
+import { SubmissionDetailModal } from '@/components/SubmissionDetailModal';
+import { useViewCode } from '@/hooks/useViewCode';
 import { toast } from '@/components/ui/Toast';
-import type { TestResult } from '@/types/judge';
+import { displayLanguage } from '@/lib/languages';
 import type { SubmissionRow, SubmissionStats } from './page';
+import { formatSubmittedAt } from '@/utils/formatDate';
 
 interface Props {
   initialSubmissions: SubmissionRow[];
@@ -33,7 +35,8 @@ const PAGE_SIZE = 20;
 
 // ─── Relative time ────────────────────────────────────────────────────────────
 
-function formatRelativeTime(dateStr: string): string {
+function formatRelativeTime(dateStr: string | null): string {
+  if (!dateStr) return '—';
   const diff = Date.now() - new Date(dateStr).getTime();
   const seconds = Math.floor(diff / 1000);
   if (seconds < 60) return `${seconds}s ago`;
@@ -45,62 +48,12 @@ function formatRelativeTime(dateStr: string): string {
   return `${days}d ago`;
 }
 
-// ─── Language label ───────────────────────────────────────────────────────────
-
-function languageLabel(lang: string): string {
-  switch (lang) {
-    case 'python':       return 'Python';
-    case 'python3':      return 'Python 3';
-    case 'pypy3':        return 'PyPy 3';
-    case 'cpp':          return 'C++';
-    case 'cpp14':        return 'C++14 (GCC)';
-    case 'cpp17':        return 'C++17 (GCC)';
-    case 'cpp20':        return 'C++20 (GCC)';
-    case 'cpp23':        return 'C++23 (GCC)';
-    default:             return lang.toUpperCase();
-  }
-}
-
 // ─── Submission detail (own-code modal) ────────────────────────────────────────
-// Mirrors the submission-detail popup used on the admin/manager dashboards.
 
-// Shape returned by GET /api/user/submissions/[id] (the caller's own submission).
-interface SubmissionDetail {
-  id: string;
-  problem_id: string;
-  problem_name: string;
-  language: string;
-  code: string;
-  results: TestResult[] | null;
-  summary: { total: number; passed: number; failed: number };
-  // A compile error is stored as summary {0,0,0} with the compiler's message in
-  // the summary JSON. The route has always returned it; without this field the
-  // modal rendered neither a message nor a results section (results is []) and
-  // the only explanation of the failure sat unread in the JSON response.
-  compileError: string | null;
-  created_at: string;
-}
-
-function isAccepted(sub: SubmissionDetail): boolean {
-  return sub.summary.total > 0 && sub.summary.failed === 0;
-}
-
-function statusLabel(sub: SubmissionDetail): string {
-  if (isAccepted(sub)) return 'Accepted';
-  if (sub.compileError) return 'Compile Error';
-  return 'Failed';
-}
-
-function formatModalDate(timestamp: string): string {
-  return new Date(timestamp).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
+/**
+ * The modal subtitle's date. Built from the LIST ROW, so it renders while the
+ * detail request is still in flight.
+ */
 // ─── Pie Chart ────────────────────────────────────────────────────────────────
 
 const PIE_SLICES = [
@@ -221,8 +174,14 @@ export default function SubmissionsClient({
   fetchError,
 }: Props) {
   const { user, session } = useAuth();
-  const [selected, setSelected] = useState<SubmissionDetail | null>(null);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [selectedRow, setSelectedRow] = useState<SubmissionRow | null>(null);
+
+  const { selected, loading: viewCodeLoading, open: openViewCode, close: closeViewCode } = useViewCode({
+    buildUrl: (id) => `/api/user/submissions/${id}`,
+    getToken: () => session?.access_token,
+  });
+
+  const handleCloseViewCode = () => { closeViewCode(); setSelectedRow(null); };
 
   // The id filters arrive from deep links and have no input of their own, so
   // they ride along on every page flip and filter change like the text ones.
@@ -258,25 +217,16 @@ export default function SubmissionsClient({
 
   const handleStatusChange = (value: 'all' | 'passed' | 'failed') => handleFilterChange({ status: value !== 'all' ? value : undefined });
 
-  const openSubmission = async (id: string) => {
-    if (loadingId) return;
+  // The "View Code" button only renders on the caller's own rows, so a missing
+  // token here means the session lapsed between render and click — say so,
+  // rather than letting it surface as a bare 401 from the route.
+  const openSubmission = (sub: SubmissionRow) => {
     if (!session?.access_token) {
       toast.error('Error', 'You must be signed in to view your code.');
       return;
     }
-    setLoadingId(id);
-    try {
-      const res = await fetch(`/api/user/submissions/${id}`, {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to load submission');
-      setSelected(data.submission as SubmissionDetail);
-    } catch (e: unknown) {
-      toast.error('Error', e instanceof Error ? e.message : 'Failed to load submission');
-    } finally {
-      setLoadingId(null);
-    }
+    setSelectedRow(sub);
+    openViewCode(sub.id);
   };
 
   const inputClass =
@@ -354,7 +304,7 @@ export default function SubmissionsClient({
                         : 'bg-error/10 text-error border border-error/20';
 
                       const isOwn = !!user && sub.user_id === user.id;
-                      const isViewingCode = loadingId === sub.id;
+                      const isViewingCode = viewCodeLoading && selectedRow?.id === sub.id;
 
                       return (
                         <tr key={sub.id} className="hover:bg-surface-2 transition-colors">
@@ -378,12 +328,12 @@ export default function SubmissionsClient({
                           <td className="px-4 py-3 align-middle text-right whitespace-nowrap">
                             <div className="flex flex-col items-end gap-1.5">
                               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-2 text-text-muted border border-border whitespace-nowrap">
-                                {languageLabel(sub.language)}
+                                {displayLanguage(sub.language)}
                               </span>
                               {isOwn && (
                                 <button
                                   type="button"
-                                  onClick={() => openSubmission(sub.id)}
+                                  onClick={() => openSubmission(sub)}
                                   disabled={isViewingCode}
                                   className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 disabled:opacity-60 whitespace-nowrap"
                                 >
@@ -477,133 +427,13 @@ export default function SubmissionsClient({
         </div>
       </div>
 
-      {/* View Code Modal — only opens for the current user's own submissions */}
-      {selected && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setSelected(null)}
-        >
-          <div
-            className="w-full max-w-4xl bg-surface-1 border border-border rounded-lg flex flex-col max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-              <div>
-                <h2 className="text-base font-semibold text-foreground">Submission Details</h2>
-                <p className="text-xs text-text-muted">
-                  {selected.problem_name} • {formatModalDate(selected.created_at)}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelected(null)}
-                className="text-text-muted hover:text-foreground text-lg"
-                aria-label="Close"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-surface-2 p-3 rounded-md border border-border">
-                  <div className="text-text-muted text-xs uppercase tracking-wider">Status</div>
-                  <div className={`text-sm font-semibold mt-1 ${isAccepted(selected) ? 'text-success' : 'text-error'}`}>
-                    {statusLabel(selected)}
-                  </div>
-                </div>
-                <div className="bg-surface-2 p-3 rounded-md border border-border">
-                  <div className="text-text-muted text-xs uppercase tracking-wider">Score</div>
-                  <div className="text-sm font-semibold text-foreground mt-1 font-mono">
-                    {selected.summary.passed}/{selected.summary.total}
-                  </div>
-                </div>
-                <div className="bg-surface-2 p-3 rounded-md border border-border">
-                  <div className="text-text-muted text-xs uppercase tracking-wider">Language</div>
-                  <div className="text-sm font-semibold text-foreground mt-1">{languageLabel(selected.language)}</div>
-                </div>
-              </div>
-
-              {/* Compile error — the only explanation a CE submission has.
-                  There are no test-case results to fall back on (results is []),
-                  so without this the modal showed a bare 0/0 and nothing else. */}
-              {selected.compileError && (
-                <div>
-                  <h3 className="text-sm font-medium text-foreground mb-1.5">Compile Error</h3>
-                  <pre className="p-2 rounded bg-surface-1 text-error overflow-x-auto border border-border text-xs whitespace-pre-wrap">
-                    {selected.compileError}
-                  </pre>
-                </div>
-              )}
-
-              {/* Source Code */}
-              <div>
-                <h3 className="text-sm font-medium text-foreground mb-1.5">Source Code</h3>
-                <div className="rounded-md overflow-hidden border border-border text-sm">
-                  <SubmissionCodeBlock language={selected.language} code={selected.code} />
-                </div>
-              </div>
-
-              {/* Test Case Results */}
-              {selected.results && selected.results.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-foreground mb-1.5">Test Case Results</h3>
-                  <div className="space-y-1.5">
-                    {selected.results.map((r, i) => (
-                      <div
-                        key={i}
-                        className={`p-2.5 rounded-md border ${r.passed ? 'bg-success/5 border-success/20' : 'bg-error/5 border-error/20'}`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className={`font-medium text-sm ${r.passed ? 'text-success' : 'text-error'}`}>
-                            Case #{i + 1}: {r.passed ? 'Passed' : 'Failed'}
-                          </span>
-                          <span className="text-xs text-text-muted font-mono">
-                            Exit: {r.exitCode ?? 'N/A'} {r.timedOut ? '(Timed Out)' : ''}
-                          </span>
-                        </div>
-                        {r.checkerMessage && (
-                          <div className="mt-1 text-xs font-mono">
-                            <div className="text-text-muted mb-0.5">Checker:</div>
-                            <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-foreground border border-border whitespace-pre-wrap">{r.checkerMessage}</pre>
-                          </div>
-                        )}
-                        {!r.passed && (r.expected || r.received) && (
-                          <div className="grid grid-cols-2 gap-2 mt-1 text-xs font-mono">
-                            <div>
-                              <div className="text-text-muted mb-0.5">Expected:</div>
-                              <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-text-muted border border-border">{r.expected}</pre>
-                            </div>
-                            <div>
-                              <div className="text-text-muted mb-0.5">Received:</div>
-                              <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-error border border-border">{r.received}</pre>
-                            </div>
-                            {r.stderr && (
-                              <div className="col-span-2">
-                                <div className="text-text-muted mb-0.5">Stderr:</div>
-                                <pre className="bg-surface-1 p-1.5 rounded overflow-x-auto text-warning border border-border">{r.stderr}</pre>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="px-5 py-3 border-t border-border flex justify-end">
-              <button
-                onClick={() => setSelected(null)}
-                className="px-4 py-1.5 rounded-md bg-surface-2 hover:bg-surface-3 text-sm font-medium text-foreground"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* View Code — only opens for the current user's own submissions. */}
+      <SubmissionDetailModal
+        submission={selected}
+        loading={viewCodeLoading}
+        subtitle={selectedRow ? `${selectedRow.problem_name} • ${formatSubmittedAt(selectedRow.created_at)}` : 'Loading…'}
+        onClose={handleCloseViewCode}
+      />
     </div>
   );
 }

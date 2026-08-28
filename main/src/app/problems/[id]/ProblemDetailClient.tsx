@@ -97,7 +97,7 @@ export default function ProblemDetailClient({ problem, testCaseCount, activeCont
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-text-muted">Added</span>
-                  <span className="text-foreground font-mono">{new Date(problem.created_at).toLocaleDateString()}</span>
+                  <span className="text-foreground font-mono">{problem.created_at ? new Date(problem.created_at).toLocaleDateString() : '—'}</span>
                 </div>
               </div>
 

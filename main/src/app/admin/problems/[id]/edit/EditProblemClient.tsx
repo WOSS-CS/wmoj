@@ -5,24 +5,22 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
-import { AdminGuard } from '@/components/AdminGuard';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/AnimationWrapper';
+import type { ProblemEditRow } from '@/lib/queries/problems';
 
-interface ProblemData {
-  id: string;
-  name: string;
-  content: string;
-  is_active: boolean | null;
-  time_limit: number | null;
-  memory_limit: number | null;
-  points: number;
+/**
+ * {@link PROBLEM_EDIT_COLUMNS} plus the two authoring sources and the case count
+ * the page reads out of the staff-only `problem_tests` side table.
+ *
+ * The row half is derived, not restated: `input` and `output` must never reach
+ * a browser, and only the count does — see `lib/queries/problemTests.ts`.
+ */
+type ProblemData = ProblemEditRow & {
   test_case_count: number;
   generator_file: string | null;
   checker: string | null;
-  created_at: string;
-  updated_at: string;
-}
+};
 
 const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor').then(m => m.MarkdownEditor), { ssr: false });
 const CodeEditor = dynamic(() => import('@/components/CodeEditor'), { ssr: false, loading: () => <div className="h-[300px] bg-surface-2 rounded-md animate-pulse" /> });
@@ -139,123 +137,121 @@ export default function EditProblemClient({ problem }: { problem: ProblemData })
 
   return (
     <AuthGuard requireAuth allowAuthenticated>
-      <AdminGuard>
-        <div className="w-full space-y-6">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Edit Problem</h1>
-            <p className="text-sm text-text-muted mt-1">Update problem details, statement, and optionally regenerate test cases</p>
+      <div className="w-full space-y-6">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">Edit Problem</h1>
+          <p className="text-sm text-text-muted mt-1">Update problem details, statement, and optionally regenerate test cases</p>
+        </div>
+
+        {isLive && (
+          <div className="p-4 border border-warning/20 rounded-lg bg-warning/5 flex items-start gap-3 max-w-4xl">
+            <div className="w-2 h-2 rounded-full bg-warning mt-1.5 shrink-0" />
+            <p className="text-warning text-sm font-medium">
+              This problem is already <span className="font-semibold">live</span>, so it is read-only here — published problems can only be changed by a Manager. Ask a Manager to deactivate it first, or to make the edit for you.
+            </p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5 max-w-4xl">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-foreground">Problem ID</label>
+            <input className={`${inputClass} opacity-60 cursor-not-allowed`} value={problem.id} readOnly disabled />
+            <p className="text-xs text-text-muted">The problem ID cannot be changed after creation.</p>
           </div>
 
-          {isLive && (
-            <div className="p-4 border border-warning/20 rounded-lg bg-warning/5 flex items-start gap-3 max-w-4xl">
-              <div className="w-2 h-2 rounded-full bg-warning mt-1.5 shrink-0" />
-              <p className="text-warning text-sm font-medium">
-                This problem is already <span className="font-semibold">live</span>, so it is read-only here — published problems can only be changed by a Manager. Ask a Manager to deactivate it first, or to make the edit for you.
-              </p>
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <label htmlFor="name" className="block text-sm font-medium text-foreground">Problem Name *</label>
+            <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className={inputClass} placeholder="Enter problem name" />
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5 max-w-4xl">
+          <MarkdownEditor value={formData.content} onChange={(value) => setFormData(prev => ({ ...prev, content: value }))} placeholder="Enter problem description..." height={500} />
+
+          <div className="grid md:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-foreground">Problem ID</label>
-              <input className={`${inputClass} opacity-60 cursor-not-allowed`} value={problem.id} readOnly disabled />
-              <p className="text-xs text-text-muted">The problem ID cannot be changed after creation.</p>
+              <label htmlFor="points" className="block text-sm font-medium text-foreground">Points *</label>
+              <input type="number" id="points" name="points" value={formData.points} onChange={handleChange} required min="1" className={inputClass} placeholder="e.g. 3, 6, 10" />
             </div>
-
             <div className="space-y-1.5">
-              <label htmlFor="name" className="block text-sm font-medium text-foreground">Problem Name *</label>
-              <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className={inputClass} placeholder="Enter problem name" />
+              <label htmlFor="timeLimit" className="block text-sm font-medium text-foreground">Time Limit (ms) *</label>
+              <input type="number" id="timeLimit" name="timeLimit" value={formData.timeLimit} onChange={handleChange} required min="1" className={inputClass} placeholder="5000" />
             </div>
+            <div className="space-y-1.5">
+              <label htmlFor="memoryLimit" className="block text-sm font-medium text-foreground">Memory Limit (MB) *</label>
+              <input type="number" id="memoryLimit" name="memoryLimit" value={formData.memoryLimit} onChange={handleChange} required min="1" className={inputClass} placeholder="256" />
+            </div>
+          </div>
 
-            <MarkdownEditor value={formData.content} onChange={(value) => setFormData(prev => ({ ...prev, content: value }))} placeholder="Enter problem description..." height={500} />
+          {/* No "Active" control here, deliberately. Only managers publish: the
+              admin PATCH route never reads is_active and the RLS write policies
+              pin is_active = false, so the checkbox this file used to ship could
+              only ever report a success it had not achieved. */}
 
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <label htmlFor="points" className="block text-sm font-medium text-foreground">Points *</label>
-                <input type="number" id="points" name="points" value={formData.points} onChange={handleChange} required min="1" className={inputClass} placeholder="e.g. 3, 6, 10" />
+          {/* Existing test case info */}
+          <div className="p-4 border border-border rounded-lg bg-surface-2 flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-brand-primary" />
+            <p className="text-sm text-foreground">
+              Current test cases: <span className="font-mono font-medium">{problem.test_case_count}</span>
+            </p>
+            {generatedInput && generatedOutput && (
+              <span className="text-xs text-warning font-medium ml-auto">Will be overridden on save</span>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-foreground">Generator (C++) — Optional</label>
+            <p className="text-xs text-text-muted">Paste a C++ generator to regenerate test cases. It must print input JSON to stdout and output JSON to stderr. Leave blank to keep existing test cases.</p>
+            <CodeEditor language="cpp" value={generatorCode} onChange={setGeneratorCode} height="300px" />
+            <button type="button" onClick={handleGenerate} disabled={!generatorCode.trim() || genLoading} className="px-4 py-1.5 bg-success/10 text-success text-sm font-medium rounded-md hover:bg-success/20 disabled:opacity-50 disabled:cursor-not-allowed">
+              {genLoading ? 'Generating…' : 'Generate Test Cases'}
+            </button>
+
+            {genError && <div className="bg-error/10 border border-error/20 rounded-lg p-3"><p className="text-error text-sm whitespace-pre-wrap break-words">{genError}</p></div>}
+
+            {generatedInput && generatedOutput && !isStaleAfterGen && (
+              <div className="p-4 border border-success/20 rounded-lg bg-success/5 flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
+                <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                <p className="text-success text-sm font-medium">
+                  Successfully generated {generatedInput.length} test cases. These will replace the existing ones when you save.
+                </p>
               </div>
-              <div className="space-y-1.5">
-                <label htmlFor="timeLimit" className="block text-sm font-medium text-foreground">Time Limit (ms) *</label>
-                <input type="number" id="timeLimit" name="timeLimit" value={formData.timeLimit} onChange={handleChange} required min="1" className={inputClass} placeholder="5000" />
+            )}
+
+            {generatedInput && generatedOutput && isStaleAfterGen && (
+              <div className="p-4 border border-warning/20 rounded-lg bg-warning/5 flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
+                <div className="w-2 h-2 rounded-full bg-warning mt-1.5 shrink-0" />
+                <p className="text-warning text-sm font-medium">
+                  Generator code has changed since these {generatedInput.length} test cases were generated. Click <span className="font-semibold">Generate Test Cases</span> again before saving so the stored generator matches the stored tests.
+                </p>
               </div>
-              <div className="space-y-1.5">
-                <label htmlFor="memoryLimit" className="block text-sm font-medium text-foreground">Memory Limit (MB) *</label>
-                <input type="number" id="memoryLimit" name="memoryLimit" value={formData.memoryLimit} onChange={handleChange} required min="1" className={inputClass} placeholder="256" />
+            )}
+
+            {editorEditsWillBeDiscarded && (
+              <div className="p-4 border border-warning/20 rounded-lg bg-warning/5 flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
+                <div className="w-2 h-2 rounded-full bg-warning mt-1.5 shrink-0" />
+                <p className="text-warning text-sm font-medium">
+                  Generator code edits will be discarded on save unless you click <span className="font-semibold">Generate Test Cases</span> to apply them. The existing test cases will be preserved.
+                </p>
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* No "Active" control here, deliberately. Only managers publish: the
-                admin PATCH route never reads is_active and the RLS write policies
-                pin is_active = false, so the checkbox this file used to ship could
-                only ever report a success it had not achieved. */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-foreground">Custom Checker (C++) — Optional</label>
+            <p className="text-xs text-text-muted">Leave this empty for the normal behaviour: every submission is graded by comparing its output to the expected output exactly. Add a checker only when the problem has <strong className="text-foreground">more than one valid answer</strong> — any shortest path, any valid ordering, a floating-point answer within a tolerance. The judge then compiles this program and lets it accept or reject each test case, and its explanation is shown to the student on a rejected case. Unlike the generator above, this field is saved as-is: clearing it removes the checker and returns the problem to exact comparison.</p>
+            <CodeEditor language="cpp" value={checkerCode} onChange={setCheckerCode} height="300px" />
+          </div>
 
-            {/* Existing test case info */}
-            <div className="p-4 border border-border rounded-lg bg-surface-2 flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-brand-primary" />
-              <p className="text-sm text-foreground">
-                Current test cases: <span className="font-mono font-medium">{problem.test_case_count}</span>
-              </p>
-              {generatedInput && generatedOutput && (
-                <span className="text-xs text-warning font-medium ml-auto">Will be overridden on save</span>
-              )}
-            </div>
+          {error && <div className="bg-error/10 border border-error/20 rounded-lg p-3"><p className="text-error text-sm">{error}</p></div>}
+          {success && <div className="bg-success/10 border border-success/20 rounded-lg p-3"><p className="text-success text-sm">{success}</p></div>}
 
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-foreground">Generator (C++) — Optional</label>
-              <p className="text-xs text-text-muted">Paste a C++ generator to regenerate test cases. It must print input JSON to stdout and output JSON to stderr. Leave blank to keep existing test cases.</p>
-              <CodeEditor language="cpp" value={generatorCode} onChange={setGeneratorCode} height="300px" />
-              <button type="button" onClick={handleGenerate} disabled={!generatorCode.trim() || genLoading} className="px-4 py-1.5 bg-success/10 text-success text-sm font-medium rounded-md hover:bg-success/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                {genLoading ? 'Generating…' : 'Generate Test Cases'}
-              </button>
-
-              {genError && <div className="bg-error/10 border border-error/20 rounded-lg p-3"><p className="text-error text-sm whitespace-pre-wrap break-words">{genError}</p></div>}
-
-              {generatedInput && generatedOutput && !isStaleAfterGen && (
-                <div className="p-4 border border-success/20 rounded-lg bg-success/5 flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
-                  <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                  <p className="text-success text-sm font-medium">
-                    Successfully generated {generatedInput.length} test cases. These will replace the existing ones when you save.
-                  </p>
-                </div>
-              )}
-
-              {generatedInput && generatedOutput && isStaleAfterGen && (
-                <div className="p-4 border border-warning/20 rounded-lg bg-warning/5 flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
-                  <div className="w-2 h-2 rounded-full bg-warning mt-1.5 shrink-0" />
-                  <p className="text-warning text-sm font-medium">
-                    Generator code has changed since these {generatedInput.length} test cases were generated. Click <span className="font-semibold">Generate Test Cases</span> again before saving so the stored generator matches the stored tests.
-                  </p>
-                </div>
-              )}
-
-              {editorEditsWillBeDiscarded && (
-                <div className="p-4 border border-warning/20 rounded-lg bg-warning/5 flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
-                  <div className="w-2 h-2 rounded-full bg-warning mt-1.5 shrink-0" />
-                  <p className="text-warning text-sm font-medium">
-                    Generator code edits will be discarded on save unless you click <span className="font-semibold">Generate Test Cases</span> to apply them. The existing test cases will be preserved.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-foreground">Custom Checker (C++) — Optional</label>
-              <p className="text-xs text-text-muted">Leave this empty for the normal behaviour: every submission is graded by comparing its output to the expected output exactly. Add a checker only when the problem has <strong className="text-foreground">more than one valid answer</strong> — any shortest path, any valid ordering, a floating-point answer within a tolerance. The judge then compiles this program and lets it accept or reject each test case, and its explanation is shown to the student on a rejected case. Unlike the generator above, this field is saved as-is: clearing it removes the checker and returns the problem to exact comparison.</p>
-              <CodeEditor language="cpp" value={checkerCode} onChange={setCheckerCode} height="300px" />
-            </div>
-
-            {error && <div className="bg-error/10 border border-error/20 rounded-lg p-3"><p className="text-error text-sm">{error}</p></div>}
-            {success && <div className="bg-success/10 border border-success/20 rounded-lg p-3"><p className="text-success text-sm">{success}</p></div>}
-
-            <div className="flex gap-3">
-              <button type="submit" disabled={loading || isStaleAfterGen || isLive} title={isLive ? 'Live problems can only be edited by a Manager.' : undefined} className="h-10 px-5 bg-brand-primary text-white text-sm font-medium rounded-md hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                {loading ? <><LoadingSpinner size="sm" /><span>Saving...</span></> : 'Save Changes'}
-              </button>
-              <Link href="/admin/problems/manage" className="h-10 px-5 bg-surface-2 text-foreground text-sm font-medium rounded-md hover:bg-surface-3 flex items-center">Cancel</Link>
-            </div>
-          </form>
-        </div>
-      </AdminGuard>
+          <div className="flex gap-3">
+            <button type="submit" disabled={loading || isStaleAfterGen || isLive} title={isLive ? 'Live problems can only be edited by a Manager.' : undefined} className="h-10 px-5 bg-brand-primary text-white text-sm font-medium rounded-md hover:bg-brand-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+              {loading ? <><LoadingSpinner size="sm" /><span>Saving...</span></> : 'Save Changes'}
+            </button>
+            <Link href="/admin/problems/manage" className="h-10 px-5 bg-surface-2 text-foreground text-sm font-medium rounded-md hover:bg-surface-3 flex items-center">Cancel</Link>
+          </div>
+        </form>
+      </div>
     </AuthGuard>
   );
 }

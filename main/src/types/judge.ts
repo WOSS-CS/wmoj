@@ -68,14 +68,19 @@ export interface TestResult {
  * `checkerMessage` quotes the expected answer. The full array lives in
  * `public.submission_private.results_full`, readable only by the submitter and
  * active staff.
+ *
+ * A type ALIAS, not an `interface`, and that is load-bearing: only an alias of
+ * an object literal gets TypeScript's implicit index signature, which is what
+ * lets a redacted array be assigned to the `jsonb` `submissions.results` column
+ * (typed `Json`) without a cast. An interface here would force one back.
  */
-export interface PublicTestResult {
+export type PublicTestResult = {
   index: number;
   passed: boolean;
   verdict: Verdict;
   timedOut: boolean;
   exitCode: number | null;
-}
+};
 
 /** The `summary` JSON stored on `public.submissions`. There is no `verdict` column. */
 export interface SubmissionSummary {

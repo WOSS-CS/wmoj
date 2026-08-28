@@ -1,4 +1,5 @@
 import { validateSlug } from '@/utils/validation';
+import type { Json } from '@/types/supabase';
 
 /**
  * Shared request validation for the four problem write handlers
@@ -28,17 +29,23 @@ export interface ProblemValidationError {
  */
 export interface ProblemMetadata {
   id: string;
-  name: unknown;
-  content: unknown;
+  name: string;
+  content: string;
   time_limit: number;
   memory_limit: number;
   points: number;
 }
 
-/** The `problem_tests` columns a create request supplies, already normalised. */
+/**
+ * The `problem_tests` columns a create request supplies, already normalised.
+ *
+ * `input`/`output` are `Json[]` because the columns are `jsonb` and the values
+ * reached here through `request.json()` — every element is JSON-representable by
+ * construction. Only the array-ness is checkable at runtime, and it is checked.
+ */
 export interface ProblemTestData {
-  input: unknown[];
-  output: unknown[];
+  input: Json[];
+  output: Json[];
   checker: string | null;
   generator_file: string | null;
 }
@@ -122,6 +129,14 @@ export function validateProblemCreate(
 
   if (!name || !content || !input || !output) {
     return { error: 'Name, content, input, and output are required', status: 400 };
+  }
+
+  // `problems.name` and `problems.content` are `text not null`, so the typed
+  // client will not take an `unknown`. Proving string-ness here rather than at
+  // the two insert sites keeps the check in the one place both trees call, and
+  // turns a non-string name into a clean 400 instead of a PostgREST 500.
+  if (typeof name !== 'string' || typeof content !== 'string') {
+    return { error: 'Name and content must be strings', status: 400 };
   }
 
   // Validate that input and output are arrays

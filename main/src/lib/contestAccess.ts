@@ -1,8 +1,8 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { AppSupabaseClient } from '@/types/supabase';
 import { isActiveAdmin, isActiveManager } from '@/lib/staffAuth';
 
 export async function canUserAccessContest(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   contest: { is_active: boolean | null; created_by: string | null },
   userId: string | null,
 ): Promise<boolean> {

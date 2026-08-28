@@ -11,21 +11,10 @@ import { AuthPromptModal } from '@/components/AuthPromptModal';
 import { Badge } from '@/components/ui/Badge';
 import { toast } from '@/components/ui/Toast';
 import { getContestStatus, formatTimeUntil, CONTEST_STATUS_VARIANT, CONTEST_STATUS_LABEL } from '@/utils/contestStatus';
+import type { ContestDetailRow } from '@/lib/queries/contests';
 import type { ContestStatus } from '@/types/contest';
 
 const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').then(m => m.MarkdownRenderer), { ssr: false });
-
-interface ContestDetail {
-  id: string;
-  name: string;
-  description: string | null;
-  length: number;
-  created_by: string;
-  starts_at: string | null;
-  ends_at: string | null;
-  is_rated: boolean;
-  is_active: boolean | null;
-}
 
 interface ContestProblem {
   id: string;
@@ -35,7 +24,7 @@ interface ContestProblem {
 
 interface ContestViewClientProps {
   error?: string;
-  initialContest?: ContestDetail;
+  initialContest?: ContestDetailRow;
   problems?: ContestProblem[];
 }
 

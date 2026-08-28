@@ -1,18 +1,12 @@
+/**
+ * The four states a contest can be displayed in.
+ *
+ * Contest status is NEVER stored — always compute it with `getContestStatus`
+ * (`utils/contestStatus.ts`) from `is_active` plus the time window. Both
+ * timestamps null means `virtual`, not `inactive`.
+ *
+ * The hand-written `Contest` row interface that used to live here is gone: every
+ * contest row shape is now derived from the generated schema in
+ * `lib/queries/contests.ts`, beside the column list that produces it.
+ */
 export type ContestStatus = 'upcoming' | 'ongoing' | 'virtual' | 'inactive';
-
-export interface Contest {
-  id: string;
-  name: string;
-  description: string | null;
-  length: number;
-  created_at: string | null;
-  updated_at: string | null;
-  is_active: boolean;
-  starts_at: string | null;
-  ends_at: string | null;
-  is_rated: boolean;
-  created_by: string | null;
-  // Added at runtime (not necessarily persisted columns) for listing enrichment
-  participants_count?: number;
-  problems_count?: number;
-}

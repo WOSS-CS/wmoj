@@ -1,5 +1,8 @@
 import { getServerSupabase } from '@/lib/supabaseServer';
 import DashboardClient from './DashboardClient';
+import { CONTEST_SCHEDULE_COLUMNS, type ContestScheduleRow } from '@/lib/queries/contests';
+import { NEWS_POST_FEED_COLUMNS } from '@/lib/queries/newsPosts';
+import { PROBLEM_RECENT_COLUMNS, type ProblemRecentRow } from '@/lib/queries/problems';
 import { getContestStatus } from '@/utils/contestStatus';
 
 export interface NewsPost {
@@ -10,20 +13,11 @@ export interface NewsPost {
   users: { username: string } | { username: string }[];
 }
 
-export interface CompactContest {
-  id: string;
-  name: string;
-  starts_at: string | null;
-  ends_at: string | null;
-  is_active: boolean;
-}
+/** {@link CONTEST_SCHEDULE_COLUMNS}. */
+export type CompactContest = ContestScheduleRow;
 
-export interface CompactProblem {
-  id: string;
-  name: string;
-  points: number;
-  created_at: string;
-}
+/** {@link PROBLEM_RECENT_COLUMNS}. */
+export type CompactProblem = ProblemRecentRow;
 
 export default async function HomePage() {
   const supabase = await getServerSupabase();
@@ -36,31 +30,31 @@ export default async function HomePage() {
   const [newsResult, contestsResult, problemsResult] = await Promise.all([
     supabase
       .from('news_posts')
-      .select('id, title, content, date_posted, users!inner(username)')
+      .select(NEWS_POST_FEED_COLUMNS)
       .order('date_posted', { ascending: false })
       .limit(10),
     supabase
       .from('contests')
-      .select('id, name, starts_at, ends_at, is_active')
+      .select(CONTEST_SCHEDULE_COLUMNS)
       .eq('is_active', true),
     supabase
       .from('problems')
-      .select('id, name, points, created_at')
+      .select(PROBLEM_RECENT_COLUMNS)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(5)
   ]);
 
   if (!newsResult.error && newsResult.data) {
-    initialNewsPosts = newsResult.data as unknown as NewsPost[];
+    initialNewsPosts = newsResult.data;
   }
 
   if (!problemsResult.error && problemsResult.data) {
-    recentProblems = problemsResult.data as unknown as CompactProblem[];
+    recentProblems = problemsResult.data;
   }
 
   if (!contestsResult.error && contestsResult.data) {
-    const allActive = contestsResult.data as unknown as CompactContest[];
+    const allActive = contestsResult.data;
     allActive.forEach(c => {
       const status = getContestStatus(c);
       if (status === 'ongoing') ongoingContests.push(c);

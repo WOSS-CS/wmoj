@@ -1,4 +1,4 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+import type { AppSupabaseClient } from '@/types/supabase';
 
 const BUCKET = 'problem_images';
 const STORAGE_PREFIX = `/storage/v1/object/public/${BUCKET}/`;
@@ -59,7 +59,7 @@ export function extractImagePaths(content: string): string[] {
  * Delete all problem_images bucket files referenced in the given content.
  * Best-effort: logs errors but does not throw.
  */
-export async function deleteProblemImages(supabase: SupabaseClient, content: string): Promise<void> {
+export async function deleteProblemImages(supabase: AppSupabaseClient, content: string): Promise<void> {
     const paths = extractImagePaths(content);
     if (paths.length === 0) return;
 

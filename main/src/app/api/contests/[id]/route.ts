@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSupabase } from '@/lib/supabaseServer';
 import { canUserAccessContest } from '@/lib/contestAccess';
+import { CONTEST_DETAIL_COLUMNS } from '@/lib/queries/contests';
 
 export async function GET(
   request: Request,
@@ -11,7 +12,7 @@ export async function GET(
     const supabase = await getServerSupabase();
     const { data, error } = await supabase
       .from('contests')
-      .select('*')
+      .select(CONTEST_DETAIL_COLUMNS)
       .eq('id', id)
       .maybeSingle();
     if (error) return NextResponse.json({ error: 'Failed to load contest' }, { status: 500 });

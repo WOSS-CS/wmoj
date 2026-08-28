@@ -114,6 +114,14 @@ export function DataTable<Row extends object>(props: DataTableProps<Row>) {
               </tr>
             ) : (
               rows.map((row, index) => {
+                // `T` is unconstrained on purpose — every caller passes its own
+                // row shape and most pass `rowKey`. Reading `id` off an unknown
+                // `T`, and reading `col.key` off it below, are the two places
+                // this component indexes a value whose type it cannot name, so
+                // both hop through `unknown`. Neither is a claim about the row:
+                // the `id` read is null-checked and falls back to the index, and
+                // the cell read is only reached when a column supplies no
+                // `render`.
                 const key = rowKey
                   ? rowKey(row, index)
                   : (() => {

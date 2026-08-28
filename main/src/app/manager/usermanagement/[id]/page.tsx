@@ -1,25 +1,26 @@
 import { redirect } from 'next/navigation';
 import { requireActiveManager } from '@/lib/staffAuth';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
+import {
+  SUBMISSION_PUBLIC_COLUMNS,
+  resolveSubmissionNames,
+  summarizeSubmission,
+} from '@/lib/queries/submissions';
+import { USER_DETAIL_COLUMNS } from '@/lib/queries/users';
 import ManagerUserDetailClient from './ManagerUserDetailClient';
 
 const PAGE_SIZE = 20;
 
 export type UserSubmissionRow = {
   id: string;
-  timestamp: string;
+  /** `submissions.created_at` is nullable in the schema. */
+  timestamp: string | null;
   problem: string;
   language: string;
   status: string;
   score: string;
   passed: boolean;
   isCompileError: boolean;
-};
-
-type RawSub = {
-  id: string; created_at: string; language: string;
-  status: string; summary: unknown;
-  problem_id: string;
 };
 
 export default async function ManagerUserDetailPage({
@@ -39,7 +40,7 @@ export default async function ManagerUserDetailPage({
   ] = await Promise.all([
     supabase
       .from('users')
-      .select('id, username, email, created_at')
+      .select(USER_DETAIL_COLUMNS)
       .eq('id', targetUserId)
       .maybeSingle(),
     supabase
@@ -74,7 +75,7 @@ export default async function ManagerUserDetailPage({
       .eq('status', 'passed'),
     supabase
       .from('submissions')
-      .select('id, created_at, language, status, summary, problem_id', { count: 'exact' })
+      .select(SUBMISSION_PUBLIC_COLUMNS, { count: 'exact' })
       .eq('user_id', targetUserId)
       .order('created_at', { ascending: false })
       .range(from, to),
@@ -90,31 +91,24 @@ export default async function ManagerUserDetailPage({
     redirect(buildPageHref({}, effectivePage));
   }
 
-  const pageRows = (subs || []) as RawSub[];
-
-  const problemIds = [...new Set(pageRows.map((s) => s.problem_id).filter(Boolean))];
-  const problemMap = new Map<string, string>();
-  if (problemIds.length > 0) {
-    const { data: problems } = await supabase
-      .from('problems')
-      .select('id, name')
-      .in('id', problemIds as string[]);
-    (problems || []).forEach((p: { id: string; name: string }) => problemMap.set(p.id, p.name));
-  }
+  const pageRows = subs || [];
+  // Only the problem names are rendered here — the page header already names
+  // the one user every row belongs to. The users half of the lookup resolves
+  // that single id and rides along in the same `Promise.all`, so it costs a
+  // primary-key hit and no extra wall-clock time.
+  const { problems } = await resolveSubmissionNames(supabase, pageRows, 'staff');
 
   const submissions: UserSubmissionRow[] = pageRows.map((s) => {
-    const summary = s.summary as { total?: number; passed?: number; failed?: number; verdict?: string } | null;
-    const total = Number(summary?.total ?? 0);
-    const passed = Number(summary?.passed ?? 0);
+    const summary = summarizeSubmission(s.summary);
     return {
       id: s.id,
       timestamp: s.created_at,
-      problem: problemMap.get(s.problem_id) || 'Unknown Problem',
+      problem: problems.get(s.problem_id) ?? 'Unknown Problem',
       language: s.language,
       status: s.status || 'failed',
-      score: total > 0 ? `${passed}/${total}` : '—',
+      score: summary.score,
       passed: s.status === 'passed',
-      isCompileError: summary?.verdict === 'CE',
+      isCompileError: summary.isCompileError,
     };
   });
 

@@ -1,5 +1,8 @@
 import { redirect } from 'next/navigation';
 import { requireActiveAdmin } from '@/lib/staffAuth';
+import { CONTEST_EDIT_COLUMNS } from '@/lib/queries/contests';
+import { CONTEST_PROBLEM_PICKER_COLUMNS } from '@/lib/queries/contestProblems';
+import type { SearchableProblem } from '@/components/ProblemSearch';
 import EditContestClient from './EditContestClient';
 
 export default async function EditContestPage({ params }: { params: Promise<{ id: string }> }) {
@@ -11,7 +14,7 @@ export default async function EditContestPage({ params }: { params: Promise<{ id
   // never write. Admin-side only; managers see everything.
   const { data: contestData, error: contestError } = await supabase
     .from('contests')
-    .select('id,name,description,length,is_active,created_at,updated_at,starts_at,ends_at,is_rated')
+    .select(CONTEST_EDIT_COLUMNS)
     .eq('id', id)
     .eq('created_by', userId)
     .maybeSingle();
@@ -23,13 +26,16 @@ export default async function EditContestPage({ params }: { params: Promise<{ id
   // Load problems assigned to this contest via junction table
   const { data: cpRows } = await supabase
     .from('contest_problems')
-    .select('problem_id, problems(id, name, points)')
+    .select(CONTEST_PROBLEM_PICKER_COLUMNS)
     .eq('contest_id', id);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const contestProblems = (cpRows || []).map((row: any) => {
+  // PostgREST returns a to-one embed as an object; the array arm is kept because
+  // a hand-written type used to claim both and dropping it silently would be a
+  // behaviour change nobody could see. A link whose problem row is gone is
+  // skipped rather than crashing on `p.id`.
+  const contestProblems: SearchableProblem[] = (cpRows || []).flatMap((row) => {
     const p = Array.isArray(row.problems) ? row.problems[0] : row.problems;
-    return { id: p.id as string, name: p.name as string, points: p.points as number | null };
+    return p ? [{ id: p.id, name: p.name, points: p.points }] : [];
   });
 
   return <EditContestClient contest={contestData} initialProblems={contestProblems} />;

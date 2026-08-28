@@ -52,7 +52,9 @@ export default function ProblemsClient({
     for (const id of problemIds) map[id] = 'not_attempted';
     const perProblem: Record<string, { any: boolean; solved: boolean }> = {};
     for (const row of data || []) {
-      const pid = row.problem_id as string;
+      const pid = row.problem_id;
+      // `summary` is `jsonb`, so its shape is a runtime fact; the counts are
+      // coerced below because historical rows store them as strings.
       const s = (row.summary || {}) as { total?: number; passed?: number; failed?: number };
       const total = Number(s.total ?? 0); const passed = Number(s.passed ?? 0); const failed = Number(s.failed ?? 0);
       const solved = total > 0 && failed === 0 && passed === total;

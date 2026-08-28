@@ -1,13 +1,15 @@
 import { cookies } from 'next/headers';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+
+import type { AppSupabaseClient, Database } from '@/types/supabase';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
-export async function getServerSupabase() {
+export async function getServerSupabase(): Promise<AppSupabaseClient> {
   const cookieStore = await cookies();
-  return createServerClient(supabaseUrl, supabasePublishableKey, {
+  return createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value;
@@ -26,8 +28,8 @@ export async function getServerSupabase() {
   });
 }
 
-export function getServerSupabaseFromToken(accessToken: string): SupabaseClient {
-  return createClient(supabaseUrl, supabasePublishableKey, {
+export function getServerSupabaseFromToken(accessToken: string): AppSupabaseClient {
+  return createClient<Database>(supabaseUrl, supabasePublishableKey, {
     global: {
       headers: {
         Authorization: `Bearer ${accessToken}`,

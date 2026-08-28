@@ -18,7 +18,7 @@
 --
 -- KNOWN production difference, explained, not a local failure:
 --
---   `functions` md5 differs (count matches at 14). SIX bodies differ, and they differ for two
+--   `functions` md5 differs (count matches at 16). SIX bodies differ, and they differ for two
 --    different reasons. Five drifted in production in ways that do not change behaviour —
 --    keyword case, a stray space, one SQL comment, plus `::text` casts the repo added to
 --    join_contest/leave_contest, which are dead code with no caller in main/src. There the
@@ -34,7 +34,7 @@
 with expected(k, n, d) as (values
   ('columns',      98, 'c6db0181eff27c8dcfc5eeaf1e7a0c27'),
   ('policies',     64, '786b46a0bc53f0a19572caf6f6d468f4'),
-  ('functions',    14, 'c1064df3f23aefead2e8204c1f02a077'),
+  ('functions',    16, '4ecee1a3d7b43b8960658cb1c0c20082'),
   ('triggers',     10, 'fb14cea26ce078f409af7c7189feb5ad'),
   ('indexes',      46, 'd12c1a0bdb158da06de3bf5bf9fdfb22'),
   ('constraints',  49, 'e9515ed5807694e45584db4624cb04ee'),

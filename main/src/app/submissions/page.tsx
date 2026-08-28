@@ -1,6 +1,12 @@
 import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabaseServer';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
+import {
+  SUBMISSION_PUBLIC_COLUMNS,
+  resolveSubmissionNames,
+  summarizeSubmission,
+} from '@/lib/queries/submissions';
+import type { AppSupabaseClient } from '@/types/supabase';
 import SubmissionsClient from './SubmissionsClient';
 
 export interface SubmissionRow {
@@ -12,7 +18,8 @@ export interface SubmissionRow {
   status: string;
   passed: number;
   total: number;
-  created_at: string;
+  /** `submissions.created_at` is nullable in the schema. */
+  created_at: string | null;
 }
 
 export interface SubmissionStats {
@@ -45,7 +52,7 @@ const NO_FILTER: FilterResolution = { ids: null, tooBroad: false, failed: false 
  * "over the limit" can be told apart.
  */
 async function resolveFilterIds(
-  supabase: Awaited<ReturnType<typeof getServerSupabase>>,
+  supabase: AppSupabaseClient,
   table: 'users' | 'problems',
   column: 'username' | 'name',
   term: string,
@@ -154,9 +161,7 @@ export default async function SubmissionsPage({
         // queries, so paging 2 → 3 → 2 could show one row twice.
         let query = supabase
           .from('submissions')
-          .select('id, user_id, problem_id, language, status, summary, created_at', {
-            count: 'exact',
-          })
+          .select(SUBMISSION_PUBLIC_COLUMNS, { count: 'exact' })
           .order('created_at', { ascending: false })
           .order('id', { ascending: true });
 
@@ -178,33 +183,23 @@ export default async function SubmissionsPage({
           if (effectivePage !== currentPage) {
             redirectTo = buildPageHref(urlParams, effectivePage);
           } else {
-            // Fetch only the users and problems referenced on this page
-            const userIds = [...new Set((rawSubs || []).map((s) => s.user_id))];
-            const problemIds = [...new Set((rawSubs || []).map((s) => s.problem_id))];
+            // Only the users and problems referenced on this page, and the
+            // `'public'` scope: this page renders for signed-out visitors, and
+            // `users.email` is revoked from `anon`.
+            const pageRows = rawSubs || [];
+            const { users, problems } = await resolveSubmissionNames(supabase, pageRows, 'public');
 
-            const [usersResult, problemsResult] = await Promise.all([
-              userIds.length > 0
-                ? supabase.from('users').select('id, username').in('id', userIds)
-                : Promise.resolve({ data: [] }),
-              problemIds.length > 0
-                ? supabase.from('problems').select('id, name').in('id', problemIds)
-                : Promise.resolve({ data: [] }),
-            ]);
-
-            const userMap = new Map((usersResult.data || []).map((u) => [u.id, u.username]));
-            const problemMap = new Map((problemsResult.data || []).map((p) => [p.id, p.name]));
-
-            submissions = (rawSubs || []).map((s) => {
-              const summary = s.summary as { passed?: number; total?: number } | null;
+            submissions = pageRows.map((s) => {
+              const summary = summarizeSubmission(s.summary);
               return {
                 id: s.id,
                 user_id: s.user_id,
-                username: userMap.get(s.user_id) ?? 'Unknown',
-                problem_name: problemMap.get(s.problem_id) ?? 'Unknown Problem',
+                username: users.get(s.user_id)?.username ?? 'Unknown User',
+                problem_name: problems.get(s.problem_id) ?? 'Unknown Problem',
                 language: s.language,
                 status: s.status ?? 'failed',
-                passed: summary?.passed ?? 0,
-                total: summary?.total ?? 0,
+                passed: summary.passed,
+                total: summary.total,
                 created_at: s.created_at,
               };
             });

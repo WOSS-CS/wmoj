@@ -3,20 +3,9 @@ import ProblemDetailClient from './ProblemDetailClient';
 import { canUserAccessProblem } from '@/lib/problemAccess';
 import { checkContestGate, getContestIdsForProblem } from '@/lib/contestGate';
 import { countProblemTestCases } from '@/lib/supabaseAdmin';
+import { PROBLEM_DETAIL_COLUMNS } from '@/lib/queries/problems';
 import { Problem } from '@/types/problem';
 import { notFound, redirect } from 'next/navigation';
-
-/**
- * The only columns this page may select. The whole row is passed to
- * `ProblemDetailClient`, and React serialises every prop into the RSC flight
- * payload, so anything listed here lands in the page source. The graded columns
- * were dropped from `problems` and now live in the staff-only `problem_tests`,
- * which is why the test-case count the sidebar needs is fetched separately as a
- * server-computed scalar. Never widen this to `*`, and never add a column here
- * that the client does not actually render.
- */
-const PROBLEM_COLUMNS =
-  'id, name, content, points, time_limit, memory_limit, created_at, is_active, created_by';
 
 export default async function ProblemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,7 +14,7 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
   const [problemResult, authResult, contestIds] = await Promise.all([
     supabase
       .from('problems')
-      .select(PROBLEM_COLUMNS)
+      .select(PROBLEM_DETAIL_COLUMNS)
       .eq('id', id)
       .single(),
     supabase.auth.getUser(),
@@ -38,7 +27,7 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
     notFound();
   }
 
-  const problem = problemRow as unknown as Problem;
+  const problem: Problem = problemRow;
 
   // Who is asking, and may they see this problem at all? (An unpublished
   // problem is staff-only; the contest gate below is a separate question.)
@@ -93,6 +82,8 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
   const { data: subs } = subsResult;
   if (subs && subs.length > 0) {
     for (const row of subs) {
+      // `summary` is `jsonb`; the counts are coerced below because historical
+      // rows store them as strings.
       const s = row.summary as { total?: number; passed?: number; failed?: number } | null;
       if (!s) continue;
       const current = { total: Number(s.total ?? 0), passed: Number(s.passed ?? 0), failed: Number(s.failed ?? 0) };
@@ -109,17 +100,19 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
 
   const { data: rawComments } = commentsResult;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const initialComments = (rawComments || []).map((c: Record<string, unknown>) => {
-    const users = c.users as { username: string } | null;
+  const initialComments = (rawComments || []).map((c) => {
+    // PostgREST returns a to-one embed as an object; the array arm is kept
+    // because the untyped projection this replaces allowed for both.
+    const users = Array.isArray(c.users) ? c.users[0] : c.users;
     return {
-      id: c.id as string,
-      problem_id: c.problem_id as string,
-      user_id: c.user_id as string,
-      parent_id: (c.parent_id as string) || null,
-      body: c.body as string,
-      score: c.score as number,
-      created_at: c.created_at as string,
-      updated_at: c.updated_at as string,
+      id: c.id,
+      problem_id: c.problem_id,
+      user_id: c.user_id,
+      parent_id: c.parent_id,
+      body: c.body,
+      score: c.score,
+      created_at: c.created_at,
+      updated_at: c.updated_at,
       username: users?.username || 'Unknown',
       avatar_url: `${supabaseUrl}/storage/v1/object/public/avatars/${c.user_id}/avatar`,
     };

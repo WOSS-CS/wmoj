@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getManagerSupabase } from '@/lib/managerAuth';
+import { NEWS_POST_DETAIL_COLUMNS, NEWS_POST_EDIT_COLUMNS } from '@/lib/queries/newsPosts';
 
 export async function GET(request: NextRequest) {
   const auth = await getManagerSupabase(request);
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('news_posts')
-    .select('id, title, content, date_posted, updated_at, users!uid(username)')
+    .select(NEWS_POST_DETAIL_COLUMNS)
     .order('date_posted', { ascending: false });
 
   if (error) {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('news_posts')
     .insert([{ title, content, uid: user.id }])
-    .select('id, title, content, date_posted, updated_at')
+    .select(NEWS_POST_EDIT_COLUMNS)
     .single();
 
   if (error) {

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { requireActiveManager } from '@/lib/staffAuth';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
+import { USER_MANAGE_COLUMNS } from '@/lib/queries/users';
 import ManagerUserManagementClient from './ManagerUserManagementClient';
 
 const PAGE_SIZE = 20;
@@ -45,7 +46,7 @@ export default async function ManagerUserManagementPage({
 
   let query = supabase
     .from('users')
-    .select('id, username, email, created_at, updated_at', { count: 'exact' })
+    .select(USER_MANAGE_COLUMNS, { count: 'exact' })
     .order('created_at', { ascending: false });
 
   if (filteredUserIds !== null) query = query.in('id', filteredUserIds);

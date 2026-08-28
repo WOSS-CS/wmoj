@@ -27,6 +27,44 @@ export function parsePage(searchParamsValue: string | string[] | undefined): num
 }
 
 /**
+ * The publication state a staff `manage` screen is filtered to.
+ *
+ * `pending` is the honest word: an admin-created problem or contest lands
+ * `is_active = false` and waits for a manager. The database column is still
+ * `is_active`; only the URL vocabulary is `pending`.
+ */
+export type StaffStatusFilter = 'all' | 'active' | 'pending';
+
+/**
+ * Read `?status=` off a `manage` screen's searchParams.
+ *
+ * All four staff `manage` screens (problems and contests, admin and manager)
+ * call this, which is the point — the same nested ternary written out four
+ * times is exactly how two of them ended up on different vocabularies.
+ *
+ * Two back-compat shims, both deliberate:
+ *
+ * - **`inactive` → `pending`.** The manager tree has carried this since someone
+ *   was bitten by the two words disagreeing; anything unrecognised is `all`.
+ * - **`?filter=` → `?status=`.** The admin `manage` screens read `?filter=`
+ *   until this rename, so a bookmarked or emailed link still lands on the right
+ *   tab. `status` wins when both are present. **Delete the `filter` branch one
+ *   release after this ships** — it is the only reason this function looks at
+ *   more than one param.
+ */
+export function parseStaffStatus(searchParams: {
+  status?: string | string[] | undefined;
+  filter?: string | string[] | undefined;
+}): StaffStatusFilter {
+  const first = (v: string | string[] | undefined): string | undefined =>
+    Array.isArray(v) ? v[0] : v;
+  const raw = first(searchParams.status) ?? first(searchParams.filter);
+  if (raw === 'active' || raw === 'pending') return raw;
+  if (raw === 'inactive') return 'pending';
+  return 'all';
+}
+
+/**
  * Compute the Supabase `.range(from, to)` bounds for a 1-indexed page.
  * Both from and to are inclusive (Supabase range semantics).
  */
@@ -86,4 +124,20 @@ export function buildPageHref(
 export function clampPage(page: number, totalPages: number): number {
   if (totalPages <= 1) return 1;
   return Math.min(totalPages, Math.max(1, Math.floor(page)));
+}
+
+/**
+ * The heading a staff list shows for the status it is filtered to, so the card
+ * title agrees with the tab: "Pending Problems", not "All Problems" over a list
+ * that only holds pending ones.
+ */
+export function staffStatusLabel(status: StaffStatusFilter): 'All' | 'Active' | 'Pending' {
+  switch (status) {
+    case 'active':
+      return 'Active';
+    case 'pending':
+      return 'Pending';
+    default:
+      return 'All';
+  }
 }

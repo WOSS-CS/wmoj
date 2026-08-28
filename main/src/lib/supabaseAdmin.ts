@@ -4,19 +4,20 @@
 // hands out bypasses RLS entirely.
 import 'server-only';
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+
+import type { AppSupabaseClient, Database } from '@/types/supabase';
 
 /**
- * Service-role Supabase client, for the cases RLS genuinely cannot express.
+ * Service-role Supabase client, for the one case RLS genuinely cannot express:
+ * READING the answer key on behalf of someone who must not read it.
  *
- * There are two, and they are different in kind.
- *
- * 1. READING the answer key on behalf of someone who must not read it (below).
- * 2. WRITING `public.submission_private`. That table has a SELECT policy and
- *    deliberately no INSERT/UPDATE/DELETE policy — "the row is written for you,
- *    but you may not write it yourself" is not expressible as a policy on a
- *    table the writer is also the subject of. See `writeSubmissionPrivate` and
- *    `compensateFailedSubmission` at the foot of this file.
+ * There used to be a second — writing `public.submission_private`, which has a
+ * SELECT policy and deliberately no write policy at all. That is now the
+ * `record_submission()` RPC's job (SECURITY DEFINER, both halves of a
+ * submission in one transaction), reached through `lib/submissionRecord.ts`
+ * under the student's own token. Reading the answer key is what is left, and it
+ * is the only thing this module may ever grow.
  *
  * A problem's graded data (`input`, `output`, `checker`, `generator_file`) lives
  * in `public.problem_tests`, whose only SELECT policy grants managers and active
@@ -45,7 +46,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 const SECRET_KEY_VAR = 'SUPABASE_SECRET_KEY';
 
 /** `undefined` = not resolved yet; `null` = resolved, key absent. */
-let cachedAdmin: SupabaseClient | null | undefined;
+let cachedAdmin: AppSupabaseClient | null | undefined;
 let missingKeyWarned = false;
 
 function warnMissingSecretKey(): void {
@@ -71,7 +72,7 @@ function warnMissingSecretKey(): void {
  * enforced by the module boundary rather than by review. Add a reader below
  * instead of handing the raw client out.
  */
-function getSupabaseAdmin(): SupabaseClient | null {
+function getSupabaseAdmin(): AppSupabaseClient | null {
   if (cachedAdmin !== undefined) {
     if (cachedAdmin === null) warnMissingSecretKey();
     return cachedAdmin;
@@ -86,7 +87,7 @@ function getSupabaseAdmin(): SupabaseClient | null {
     return null;
   }
 
-  cachedAdmin = createClient(url, secret, {
+  cachedAdmin = createClient<Database>(url, secret, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
   return cachedAdmin;
@@ -195,83 +196,4 @@ export async function countProblemTestCases(problemId: string): Promise<number |
   const row = await readTestColumns(problemId, 'input');
   if (!row) return null;
   return Array.isArray(row.input) ? row.input.length : null;
-}
-
-/**
- * The private half of a submission: source code, the FULL per-case judge array,
- * and any compiler diagnostics.
- *
- * `public.submission_private` has a SELECT policy and no INSERT policy at all,
- * by design — every write goes through the service role. That is why this
- * writer exists rather than the submit route inserting under the student's own
- * token.
- */
-export interface SubmissionPrivateRow {
-  submission_id: string;
-  user_id: string;
-  code: string;
-  results_full: unknown;
-  compile_error: string | null;
-  created_at: string;
-}
-
-/**
- * Writes the private half of a submission. Returns `true` only when the row
- * actually landed.
- *
- * The caller MUST check the result and compensate: the public row is inserted
- * first (the FK requires it), so a failure here leaves a public submission
- * whose owner can never see their own code or per-case feedback.
- */
-export async function writeSubmissionPrivate(row: SubmissionPrivateRow): Promise<boolean> {
-  const admin = getSupabaseAdmin();
-  if (!admin) return false;
-
-  const { error } = await admin.from('submission_private').insert(row);
-  if (error) {
-    console.error(
-      `[supabaseAdmin] submission_private insert failed for submission ${row.submission_id}:`,
-      error,
-    );
-    return false;
-  }
-  return true;
-}
-
-/**
- * Deletes one `public.submissions` row through the service role.
- *
- * This exists ONLY as the compensating action for a failed
- * {@link writeSubmissionPrivate}. It cannot be done under the student's token:
- * `submissions` has no owner DELETE policy, so their delete would remove zero
- * rows and report success — stranding exactly the orphan it was meant to clean
- * up. The FK's `ON DELETE CASCADE` takes any private row with it.
- *
- * Returns `true` only when a row was actually removed.
- */
-export async function compensateFailedSubmission(
-  submissionId: string,
-  userId: string,
-): Promise<boolean> {
-  const admin = getSupabaseAdmin();
-  if (!admin) return false;
-
-  // `.eq('user_id')` is not needed to make the delete correct — the caller
-  // passes an id it just created. It is here so that this stays a COMPENSATION
-  // and cannot become an arbitrary-submission-delete primitive: the service
-  // role has `rolbypassrls`, so a future caller passing a request-supplied id
-  // would otherwise delete anyone's row. Scoped, the worst case is that a
-  // caller destroys a row belonging to the user it already names.
-  const { data, error } = await admin
-    .from('submissions')
-    .delete()
-    .eq('id', submissionId)
-    .eq('user_id', userId)
-    .select('id');
-
-  if (error) {
-    console.error(`[supabaseAdmin] compensating delete failed for submission ${submissionId}:`, error);
-    return false;
-  }
-  return (data?.length ?? 0) > 0;
 }

@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabaseServer';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
-import { Contest } from '@/types/contest';
+import { fetchAllRows } from '@/lib/fetchAllRows';
+import { CONTEST_LIST_COLUMNS, type ContestListRow } from '@/lib/queries/contests';
 import ContestsClient from './ContestsClient';
 
 const PAST_PAGE_SIZE = 10;
@@ -17,8 +18,8 @@ export default async function ContestsPage({
 
   const supabase = await getServerSupabase();
 
-  let activeContests: Contest[] = [];
-  let pastContests: Contest[] = [];
+  let activeContests: ContestListRow[] = [];
+  let pastContests: ContestListRow[] = [];
   let pastTotalPages = 1;
   let fetchError: string | undefined;
   let redirectTo: string | undefined;
@@ -44,7 +45,7 @@ export default async function ContestsPage({
     ] = await Promise.all([
       supabase
         .from('contests')
-        .select('*')
+        .select(CONTEST_LIST_COLUMNS)
         .eq('is_active', true)
         .not('starts_at', 'is', null)
         .or(`starts_at.gt.${isoNow},ends_at.gte.${isoNow}`)
@@ -52,7 +53,7 @@ export default async function ContestsPage({
       // Past contests: everything getContestStatus() calls virtual.
       supabase
         .from('contests')
-        .select('*', { count: 'exact' })
+        .select(CONTEST_LIST_COLUMNS, { count: 'exact' })
         .eq('is_active', true)
         .or(
           `starts_at.is.null,` +
@@ -81,41 +82,57 @@ export default async function ContestsPage({
         const problemsCountMap: Record<string, number> = {};
 
         if (contestIds.length > 0) {
+          // Both of these count rows client-side, so a truncated response is a
+          // wrong number rendered as though it were right: PostgREST answers 206
+          // past its cap and `postgrest-js` calls that success. `fetchAllRows`
+          // pages until the exact count is in hand, and each query is ordered on
+          // its whole primary key — `(contest_id, user_id)` and
+          // `(contest_id, problem_id)` — because range paging needs a total order.
           const [participantsResult, problemsResult] = await Promise.all([
-            supabase
-              .from('contest_participants')
-              .select('contest_id')
-              .in('contest_id', contestIds),
+            fetchAllRows<{ contest_id: string }>((rangeFrom, rangeTo) =>
+              supabase
+                .from('contest_participants')
+                .select('contest_id', { count: 'exact' })
+                .in('contest_id', contestIds)
+                .order('contest_id', { ascending: true })
+                .order('user_id', { ascending: true })
+                .range(rangeFrom, rangeTo),
+            ),
             // `problems` has no `contest` column — membership lives in the
             // contest_problems junction, so count junction rows and use an
             // inner embed to keep only the active problems.
-            supabase
-              .from('contest_problems')
-              .select('contest_id, problems!inner(is_active)')
-              .in('contest_id', contestIds)
-              .eq('problems.is_active', true),
+            fetchAllRows<{ contest_id: string }>((rangeFrom, rangeTo) =>
+              supabase
+                .from('contest_problems')
+                .select('contest_id, problems!inner(is_active)', { count: 'exact' })
+                .in('contest_id', contestIds)
+                .eq('problems.is_active', true)
+                .order('contest_id', { ascending: true })
+                .order('problem_id', { ascending: true })
+                .range(rangeFrom, rangeTo),
+            ),
           ]);
 
-          const { data: participantsRaw, error: participantsErr } = participantsResult;
-          if (!participantsErr) {
-            interface ParticipantRow { contest_id: string }
-            (participantsRaw as ParticipantRow[] | null | undefined)?.forEach(({ contest_id }) => {
-              if (!contest_id) return;
-              participantsCountMap[contest_id] = (participantsCountMap[contest_id] || 0) + 1;
-            });
+          // A failed count is logged and left at zero rather than failing the
+          // page: the contest list itself is still worth rendering.
+          if (participantsResult.error) {
+            console.error('[ContestsPage] participants count error:', participantsResult.error);
+          }
+          for (const { contest_id } of participantsResult.rows) {
+            if (!contest_id) continue;
+            participantsCountMap[contest_id] = (participantsCountMap[contest_id] || 0) + 1;
           }
 
-          const { data: problemsRaw, error: problemsErr } = problemsResult;
-          if (!problemsErr) {
-            interface ContestProblemRow { contest_id: string }
-            (problemsRaw as ContestProblemRow[] | null | undefined)?.forEach(({ contest_id }) => {
-              if (!contest_id) return;
-              problemsCountMap[contest_id] = (problemsCountMap[contest_id] || 0) + 1;
-            });
+          if (problemsResult.error) {
+            console.error('[ContestsPage] problems count error:', problemsResult.error);
+          }
+          for (const { contest_id } of problemsResult.rows) {
+            if (!contest_id) continue;
+            problemsCountMap[contest_id] = (problemsCountMap[contest_id] || 0) + 1;
           }
         }
 
-        const enrich = (c: Contest) => ({
+        const enrich = (c: ContestListRow) => ({
           ...c,
           participants_count: participantsCountMap[c.id] || 0,
           problems_count: problemsCountMap[c.id] || 0,

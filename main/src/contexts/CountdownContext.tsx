@@ -166,33 +166,47 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     setIsPaused(false);
   }, []);
 
+  /**
+   * POSTs `/api/contests/[id]/leave`, the one route that ends a participation.
+   * Returns whether the server accepted it.
+   *
+   * Two callers want the request and only one wants the navigation, so the
+   * request lives here on its own: the tick's {@link checkExpiration} sends the
+   * user back to `/contests` afterwards, while the mount-time restore below
+   * only clears state — it can run on any page in the app.
+   */
+  const postLeave = useCallback(async (targetContestId: string): Promise<boolean> => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+
+    const res = await fetch(`/api/contests/${targetContestId}/leave`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!res.ok) console.error('Failed to leave contest:', res.status);
+    return res.ok;
+  }, []);
+
   const checkExpiration = useCallback(async () => {
     if (!contestId || !user?.id) return;
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
+      const ok = await postLeave(contestId);
 
-      const res = await fetch(`/api/contests/${contestId}/leave`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-
-      if (res.ok) {
+      if (ok) {
         stopCountdown();
         window.location.href = '/contests';
-      } else {
-        // Don't retry from the tick — that would POST once a second. The 30s
-        // server sync below sees the expired timer and clears the state.
-        console.error('Failed to leave contest on expiry:', res.status);
       }
+      // Don't retry from the tick — that would POST once a second. The 30s
+      // server sync below sees the expired timer and clears the state.
     } catch (error) {
       console.error('Error leaving contest:', error);
     }
-  }, [contestId, user?.id, stopCountdown]);
+  }, [contestId, user?.id, postLeave, stopCountdown]);
 
   // Restore the countdown from the server on mount (and whenever the signed-in
   // user changes). Gated on authLoading: on a hard reload `user` is null until
@@ -227,7 +241,20 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
 
         if (data.isActive && (data.remainingSeconds ?? 0) > 0) {
           applyTimerStatus(data.remainingSeconds as number, data.contestName);
+          return;
         }
+
+        // A participant row with a countdown the server reports as finished.
+        // `GET /timer` is a pure read now, so nothing cleans this up on a page
+        // load any more — without this the row lingers until somebody joins or
+        // leaves a contest anywhere, and `/contests` keeps offering the user a
+        // stale "Continue →". POST the same `/leave` the tick sends at zero.
+        // This is an extra trigger for the mutation route, not a write from a
+        // read path, and it cannot loop: `resetState` is a stable callback and
+        // this effect depends on neither the state it clears nor anything the
+        // request changes.
+        await postLeave(activeContestId);
+        if (isMounted) resetState();
       } catch (error) {
         console.error('Error loading active contest:', error);
       } finally {
@@ -238,7 +265,7 @@ export function CountdownProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [authLoading, user?.id, resetState, fetchTimerStatus, applyTimerStatus]);
+  }, [authLoading, user?.id, resetState, fetchTimerStatus, applyTimerStatus, postLeave]);
 
   // Display tick. Depends only on [isActive, isPaused, checkExpiration] — the
   // remaining time lives in deadlineRef, so the interval is created once per

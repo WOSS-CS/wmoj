@@ -1,4 +1,5 @@
 import type { PublicTestResult, SubmissionSummary, TestResult } from '@/types/judge';
+import type { Json } from '@/types/supabase';
 
 /**
  * The redaction that keeps the answer key off the world-readable
@@ -83,10 +84,10 @@ export const PUBLIC_SUMMARY_KEYS = [
  * itself is no longer on the row.
  */
 export function redactSummary(
-  summary: Record<string, unknown> | null | undefined,
-): Record<string, unknown> | null {
+  summary: Record<string, Json> | null | undefined,
+): Record<string, Json> | null {
   if (!summary || typeof summary !== 'object') return null;
-  const out: Record<string, unknown> = {};
+  const out: Record<string, Json> = {};
   for (const key of PUBLIC_SUMMARY_KEYS) {
     if (key in summary) out[key] = summary[key];
   }

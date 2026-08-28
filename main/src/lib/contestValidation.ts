@@ -1,4 +1,6 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { CONTEST_PROBLEM_LINK_COLUMNS } from '@/lib/queries/contestProblems';
+import { CONTEST_ELIGIBILITY_COLUMNS } from '@/lib/queries/contests';
+import type { AppSupabaseClient } from '@/types/supabase';
 import { getContestStatus } from '@/utils/contestStatus';
 
 /**
@@ -183,7 +185,7 @@ export function buildContestUpdates(
  * manager policies cover every problem.
  */
 export async function findUnownedProblems(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   ids: string[],
   userId: string,
 ): Promise<{ unowned: string[] } | { error: string }> {
@@ -222,14 +224,14 @@ export async function findUnownedProblems(
  * Returns `null` when every id is eligible.
  */
 export async function checkContestProblemEligibility(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   { contestId, problemIds, isRated }: { contestId: string | null; problemIds: string[]; isRated: boolean },
 ): Promise<ContestValidationError | null> {
   if (problemIds.length === 0) return null;
 
   const { data: cpRows, error: cpError } = await supabase
     .from('contest_problems')
-    .select('problem_id, contest_id')
+    .select(CONTEST_PROBLEM_LINK_COLUMNS)
     .in('problem_id', problemIds);
 
   if (cpError) {
@@ -243,7 +245,7 @@ export async function checkContestProblemEligibility(
   const contestIdsInUse = [...new Set(otherContestRows.map(r => r.contest_id))];
   const { data: contestsInUse, error: contestsError } = await supabase
     .from('contests')
-    .select('id, is_active, is_rated, starts_at, ends_at')
+    .select(CONTEST_ELIGIBILITY_COLUMNS)
     .in('id', contestIdsInUse);
 
   if (contestsError) {
@@ -255,7 +257,7 @@ export async function checkContestProblemEligibility(
     (contestsInUse || [])
       .filter(c => {
         if (!c.is_rated) return false;
-        const status = getContestStatus(c as { is_active: boolean; starts_at: string | null; ends_at: string | null });
+        const status = getContestStatus(c);
         return status === 'ongoing' || status === 'upcoming';
       })
       .map(c => c.id),
@@ -308,7 +310,7 @@ export interface ContestProblemError extends ContestValidationError {
  * "Rated" without touching the problem list.
  */
 export async function planContestProblemChanges(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   {
     contestId,
     problemIds,
@@ -380,7 +382,7 @@ export async function planContestProblemChanges(
  * *is* the authorisation check.
  */
 export async function applyContestProblemChanges(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   contestId: string,
   { toAdd, toRemove }: ContestProblemChanges,
 ): Promise<ContestValidationError | null> {

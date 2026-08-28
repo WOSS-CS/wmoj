@@ -7,6 +7,7 @@ import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { NewsPost, CompactContest, CompactProblem } from './page';
 import { formatTimeUntil } from '@/utils/contestStatus';
 import { toast } from '@/components/ui/Toast';
+import { NEWS_POST_FEED_COLUMNS } from '@/lib/queries/newsPosts';
 
 const NEWS_PAGE_SIZE = 10;
 
@@ -50,7 +51,7 @@ export default function DashboardClient({
     try {
       const { data, error } = await supabase
         .from('news_posts')
-        .select('id, title, content, date_posted, users!inner(username)')
+        .select(NEWS_POST_FEED_COLUMNS)
         .order('date_posted', { ascending: false })
         // Tiebreaker: two posts sharing a date_posted have no stable order
         // across separate LIMIT/OFFSET queries, so one could repeat while
@@ -66,7 +67,7 @@ export default function DashboardClient({
         return;
       }
 
-      const batch = (data || []) as unknown as NewsPost[];
+      const batch = data || [];
       // Functional updates: reading `posts`/`offset` out of the closure dropped
       // a whole batch when two loads overlapped. The id filter keeps a post
       // published between two pages from appearing twice.

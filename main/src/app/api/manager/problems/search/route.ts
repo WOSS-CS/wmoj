@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getManagerSupabase } from '@/lib/managerAuth';
 import { getContestStatus } from '@/utils/contestStatus';
+import { CONTEST_ELIGIBILITY_COLUMNS } from '@/lib/queries/contests';
+import { PROBLEM_PICKER_COLUMNS } from '@/lib/queries/problems';
+import { STAFF_POLICY } from '@/lib/staffPolicy';
+
+// Every difference between this route and its twin in the other staff tree is
+// read from here — nothing else may differ.
+const POLICY = STAFF_POLICY.manager;
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     const auth = await getManagerSupabase(request);
     if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
-    const { supabase } = auth;
+    const { supabase, user } = auth;
 
     // Build the set of problem IDs that should be excluded
     const excludedIds = new Set<string>();
@@ -23,14 +30,14 @@ export async function GET(request: NextRequest) {
     // Fetch all contests to determine their status
     const { data: allContests } = await supabase
       .from('contests')
-      .select('id, is_active, is_rated, starts_at, ends_at');
+      .select(CONTEST_ELIGIBILITY_COLUMNS);
 
     // Find rated non-virtual (ongoing/upcoming) contest IDs, excluding the contest being edited
     const ratedNonVirtualIds = (allContests || [])
       .filter(c => {
         if (excludeContest && c.id === excludeContest) return false;
         if (!c.is_rated) return false;
-        const status = getContestStatus(c as { is_active: boolean; starts_at: string | null; ends_at: string | null });
+        const status = getContestStatus(c);
         return status === 'ongoing' || status === 'upcoming';
       })
       .map(c => c.id);
@@ -70,9 +77,12 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('problems')
-      .select('id, name, points')
+      .select(PROBLEM_PICKER_COLUMNS)
       .ilike('name', `%${q}%`)
       .limit(20);
+
+    // `scopeToOwner`: the picker offers a caller only the problems they own.
+    if (POLICY.scopeToOwner) query = query.eq('created_by', user.id);
 
     if (excludedIds.size > 0) {
       query = query.not('id', 'in', `(${Array.from(excludedIds).join(',')})`);

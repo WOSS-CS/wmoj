@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getManagerSupabase } from '@/lib/managerAuth';
+import { NEWS_POST_DETAIL_COLUMNS, NEWS_POST_EDIT_COLUMNS } from '@/lib/queries/newsPosts';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const { data, error } = await supabase
     .from('news_posts')
-    .select('id, title, content, date_posted, updated_at, users!uid(username)')
+    .select(NEWS_POST_DETAIL_COLUMNS)
     .eq('id', id)
     .maybeSingle();
 
@@ -55,7 +56,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .from('news_posts')
     .update(updates)
     .eq('id', id)
-    .select('id, title, content, date_posted, updated_at')
+    .select(NEWS_POST_EDIT_COLUMNS)
     .maybeSingle();
 
   if (error) {

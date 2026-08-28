@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
 import { requireActiveManager } from '@/lib/staffAuth';
+import { PROBLEM_EDIT_COLUMNS } from '@/lib/queries/problems';
+import { PROBLEM_TEST_EDIT_COLUMNS } from '@/lib/queries/problemTests';
 import ManagerEditProblemClient from './ManagerEditProblemClient';
 
 export default async function ManagerEditProblemPage({ params }: { params: Promise<{ id: string }> }) {
@@ -8,7 +10,7 @@ export default async function ManagerEditProblemPage({ params }: { params: Promi
 
   const { data: problemData, error: problemError } = await supabase
     .from('problems')
-    .select('id,name,content,is_active,time_limit,memory_limit,points,created_at,updated_at')
+    .select(PROBLEM_EDIT_COLUMNS)
     .eq('id', id)
     .maybeSingle();
 
@@ -20,7 +22,7 @@ export default async function ManagerEditProblemPage({ params }: { params: Promi
   // authorises staff to read it through the normal client.
   const { data: testsData } = await supabase
     .from('problem_tests')
-    .select('input,generator_file,checker')
+    .select(PROBLEM_TEST_EDIT_COLUMNS)
     .eq('problem_id', id)
     .maybeSingle();
 

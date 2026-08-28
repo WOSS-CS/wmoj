@@ -2,12 +2,18 @@ import { redirect } from 'next/navigation';
 import AdminDashboardClient from './AdminDashboardClient';
 import { requireActiveAdmin } from '@/lib/staffAuth';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
+import {
+  SUBMISSION_PUBLIC_COLUMNS,
+  resolveSubmissionNames,
+  summarizeSubmission,
+} from '@/lib/queries/submissions';
 
 const PAGE_SIZE = 20;
 
 export type AdminSubmissionRow = {
   id: string;
-  timestamp: string;
+  /** `submissions.created_at` is nullable in the schema. */
+  timestamp: string | null;
   user: string;
   problem: string;
   language: string;
@@ -15,12 +21,6 @@ export type AdminSubmissionRow = {
   score: string;
   passed: boolean;
   isCompileError: boolean;
-};
-
-type RawSub = {
-  id: string; created_at: string; language: string;
-  status: string; summary: unknown;
-  problem_id: string; user_id: string;
 };
 
 export default async function AdminDashboardPage({
@@ -34,15 +34,15 @@ export default async function AdminDashboardPage({
   const currentPage = parsePage(sp.page);
   const { from, to } = computeRange(currentPage, PAGE_SIZE);
 
+  // Only the ids: this dashboard lists submissions on the admin's own problems,
+  // and the names come back from `resolveSubmissionNames` for the current page
+  // alone rather than for every problem they have ever written.
   const { data: myProblems } = await supabase
     .from('problems')
-    .select('id, name')
+    .select('id')
     .eq('created_by', userId);
 
-  const myProblemIds = (myProblems || []).map((p: { id: string }) => p.id);
-  const problemNameMap = new Map<string, string>(
-    (myProblems || []).map((p: { id: string; name: string }) => [p.id, p.name]),
-  );
+  const myProblemIds = (myProblems || []).map((p) => p.id);
 
   if (myProblemIds.length === 0) {
     return (
@@ -57,7 +57,7 @@ export default async function AdminDashboardPage({
 
   const { data: subs, count, error: subsErr } = await supabase
     .from('submissions')
-    .select('id, created_at, language, status, summary, problem_id, user_id', { count: 'exact' })
+    .select(SUBMISSION_PUBLIC_COLUMNS, { count: 'exact' })
     .in('problem_id', myProblemIds)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -72,34 +72,21 @@ export default async function AdminDashboardPage({
     redirect(buildPageHref({}, effectivePage));
   }
 
-  const pageRows = (subs || []) as RawSub[];
-
-  const userIds = [...new Set(pageRows.map((s) => s.user_id).filter(Boolean))];
-  const userMap = new Map<string, string>();
-  if (userIds.length > 0) {
-    const { data: usersData } = await supabase
-      .from('users')
-      .select('id, username, email')
-      .in('id', userIds);
-    (usersData || []).forEach((u: { id: string; username: string; email: string }) =>
-      userMap.set(u.id, u.username || u.email || 'Unknown User'),
-    );
-  }
+  const pageRows = subs || [];
+  const { users, problems } = await resolveSubmissionNames(supabase, pageRows, 'staff');
 
   const rows: AdminSubmissionRow[] = pageRows.map((s) => {
-    const summary = s.summary as { total?: number; passed?: number; failed?: number; verdict?: string } | null;
-    const total = Number(summary?.total ?? 0);
-    const passed = Number(summary?.passed ?? 0);
+    const summary = summarizeSubmission(s.summary);
     return {
       id: s.id,
       timestamp: s.created_at,
-      user: userMap.get(s.user_id) || 'Unknown User',
-      problem: problemNameMap.get(s.problem_id) || 'Unknown Problem',
+      user: users.get(s.user_id)?.username ?? 'Unknown User',
+      problem: problems.get(s.problem_id) ?? 'Unknown Problem',
       language: s.language,
       status: s.status || 'failed',
-      score: total > 0 ? `${passed}/${total}` : '—',
+      score: summary.score,
       passed: s.status === 'passed',
-      isCompileError: summary?.verdict === 'CE',
+      isCompileError: summary.isCompileError,
     };
   });
 

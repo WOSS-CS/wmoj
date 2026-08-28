@@ -6,12 +6,22 @@ import {
   planContestProblemChanges,
   type ContestProblemChanges,
 } from '@/lib/contestValidation';
+import {
+  CONTEST_DELETE_GUARD_COLUMNS,
+  CONTEST_EDIT_COLUMNS,
+  CONTEST_WRITE_GUARD_COLUMNS,
+} from '@/lib/queries/contests';
+import { STAFF_POLICY } from '@/lib/staffPolicy';
 
 /**
  * `join_history` is `ON DELETE RESTRICT` on purpose — it is the permanent record
  * of who competed — so deleting a contest anyone has ever joined raises 23503.
  */
 const FK_VIOLATION = '23503';
+
+// Every difference between this route and its twin in the other staff tree is
+// read from here — nothing else may differ.
+const POLICY = STAFF_POLICY.admin;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,7 +30,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { supabase } = auth;
   const { data, error } = await supabase
     .from('contests')
-    .select('id,name,description,length,is_active,created_at,updated_at,starts_at,ends_at,is_rated')
+    .select(CONTEST_EDIT_COLUMNS)
     .eq('id', id)
     .maybeSingle();
   if (error) {
@@ -44,31 +54,39 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { data: existing, error: existingError } = await supabase
     .from('contests')
-    .select('is_active, is_rated, created_by, starts_at, ends_at')
+    .select(CONTEST_WRITE_GUARD_COLUMNS)
     .eq('id', id)
     .maybeSingle();
   if (existingError) {
     console.error('Fetch admin contest error:', existingError);
     return NextResponse.json({ error: 'Failed to fetch contest' }, { status: 500 });
   }
-  // `contests` is world-readable, so ownership — not visibility — is the gate here.
-  // Admins may only touch their own contests; anything else is 404, never a false 200.
-  if (!existing || existing.created_by !== user.id) {
+  // `contests` is world-readable, so under `scopeToOwner` ownership — not
+  // visibility — is the gate: anything this caller does not own is 404, never a
+  // false 200.
+  if (!existing || (POLICY.scopeToOwner && existing.created_by !== user.id)) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-  if (existing.is_active) return NextResponse.json({ error: 'Cannot edit an activated contest' }, { status: 403 });
+  // `guardActivatedContest`: only a manager may edit a contest that is already live.
+  if (POLICY.guardActivatedContest && existing.is_active) {
+    return NextResponse.json({ error: 'Cannot edit an activated contest' }, { status: 403 });
+  }
 
   const built = buildContestUpdates(body, { starts_at: existing.starts_at, ends_at: existing.ends_at });
   if ('error' in built) return NextResponse.json({ error: built.error }, { status: built.status });
   const { updates } = built;
+
+  // Publishing is the manager's alone (`mayPublish`); `buildContestUpdates` never
+  // touches `is_active`, so an admin's `is_active` is ignored rather than rejected.
+  if (POLICY.mayPublish && body.is_active !== undefined) updates.is_active = !!body.is_active;
 
   if (Object.keys(updates).length === 0 && body.problem_ids === undefined) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
   }
 
   // ---- Everything below is validation; the first write happens after it. ----
-  // `ownerId` is the admin-only half of the shared pipeline: it runs the
-  // problem-ownership gate the manager twin deliberately does without.
+  // `ownerId` runs the problem-ownership gate, which only `scopeToOwner` wants:
+  // the manager `contest_problems` policies already cover every problem.
   let changes: ContestProblemChanges = { toAdd: [], toRemove: [] };
 
   if (Array.isArray(body.problem_ids)) {
@@ -77,7 +95,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       problemIds: body.problem_ids as string[],
       isRated: body.is_rated !== undefined ? !!body.is_rated : !!existing.is_rated,
       wasRated: !!existing.is_rated,
-      ownerId: user.id,
+      ownerId: POLICY.scopeToOwner ? user.id : undefined,
     });
     if ('error' in planned) {
       const { status, ...payload } = planned;
@@ -89,13 +107,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   // ---- Writes ----
   let data = null;
   if (Object.keys(updates).length > 0) {
-    const result = await supabase
+    let update = supabase
       .from('contests')
       .update(updates)
-      .eq('id', id)
-      .eq('created_by', user.id)
-      .select()
-      .maybeSingle();
+      .eq('id', id);
+    if (POLICY.scopeToOwner) update = update.eq('created_by', user.id);
+    const result = await update.select().maybeSingle();
     if (result.error) {
       console.error('Update contest error:', result.error);
       return NextResponse.json({ error: 'Failed to update contest' }, { status: 500 });
@@ -115,7 +132,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!data) {
     const { data: refreshed } = await supabase
       .from('contests')
-      .select('id,name,description,length,is_active,created_at,updated_at,starts_at,ends_at,is_rated')
+      .select(CONTEST_EDIT_COLUMNS)
       .eq('id', id)
       .maybeSingle();
     data = refreshed;
@@ -132,25 +149,28 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   const { data: existing, error: existingError } = await supabase
     .from('contests')
-    .select('is_active, created_by')
+    .select(CONTEST_DELETE_GUARD_COLUMNS)
     .eq('id', id)
     .maybeSingle();
   if (existingError) {
     console.error('Fetch admin contest error:', existingError);
     return NextResponse.json({ error: 'Failed to fetch contest' }, { status: 500 });
   }
-  if (!existing || existing.created_by !== user.id) {
+  if (!existing || (POLICY.scopeToOwner && existing.created_by !== user.id)) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-  if (existing.is_active) return NextResponse.json({ error: 'Cannot delete an activated contest' }, { status: 403 });
+  // `guardActivatedContest`: only a manager may delete a contest that is already live.
+  if (POLICY.guardActivatedContest && existing.is_active) {
+    return NextResponse.json({ error: 'Cannot delete an activated contest' }, { status: 403 });
+  }
 
   // contest_problems, contest_participants and countdown_timers cascade.
-  const { data, error } = await supabase
+  let remove = supabase
     .from('contests')
     .delete()
-    .eq('id', id)
-    .eq('created_by', user.id)
-    .select('id');
+    .eq('id', id);
+  if (POLICY.scopeToOwner) remove = remove.eq('created_by', user.id);
+  const { data, error } = await remove.select('id');
 
   if (error) {
     if (error.code === FK_VIOLATION) {

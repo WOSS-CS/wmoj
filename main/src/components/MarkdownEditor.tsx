@@ -130,7 +130,7 @@ export function MarkdownEditor({
             textareaProps={{
               placeholder,
               readOnly: isUploading,
-              onPaste: handlePaste as unknown as React.ClipboardEventHandler<HTMLTextAreaElement>,
+              onPaste: handlePaste,
               style: {
                 fontSize: 14,
                 fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',

@@ -1,6 +1,11 @@
 import { redirect } from 'next/navigation';
 import { requireActiveManager } from '@/lib/staffAuth';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
+import {
+  SUBMISSION_PUBLIC_COLUMNS,
+  resolveSubmissionNames,
+  summarizeSubmission,
+} from '@/lib/queries/submissions';
 import ManagerProblemSubmissionsClient from './ManagerProblemSubmissionsClient';
 
 const PAGE_SIZE = 20;
@@ -9,18 +14,14 @@ export type ProblemSubmissionRow = {
   id: string;
   user_id: string;
   username: string;
+  /** Staff-only; empty when the submitter's `users` row is gone. */
   email: string;
   language: string;
   status: string;
   summary: { total: number; passed: number; failed: number };
   isCompileError: boolean;
-  created_at: string;
-};
-
-type RawSub = {
-  id: string; created_at: string; language: string;
-  status: string; summary: unknown;
-  problem_id: string; user_id: string;
+  /** `submissions.created_at` is nullable in the schema. */
+  created_at: string | null;
 };
 
 export default async function ManagerProblemSubmissionsPage({
@@ -51,7 +52,7 @@ export default async function ManagerProblemSubmissionsPage({
 
   const { data: subs, count, error: subsErr } = await supabase
     .from('submissions')
-    .select('id, created_at, language, status, summary, problem_id, user_id', { count: 'exact' })
+    .select(SUBMISSION_PUBLIC_COLUMNS, { count: 'exact' })
     .eq('problem_id', id)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -66,39 +67,21 @@ export default async function ManagerProblemSubmissionsPage({
     redirect(buildPageHref({}, effectivePage));
   }
 
-  const pageRows = (subs || []) as RawSub[];
-
-  const userIds = Array.from(new Set(pageRows.map((s) => s.user_id).filter(Boolean)));
-  let userMap: Record<string, { username: string; email: string }> = {};
-  if (userIds.length > 0) {
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, username, email')
-      .in('id', userIds);
-    if (!usersError && users) {
-      userMap = users.reduce((acc: Record<string, { username: string; email: string }>, u: { id: string; username: string; email: string }) => {
-        acc[u.id] = { username: u.username, email: u.email };
-        return acc;
-      }, {});
-    }
-  }
+  const pageRows = subs || [];
+  const { users } = await resolveSubmissionNames(supabase, pageRows, 'staff');
 
   const formattedSubmissions: ProblemSubmissionRow[] = pageRows.map((sub) => {
-    const summary = sub.summary as { total?: number; passed?: number; failed?: number; verdict?: string } | null;
-    const total = Number(summary?.total ?? 0);
-    const passed = Number(summary?.passed ?? 0);
-    const failed = Number(summary?.failed ?? 0);
-    const isCompileError = summary?.verdict === 'CE';
-    const userInfo = userMap[sub.user_id] || { username: 'Unknown', email: 'Unknown' };
+    const summary = summarizeSubmission(sub.summary);
+    const user = users.get(sub.user_id);
     return {
       id: sub.id,
       user_id: sub.user_id,
-      username: userInfo.username,
-      email: userInfo.email,
+      username: user?.username ?? 'Unknown User',
+      email: user?.email ?? '',
       language: sub.language,
       status: sub.status || 'failed',
-      summary: { total, passed, failed },
-      isCompileError,
+      summary: { total: summary.total, passed: summary.passed, failed: summary.failed },
+      isCompileError: summary.isCompileError,
       created_at: sub.created_at,
     };
   });

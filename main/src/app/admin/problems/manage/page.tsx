@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 import { requireActiveAdmin } from '@/lib/staffAuth';
-import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
+import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref, parseStaffStatus } from '@/lib/pagination';
 import { fetchContestNamesByProblem } from '@/lib/contestNames';
+import { PROBLEM_MANAGE_COLUMNS } from '@/lib/queries/problems';
 import ManageProblemsClient from './ManageProblemsClient';
 
 const PAGE_SIZE = 20;
@@ -16,19 +17,18 @@ export default async function ManageProblemsPage({
   const sp = await searchParams;
   const page = parsePage(sp.page);
   const search = typeof sp.search === 'string' ? sp.search.trim() : '';
-  const filterRaw = typeof sp.filter === 'string' ? sp.filter : 'all';
-  const filter = filterRaw === 'active' || filterRaw === 'inactive' ? filterRaw : 'all';
+  const status = parseStaffStatus(sp);
 
   const { from, to } = computeRange(page, PAGE_SIZE);
 
   let query = supabase
     .from('problems')
-    .select('id,name,is_active,updated_at,created_at,points', { count: 'exact' })
+    .select(PROBLEM_MANAGE_COLUMNS, { count: 'exact' })
     .eq('created_by', userId)
     .order('created_at', { ascending: false });
 
-  if (filter === 'active') query = query.eq('is_active', true);
-  if (filter === 'inactive') query = query.eq('is_active', false);
+  if (status === 'active') query = query.eq('is_active', true);
+  if (status === 'pending') query = query.eq('is_active', false);
   if (search) query = query.ilike('name', `%${search}%`);
 
   const { data: problemsData, count } = await query.range(from, to);
@@ -38,7 +38,7 @@ export default async function ManageProblemsPage({
   if (effectivePage !== page) {
     redirect(
       buildPageHref(
-        { search: search || undefined, filter: filter !== 'all' ? filter : undefined },
+        { search: search || undefined, status: status !== 'all' ? status : undefined },
         effectivePage,
       ),
     );
@@ -62,7 +62,7 @@ export default async function ManageProblemsPage({
       currentPage={page}
       totalPages={totalPages}
       currentSearch={search}
-      currentFilter={filter}
+      currentStatus={status}
     />
   );
 }

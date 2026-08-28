@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Error fetching user profile:', error);
       } else if (data) {
-        setProfile(data as UserProfile);
+        setProfile(data);
       }
     } catch (error) {
       console.error('Unexpected error fetching user profile:', error);
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Profile is already in Round 1 — set it right away instead of waiting
       // for a separate fetchUserProfile call.
       if (userResult.data) {
-        setProfile(userResult.data as UserProfile);
+        setProfile(userResult.data);
         setProfileLoading(false);
       }
 

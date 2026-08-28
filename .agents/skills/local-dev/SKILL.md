@@ -166,12 +166,16 @@ role. Manager > admin > regular.
 
 ```bash
 PGOPTIONS="-c check_function_bodies=off" supabase db reset   # drop, replay all migrations, empty tables
+cd main && npm run gen:types                                 # regenerate src/types/database.types.ts
 supabase stop                                                # keep the data volume
 supabase stop --no-backup                                    # throw the database away
 ```
 
 After pulling new migrations, `db reset` rather than `supabase migration up`: replaying from scratch
-is the only honest check that the history still applies to an empty database.
+is the only honest check that the history still applies to an empty database. Then
+`cd main && npm run gen:types` and commit `src/types/database.types.ts` if it changed — all three
+Supabase clients carry the `Database` generic, so a stale generated file silently type-checks
+queries against a schema that no longer exists.
 
 **Do not create migrations to make local work.** Local and production diverging is a bug in the
 migrations, not something to paper over with a local-only file. Report it instead.

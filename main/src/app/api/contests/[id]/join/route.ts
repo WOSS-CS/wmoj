@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getServerSupabaseFromToken } from '@/lib/supabaseServer';
+import { requireUser } from '@/lib/requestAuth';
 import { getContestStatus } from '@/utils/contestStatus';
+import { expireParticipation, readTimer } from '@/lib/contestTimer';
 
 export async function POST(
   request: Request,
@@ -8,21 +9,13 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const accessToken = authHeader.split(' ')[1];
-    const supabase = getServerSupabaseFromToken(accessToken);
-
     // The request body carries a `userId`, but it is never trusted or used —
     // the participant is always the bearer token's own user.
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData?.user) {
-      console.error('Join contest auth error:', authErr);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireUser(request);
+    if ('error' in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-    const userId = authData.user.id;
+    const { supabase, userId } = auth;
 
     if (!id || !userId) {
       return NextResponse.json({ error: 'contest id and userId are required' }, { status: 400 });
@@ -64,6 +57,16 @@ export async function POST(
       );
     }
 
+    // Cleanup lives on the mutation routes, never on a read. Run it BEFORE the
+    // two probes below so they see post-sweep state: a run whose window closed
+    // must not answer 409 forever, and its `left_at` is stamped here with the
+    // instant it actually ENDED rather than with now(). Never fail the join on
+    // it — a sweep that could not run leaves the orphan branch below to cope.
+    const { error: sweepErr } = await supabase.rpc('sweep_expired_participation');
+    if (sweepErr) {
+      console.error('[join] sweep_expired_participation failed:', sweepErr);
+    }
+
     // Parallelize multiple checks for better performance
     const [historyResult, existingResult] = await Promise.all([
       supabase
@@ -99,10 +102,29 @@ export async function POST(
 
     if (existing && existing.length > 0) {
       // Already in a contest
-      if (existing[0].contest_id === id) {
+      const otherContestId = existing[0].contest_id;
+      if (otherContestId === id) {
         return NextResponse.json({ ok: true, message: 'Already joined' });
       }
-      return NextResponse.json({ error: 'User already joined another contest' }, { status: 409 });
+
+      // TIME-AWARE. A participant row on its own grants nothing — the gate
+      // needs an unexpired timer too — but this probe used to answer 409
+      // forever off the row alone, so one stale row locked a user out of every
+      // contest for good. The sweep above has already removed every
+      // participation whose timer window provably closed, so a row that
+      // survived it and still reads expired has no usable timer at all (none
+      // at the moment of a join in flight, or one with a null `started_at`).
+      // That is an orphan: clear it and let the join proceed.
+      const otherTimer = await readTimer(supabase, userId, otherContestId);
+      if (!otherTimer.expired) {
+        return NextResponse.json({ error: 'User already joined another contest' }, { status: 409 });
+      }
+
+      console.error(
+        '[join] clearing an orphaned participation that survived the sweep',
+        { userId, orphanContestId: otherContestId, joiningContestId: id },
+      );
+      await expireParticipation(supabase, userId, otherContestId);
     }
 
     const isVirtual = status === 'virtual';
@@ -160,7 +182,7 @@ export async function POST(
       );
 
     if (timerErr) {
-      // Fatal: checkTimerExpiry fails closed, so a participant without a timer
+      // Fatal: readTimer fails closed, so a participant without a timer
       // is stranded — every problem page and every submit reports "Contest time
       // has expired" with no route back through the UI. There is no transaction
       // here, so undo the participation row rather than leave them in that state.

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getServerSupabaseFromToken } from '@/lib/supabaseServer';
+import { requireUser } from '@/lib/requestAuth';
+import { expireParticipation } from '@/lib/contestTimer';
 
 export async function POST(
   request: Request,
@@ -7,61 +8,25 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireUser(request);
+    if ('error' in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-    const accessToken = authHeader.split(' ')[1];
-    const supabase = getServerSupabaseFromToken(accessToken);
+    const { supabase, userId } = auth;
 
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const userId = authData.user.id;
-
-    // Record in join_history. Must be an update, not an upsert: the row is
-    // created on join, and the uniqueness here is (user_id, contest_id) while
-    // the primary key is id, so an upsert either raises 23505 or inserts a
-    // bogus history row with a wrong joined_at and is_virtual.
-    // `.select()` is what makes a refusal visible: an UPDATE filtered away by
-    // RLS reports no error, just zero rows. Checking only `.error` is how
-    // left_at silently stayed NULL for every row in the first place.
-    const { data: historyRows, error: historyErr } = await supabase
-      .from('join_history')
-      .update({ left_at: new Date().toISOString() })
-      .eq('user_id', userId)
-      .eq('contest_id', id)
-      .select('id');
-
-    if (historyErr) {
-      console.error('Join history error:', historyErr);
-    } else if ((historyRows ?? []).length === 0) {
-      console.error('[leave] join_history left_at matched no row for', { userId, contestId: id });
+    // Cleanup lives on the mutation routes, never on a read. Sweep FIRST: if
+    // this caller's own window closed on its own some time ago, the sweep is
+    // what stamps `left_at` with the instant the run actually ENDED, and
+    // `expireParticipation` then leaves that stamp alone. Never fail the
+    // request on it — the caller's own leave below does not depend on it.
+    const { error: sweepErr } = await supabase.rpc('sweep_expired_participation');
+    if (sweepErr) {
+      console.error('[leave] sweep_expired_participation failed:', sweepErr);
     }
 
-    // Remove user from contest
-    const { error: deleteErr } = await supabase
-      .from('contest_participants')
-      .delete()
-      .eq('contest_id', id)
-      .eq('user_id', userId);
-
-    if (deleteErr) {
-      console.error('Leave contest error:', deleteErr);
+    const { ok } = await expireParticipation(supabase, userId, id);
+    if (!ok) {
       return NextResponse.json({ error: 'Failed to leave contest' }, { status: 500 });
-    }
-
-    // Clean up countdown timer
-    const { error: timerErr } = await supabase
-      .from('countdown_timers')
-      .delete()
-      .eq('user_id', userId)
-      .eq('contest_id', id);
-
-    if (timerErr) {
-      console.error('Countdown timer cleanup error:', timerErr);
-      // Don't fail the request if timer cleanup fails
     }
 
     return NextResponse.json({ ok: true });

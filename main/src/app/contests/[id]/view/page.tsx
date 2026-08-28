@@ -2,17 +2,19 @@ import { getServerSupabase } from '@/lib/supabaseServer';
 import { notFound } from 'next/navigation';
 import ContestViewClient from './ContestViewClient';
 import { canUserAccessContest } from '@/lib/contestAccess';
+import { CONTEST_DETAIL_COLUMNS } from '@/lib/queries/contests';
 
 interface EmbeddedProblem {
   id: string;
   name: string;
   points: number;
-  created_at: string;
+  /** `problems.created_at` is nullable; a row without one sorts first. */
+  created_at: string | null;
 }
 
-interface ContestProblemRow {
-  problem_id: string;
-  problems: EmbeddedProblem | EmbeddedProblem[] | null;
+/** Oldest first, with a missing `created_at` treated as the epoch. */
+function addedAtMs(problem: { created_at: string | null }): number {
+  return problem.created_at ? new Date(problem.created_at).getTime() : 0;
 }
 
 export default async function ContestViewPage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,7 +24,7 @@ export default async function ContestViewPage({ params }: { params: Promise<{ id
   const [contestResult, authResult] = await Promise.all([
     supabase
       .from('contests')
-      .select('*')
+      .select(CONTEST_DETAIL_COLUMNS)
       .eq('id', id)
       .maybeSingle(),
     supabase.auth.getUser(),
@@ -51,11 +53,11 @@ export default async function ContestViewPage({ params }: { params: Promise<{ id
     console.error('[ContestViewPage] contest problems fetch error:', cpErr);
   }
 
-  const problems = ((cpRows || []) as unknown as ContestProblemRow[])
+  const problems = (cpRows || [])
     .map((row) => (Array.isArray(row.problems) ? row.problems[0] : row.problems))
     .filter((p): p is EmbeddedProblem => !!p)
     .map((p) => ({ id: p.id, name: p.name, points: p.points, created_at: p.created_at }))
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    .sort((a, b) => addedAtMs(a) - addedAtMs(b));
 
   return <ContestViewClient initialContest={contestData} problems={problems || []} />;
 }

@@ -1,20 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getServerSupabaseFromToken } from '@/lib/supabaseServer';
+import { requireUser } from '@/lib/requestAuth';
 
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireUser(request);
+    if ('error' in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-    const accessToken = authHeader.split(' ')[1];
-    const supabase = getServerSupabaseFromToken(accessToken);
-
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const userId = authData.user.id;
+    const { supabase, userId } = auth;
 
     const { data, error } = await supabase
       .from('contest_participants')

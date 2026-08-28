@@ -2,111 +2,16 @@ import { getServerSupabase } from '@/lib/supabaseServer';
 import { notFound } from 'next/navigation';
 import ContestLeaderboardClient from './LeaderboardClient';
 import { canUserAccessContest } from '@/lib/contestAccess';
-
-interface LeaderEntry {
-  user_id: string;
-  username: string;
-  total_score: number;
-  solved_problems: number;
-  total_problems: number;
-  rank: number;
-}
-
-interface JoinHistoryRow {
-  user_id: string;
-  joined_at: string | null;
-  left_at: string | null;
-}
-
-interface SubmissionRow {
-  user_id: string;
-  problem_id: string;
-  created_at: string;
-  summary: { total?: number; passed?: number } | null;
-}
-
-/** The window during which a participant's submissions count towards the board. */
-interface ScoringWindow {
-  fromMs: number;
-  toMs: number;
-}
-
-/**
- * Rows per request in `fetchAllRows`. The loop below never assumes the
- * server honoured the full page, so this is a round-trip and memory tuning
- * knob and nothing more — correctness does not depend on its value.
- */
-const FETCH_PAGE_SIZE = 1000;
-
-/**
- * Hard bound on `fetchAllRows`. At the page size above this is 50,000 rows,
- * far past anything this board can legitimately need, so reaching it means
- * something is wrong — a pathological data set, or a query whose ordering
- * stopped being total and is walking in circles. Hitting it is reported as
- * a failure, never as a completed fetch: a leaderboard that is silently
- * wrong is worse than one that visibly did not load.
- */
-const MAX_FETCH_PAGES = 50;
-
-/** The subset of a PostgREST response `fetchAllRows` needs. */
-interface PageResponse<T> {
-  data: T[] | null;
-  error: { message: string } | null;
-  count: number | null;
-}
-
-/**
- * Fetch every row a query matches, not merely the first page of them.
- *
- * PostgREST silently caps an unbounded result set: past the cap it answers
- * 206 Partial Content, and `postgrest-js` treats 206 as success. An
- * unbounded `.select()` therefore hands back a truncated array with
- * `error: null`, and every aggregate computed from it — a rank, a score, a
- * participant list — is confidently wrong with nothing to show for it.
- *
- * So page explicitly, and make completeness provable rather than assumed:
- *
- *   - `fetchPage` must ask for `{ count: 'exact' }`, which reports the size
- *     of the whole matching set regardless of any cap. The loop stops when
- *     it has that many rows, so a server-side cap *below* `FETCH_PAGE_SIZE`
- *     costs extra round trips instead of silently ending the walk early.
- *   - The offset advances by rows actually received, never by
- *     `page * FETCH_PAGE_SIZE`, for the same reason.
- *   - `fetchPage` must impose a *total* order (a unique column or a unique
- *     combination). LIMIT/OFFSET over an unordered relation may repeat or
- *     skip rows between pages, which would reintroduce the same bug from a
- *     different direction.
- */
-async function fetchAllRows<T>(
-  fetchPage: (from: number, to: number) => PromiseLike<PageResponse<T>>,
-): Promise<{ rows: T[]; error: string | null }> {
-  const rows: T[] = [];
-  let total: number | null = null;
-
-  for (let page = 0; page < MAX_FETCH_PAGES; page++) {
-    const from = rows.length;
-    const { data, error, count } = await fetchPage(from, from + FETCH_PAGE_SIZE - 1);
-
-    if (error) return { rows: [], error: error.message };
-    if (page === 0) total = count;
-
-    const batch = data || [];
-    for (const row of batch) rows.push(row);
-
-    // An empty page always terminates: there is nothing left to walk.
-    if (batch.length === 0) break;
-    if (total !== null && rows.length >= total) break;
-    // Only reachable if `{ count: 'exact' }` was omitted or the server
-    // withheld the count. Falling back to "a short page is the last page"
-    // is the weaker rule, but it is strictly better than looping forever.
-    if (total === null && batch.length < FETCH_PAGE_SIZE) break;
-  }
-
-  if (total !== null && rows.length < total) {
-    return { rows: [], error: `stopped after ${MAX_FETCH_PAGES} pages with ${rows.length}/${total} rows` };
-  }
-  return { rows, error: null };
-}
+import { fetchAllRows } from '@/lib/fetchAllRows';
+import {
+  SOLVED_THRESHOLD,
+  buildScoringWindows,
+  rankLeaderboard,
+  scoreParticipants,
+  type JoinHistoryRow,
+  type LeaderEntry,
+  type ScoredSubmissionRow,
+} from '@/lib/contestScoring';
 
 export default async function ContestLeaderboardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -182,22 +87,7 @@ export default async function ContestLeaderboardPage({ params }: { params: Promi
     } else {
       // Each participant is scored only over their own run: from when they
       // joined until they left, or until their countdown would have run out.
-      // Contest problems stay solvable as standalone practice before and after
-      // the contest, so without this bound a solve from last month counted.
-      const windows = new Map<string, ScoringWindow>();
-      for (const row of joinResult.rows) {
-        if (!row.user_id) continue;
-
-        const joinedMs = row.joined_at ? new Date(row.joined_at).getTime() : (contestStartsMs ?? Number.NEGATIVE_INFINITY);
-        const leftMs = row.left_at
-          ? new Date(row.left_at).getTime()
-          : (Number.isFinite(joinedMs) && lengthMs !== null ? joinedMs + lengthMs : Number.POSITIVE_INFINITY);
-
-        const existing = windows.get(row.user_id);
-        windows.set(row.user_id, existing
-          ? { fromMs: Math.min(existing.fromMs, joinedMs), toMs: Math.max(existing.toMs, leftMs) }
-          : { fromMs: joinedMs, toMs: leftMs });
-      }
+      const windows = buildScoringWindows(joinResult.rows, contestStartsMs, lengthMs);
 
       if (windows.size > 0) {
         const participantIds = Array.from(windows.keys());
@@ -221,7 +111,7 @@ export default async function ContestLeaderboardPage({ params }: { params: Promi
         // score and Invariant 5's un-weighted scoring are too intricate to
         // push into SQL honestly, so the fetch is made provably complete
         // instead and the arithmetic stays here.
-        const submissionsResult = await fetchAllRows<SubmissionRow>((from, to) => {
+        const submissionsResult = await fetchAllRows<ScoredSubmissionRow>((from, to) => {
           let query = supabase
             .from('submissions')
             .select('user_id, problem_id, summary, created_at', { count: 'exact' })
@@ -242,35 +132,7 @@ export default async function ContestLeaderboardPage({ params }: { params: Promi
           console.error('[ContestLeaderboard] submissions fetch error:', submissionsResult.error);
           loadError = 'Failed to load the leaderboard.';
         } else {
-          const problemIdSet = new Set(problemIds);
-          const userScores = new Map<string, { totalScore: number; problemScores: Map<string, number>; userId: string }>();
-
-          for (const submission of submissionsResult.rows) {
-            if (!problemIdSet.has(submission.problem_id)) continue;
-
-            // Unconditional: a participant set that is empty means nobody is
-            // ranked, never "rank everyone".
-            const window = windows.get(submission.user_id);
-            if (!window) continue;
-
-            const submittedMs = new Date(submission.created_at).getTime();
-            if (submittedMs < window.fromMs || submittedMs > window.toMs) continue;
-
-            const subUserId = submission.user_id;
-            if (!userScores.has(subUserId)) {
-              userScores.set(subUserId, { totalScore: 0, problemScores: new Map(), userId: subUserId });
-            }
-            const userData = userScores.get(subUserId)!;
-
-            const total = submission.summary?.total ?? 0;
-            const score = total > 0 ? (submission.summary?.passed ?? 0) / total : 0;
-
-            const currentProblemScore = userData.problemScores.get(submission.problem_id) || 0;
-            if (score > currentProblemScore) {
-              userData.totalScore += score - currentProblemScore;
-              userData.problemScores.set(submission.problem_id, score);
-            }
-          }
+          const userScores = scoreParticipants(submissionsResult.rows, windows, new Set(problemIds));
 
           const userIds = Array.from(userScores.keys());
           if (userIds.length > 0) {
@@ -296,26 +158,19 @@ export default async function ContestLeaderboardPage({ params }: { params: Promi
               const userById = new Map(usersResult.rows.map(u => [u.id, u]));
               const totalProblems = problemIds.length;
 
-              leaderboard = Array.from(userScores.values())
-                .map(userData => {
-                  const user = userById.get(userData.userId);
+              leaderboard = rankLeaderboard(
+                Array.from(userScores.entries()).map(([userId, scored]) => {
                   let solvedCount = 0;
-                  userData.problemScores.forEach(score => { if (score >= 0.999) solvedCount++; });
+                  scored.problemScores.forEach(score => { if (score >= SOLVED_THRESHOLD) solvedCount++; });
                   return {
-                    user_id: userData.userId,
-                    username: user?.username || 'Unknown',
-                    total_score: userData.totalScore,
+                    user_id: userId,
+                    username: userById.get(userId)?.username || 'Unknown',
+                    total_score: scored.totalScore,
                     solved_problems: solvedCount,
                     total_problems: totalProblems,
-                    rank: 0,
                   };
-                })
-                .sort((a, b) => {
-                  if (Math.abs(b.total_score - a.total_score) > 0.001) return b.total_score - a.total_score;
-                  if (b.solved_problems !== a.solved_problems) return b.solved_problems - a.solved_problems;
-                  return a.username.localeCompare(b.username);
-                })
-                .map((entry, index) => ({ ...entry, rank: index + 1 }));
+                }),
+              );
             }
           }
         }

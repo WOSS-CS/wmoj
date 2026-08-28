@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { AppSupabaseClient } from '@/types/supabase';
 import type { ProblemTestData, ProblemValidationError } from '@/lib/problemValidation';
 
 /**
@@ -29,7 +29,7 @@ import type { ProblemTestData, ProblemValidationError } from '@/lib/problemValid
  * closing it.
  */
 export async function insertProblemTests(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   problemId: string,
   tests: ProblemTestData
 ): Promise<ProblemValidationError | null> {
@@ -79,7 +79,7 @@ export async function insertProblemTests(
  * never mentioned.
  */
 export async function updateProblemTests(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   problemId: string,
   testUpdates: Record<string, unknown>
 ): Promise<ProblemValidationError | null> {

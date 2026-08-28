@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "tsx --conditions=react-server --test \"src/**/*.test.ts\"",
+    "gen:types": "supabase gen types typescript --local > src/types/database.types.ts"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -39,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "^16.0.10",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }

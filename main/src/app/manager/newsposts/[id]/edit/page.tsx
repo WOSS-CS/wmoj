@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { requireActiveManager } from '@/lib/staffAuth';
+import { NEWS_POST_EDIT_COLUMNS } from '@/lib/queries/newsPosts';
 import ManagerEditNewsPostClient from './ManagerEditNewsPostClient';
 
 export default async function ManagerEditNewsPostPage({ params }: { params: Promise<{ id: string }> }) {
@@ -8,7 +9,7 @@ export default async function ManagerEditNewsPostPage({ params }: { params: Prom
 
   const { data: post, error } = await supabase
     .from('news_posts')
-    .select('id, title, content, date_posted, updated_at')
+    .select(NEWS_POST_EDIT_COLUMNS)
     .eq('id', id)
     .maybeSingle();
 

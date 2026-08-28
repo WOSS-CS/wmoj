@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getManagerSupabase } from '@/lib/managerAuth';
 import { validateProblemCreate } from '@/lib/problemValidation';
 import { insertProblemTests } from '@/lib/problemTests';
+import { STAFF_POLICY } from '@/lib/staffPolicy';
 
 // The graded data (input/output/checker/generator_file) lives ONLY in
 // `public.problem_tests`, which is staff-only. The four legacy columns were dropped
@@ -9,6 +10,10 @@ import { insertProblemTests } from '@/lib/problemTests';
 // anyone who asked. There is no second copy and no fallback: if the write below
 // fails, the problem has no test data at all, which is why it is undone rather than
 // left half-applied.
+
+// Every difference between this route and its twin in the other staff tree is
+// read from here — nothing else may differ.
+const POLICY = STAFF_POLICY.manager;
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +25,11 @@ export async function POST(request: NextRequest) {
     if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
     const { supabase, user } = auth;
 
-    const validated = validateProblemCreate(await request.json());
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+    const validated = validateProblemCreate(body);
     if ('error' in validated) {
       return NextResponse.json({ error: validated.error }, { status: validated.status });
     }
@@ -32,13 +41,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'A problem with this ID already exists' }, { status: 409 });
     }
 
-    // No `is_active` here — the manager twin leaves the column to its default,
-    // where the admin route pins it false. That delta is deliberate (AGENTS.md).
     const { data, error } = await supabase
       .from('problems')
       .insert([
         {
           ...problem,
+          // `createsPending` pins the column false; without it the column is left
+          // unnamed and the table default decides.
+          ...(POLICY.createsPending ? { is_active: false } : {}),
           created_by: user.id
         }
       ])

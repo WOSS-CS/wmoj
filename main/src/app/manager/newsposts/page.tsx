@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { requireActiveManager } from '@/lib/staffAuth';
+import { NEWS_POST_LIST_COLUMNS } from '@/lib/queries/newsPosts';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
 import ManagerNewsPostsClient from './ManagerNewsPostsClient';
 
@@ -20,7 +21,7 @@ export default async function ManagerNewsPostsPage({
 
   let query = supabase
     .from('news_posts')
-    .select('id, title, date_posted, updated_at, users!uid(username)', { count: 'exact' })
+    .select(NEWS_POST_LIST_COLUMNS, { count: 'exact' })
     .order('date_posted', { ascending: false });
 
   if (search) query = query.ilike('title', `%${search}%`);
@@ -36,17 +37,19 @@ export default async function ManagerNewsPostsPage({
     );
   }
 
-  const posts = (postsData || []).map((p: Record<string, unknown>) => {
-    const usersField = p.users as { username: string } | { username: string }[] | null;
-    const username = Array.isArray(usersField)
-      ? usersField[0]?.username ?? 'Unknown'
-      : usersField?.username ?? 'Unknown';
+  const posts = (postsData || []).map((p) => {
+    // PostgREST returns a to-one embed as an object; the array arm is kept
+    // because the hand-written type this replaces claimed both, and dropping it
+    // silently would be a behaviour change nobody could see.
+    const author = Array.isArray(p.users)
+      ? p.users[0]?.username ?? 'Unknown'
+      : p.users?.username ?? 'Unknown';
     return {
-      id: p.id as string,
-      title: p.title as string,
-      date_posted: p.date_posted as string,
-      updated_at: p.updated_at as string | null,
-      author: username,
+      id: p.id,
+      title: p.title,
+      date_posted: p.date_posted,
+      updated_at: p.updated_at,
+      author,
     };
   });
 

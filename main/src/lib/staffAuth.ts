@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation';
 import type { NextRequest } from 'next/server';
-import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
+import { parseBearerHeader } from '@/lib/requestAuth';
 import { getServerSupabase, getServerSupabaseFromToken } from '@/lib/supabaseServer';
+import type { AppSupabaseClient } from '@/types/supabase';
 
 /**
  * Server-side staff authorization.
@@ -32,7 +34,7 @@ export type StaffTable = 'managers' | 'admins';
 
 export interface StaffSession {
   /** The client the check was performed with — reuse it for the rest of the request. */
-  supabase: SupabaseClient;
+  supabase: AppSupabaseClient;
   user: User;
   /** Convenience alias for `user.id`. */
   userId: string;
@@ -60,7 +62,7 @@ type StaffAuthResult =
  * database rather than being more permissive than it.
  */
 async function lookupActiveStaffRow(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   table: StaffTable,
   userId: string,
 ): Promise<{ ok: true; present: boolean } | { ok: false }> {
@@ -80,7 +82,7 @@ async function lookupActiveStaffRow(
 
 /** Does `userId` hold an active row in `table`? Fails closed on any query error. */
 async function hasActiveStaffRow(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   table: StaffTable,
   userId: string,
 ): Promise<boolean> {
@@ -89,18 +91,18 @@ async function hasActiveStaffRow(
 }
 
 /** True when `userId` is an active manager. Fails closed on any query error. */
-export function isActiveManager(supabase: SupabaseClient, userId: string): Promise<boolean> {
+export function isActiveManager(supabase: AppSupabaseClient, userId: string): Promise<boolean> {
   return hasActiveStaffRow(supabase, 'managers', userId);
 }
 
 /** True when `userId` is an active admin. Fails closed on any query error. */
-export function isActiveAdmin(supabase: SupabaseClient, userId: string): Promise<boolean> {
+export function isActiveAdmin(supabase: AppSupabaseClient, userId: string): Promise<boolean> {
   return hasActiveStaffRow(supabase, 'admins', userId);
 }
 
 async function checkActiveStaff(
   table: StaffTable,
-  client?: SupabaseClient,
+  client?: AppSupabaseClient,
 ): Promise<StaffAuthResult> {
   const supabase = client ?? (await getServerSupabase());
 
@@ -117,7 +119,7 @@ async function checkActiveStaff(
 
 async function requireActiveStaff(
   table: StaffTable,
-  client?: SupabaseClient,
+  client?: AppSupabaseClient,
 ): Promise<StaffSession> {
   const result = await checkActiveStaff(table, client);
   if (result.ok) return result;
@@ -135,18 +137,18 @@ async function requireActiveStaff(
  * const { supabase, userId } = await requireActiveManager();
  * ```
  */
-export function requireActiveManager(client?: SupabaseClient): Promise<StaffSession> {
+export function requireActiveManager(client?: AppSupabaseClient): Promise<StaffSession> {
   return requireActiveStaff('managers', client);
 }
 
 /** Require an active admin, or redirect. See {@link requireActiveManager}. */
-export function requireActiveAdmin(client?: SupabaseClient): Promise<StaffSession> {
+export function requireActiveAdmin(client?: AppSupabaseClient): Promise<StaffSession> {
   return requireActiveStaff('admins', client);
 }
 
 /** A resolved staff session, or the body and status the route should return. */
 export type StaffRouteAuth =
-  | { supabase: SupabaseClient; user: User }
+  | { supabase: AppSupabaseClient; user: User }
   | { error: string; status: number };
 
 const DENIAL_RESPONSE: Record<StaffDenialReason, { error: string; status: number }> = {
@@ -157,8 +159,9 @@ const DENIAL_RESPONSE: Record<StaffDenialReason, { error: string; status: number
 
 /**
  * The staff auth preamble for `app/api/**` route handlers. Accepts a Bearer token
- * (scheme compared case-insensitively, per RFC 7235) and falls back to the cookie
- * session. Callers branch with `if ('error' in auth)`.
+ * — parsed by `parseBearerHeader`, the app's one token parser, shared with the
+ * non-staff `requireUser` — and falls back to the cookie session when there is
+ * no usable token. Callers branch with `if ('error' in auth)`.
  *
  * Call it through `getAdminSupabase` / `getManagerSupabase` rather than directly:
  * those name which tree a route belongs to, which is what makes a route missing its
@@ -168,10 +171,8 @@ export async function getStaffSupabase(
   request: NextRequest,
   table: StaffTable,
 ): Promise<StaffRouteAuth> {
-  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-  const bearerToken = authHeader?.toLowerCase().startsWith('bearer ')
-    ? authHeader.substring(7).trim()
-    : null;
+  // `Headers` lookups are case-insensitive, so one `get` finds both spellings.
+  const bearerToken = parseBearerHeader(request.headers.get('authorization'));
   const client = bearerToken ? getServerSupabaseFromToken(bearerToken) : await getServerSupabase();
 
   const result = await checkActiveStaff(table, client);

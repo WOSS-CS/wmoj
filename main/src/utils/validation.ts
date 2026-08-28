@@ -5,6 +5,8 @@
 const USERNAME_REGEX = /^[a-zA-Z0-9_.\-]{1,30}$/;
 const SLUG_REGEX = /^[a-zA-Z0-9_\-]{1,60}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** RFC 4122 text form, any version, either case — what Postgres accepts for a `uuid` column. */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Longest username the database will accept. */
 export const USERNAME_MAX_LENGTH = 30;
@@ -56,4 +58,14 @@ export function validateSlug(slug: string, entityName: string): string | null {
   if (!SLUG_REGEX.test(slug))
     return `${entityName} ID must be 1-60 characters: letters, numbers, hyphens, or underscores only`;
   return null;
+}
+
+/**
+ * True when `value` can be a `uuid` primary key. Route handlers use it to answer
+ * 404 for an id that cannot name a row instead of letting Postgres raise 22P02
+ * (`invalid input syntax for type uuid`), which the error branch would report
+ * as a 500.
+ */
+export function isUuid(value: string): boolean {
+  return UUID_REGEX.test(value);
 }

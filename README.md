@@ -69,6 +69,8 @@ services are switched off and why, and troubleshooting.
 | `npm run build` | Production build |
 | `npm run start` | Serve the build |
 | `npm run lint` | ESLint |
+| `npm test` | `node --test` via tsx over `src/**/*.test.ts` |
+| `npm run gen:types` | Regenerate `src/types/database.types.ts` from the local Supabase stack |
 
 ## Contributing
 

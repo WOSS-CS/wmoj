@@ -4,26 +4,20 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
-import { ManagerGuard } from '@/components/ManagerGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { Badge } from '@/components/ui/Badge';
 import Pagination from '@/components/Pagination';
 import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
 import { useDebouncedSearch } from '@/hooks/useDebouncedSearch';
-import { buildPageHref } from '@/lib/pagination';
+import { buildPageHref, staffStatusLabel, type StaffStatusFilter } from '@/lib/pagination';
+import type { ContestManageRow } from '@/lib/queries/contests';
 import {
   getContestStatus,
   CONTEST_STATUS_VARIANT,
   CONTEST_STATUS_LABEL,
   CONTEST_STATUS_SORT_ORDER,
 } from '@/utils/contestStatus';
-
-interface ContestRow {
-  id: string; name: string; length: number | null;
-  is_active: boolean | null; created_at: string; updated_at: string;
-  starts_at: string | null; ends_at: string | null; is_rated: boolean;
-}
 
 export default function ManagerManageContestsClient({
   rows,
@@ -33,11 +27,11 @@ export default function ManagerManageContestsClient({
   currentStatus,
   pendingCount,
 }: {
-  rows: ContestRow[];
+  rows: ContestManageRow[];
   currentPage: number;
   totalPages: number;
   currentSearch: string;
-  currentStatus: 'all' | 'active' | 'pending';
+  currentStatus: StaffStatusFilter;
   pendingCount: number;
 }) {
   const { session } = useAuth();
@@ -60,7 +54,7 @@ export default function ManagerManageContestsClient({
     startTransition,
   });
 
-  const toggleActive = async (c: ContestRow) => {
+  const toggleActive = async (c: ContestManageRow) => {
     try {
       const res = await fetch(`/api/manager/contests/${c.id}`, {
         method: 'PATCH',
@@ -73,7 +67,7 @@ export default function ManagerManageContestsClient({
     } catch (e: unknown) { setActionMessage(e instanceof Error ? e.message : 'Failed to toggle'); }
   };
 
-  const deleteContest = async (c: ContestRow) => {
+  const deleteContest = async (c: ContestManageRow) => {
     if (!confirm('Delete this contest? All problems in this contest will become standalone problems. This action cannot be undone.')) return;
     try {
       const res = await fetch(`/api/manager/contests/${c.id}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
@@ -85,7 +79,7 @@ export default function ManagerManageContestsClient({
 
   const statusOptions = ['all', 'active', 'pending'] as const;
 
-  type Row = ContestRow;
+  type Row = ContestManageRow;
   const columns: Array<DataTableColumn<Row>> = [
     { key: 'name', header: 'Name', className: 'w-[25%]', sortable: true, sortAccessor: (r) => r.name.toLowerCase(), render: (r) => <span className="text-foreground font-medium">{r.name}</span> },
     { key: 'length', header: 'Length', className: 'w-[12%]', sortable: true, sortAccessor: (r) => r.length ?? 0, render: (r) => <span className="text-text-muted font-mono">{r.length ? `${r.length} min` : '-'}</span> },
@@ -97,7 +91,7 @@ export default function ManagerManageContestsClient({
         return <Badge variant={CONTEST_STATUS_VARIANT[s]}>{CONTEST_STATUS_LABEL[s]}</Badge>;
       }
     },
-    { key: 'updated', header: 'Updated', className: 'w-[15%]', sortable: true, sortAccessor: (r) => new Date(r.updated_at).getTime(), render: (r) => <span className="text-text-muted text-sm font-mono">{new Date(r.updated_at).toLocaleDateString()}</span> },
+    { key: 'updated', header: 'Updated', className: 'w-[15%]', sortable: true, sortAccessor: (r) => (r.updated_at ? new Date(r.updated_at).getTime() : 0), render: (r) => <span className="text-text-muted text-sm font-mono">{r.updated_at ? new Date(r.updated_at).toLocaleDateString() : '—'}</span> },
     {
       key: 'actions', header: 'Actions', className: 'w-[34%]', render: (r) => (
         <div className="flex gap-1.5">
@@ -119,61 +113,59 @@ export default function ManagerManageContestsClient({
 
   return (
     <AuthGuard requireAuth allowAuthenticated>
-      <ManagerGuard>
-        <div className="w-full space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-foreground">Manage Contests</h1>
-              <p className="text-sm text-text-muted mt-1">Review and approve contests created by admins.</p>
-            </div>
-            {pendingCount > 0 && currentStatus !== 'pending' && (
-              <Link
-                href={buildPageHref({ ...currentParams, status: 'pending' }, 1)}
-                onClick={(e) => { e.preventDefault(); handleFilterChange({ status: 'pending' }); }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-warning/10 text-warning border border-warning/30 hover:bg-warning/20"
-              >
-                {pendingCount} pending review
-              </Link>
-            )}
+      <div className="w-full space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">Manage Contests</h1>
+            <p className="text-sm text-text-muted mt-1">Review and approve contests created by admins.</p>
           </div>
-
-          {actionMessage && (
-            <div className="p-2.5 rounded-md bg-surface-2 border border-border text-sm flex justify-between items-center text-foreground">
-              <span>{actionMessage}</span>
-              <button onClick={() => setActionMessage(null)} className="text-text-muted hover:text-foreground text-lg leading-none">×</button>
-            </div>
+          {pendingCount > 0 && currentStatus !== 'pending' && (
+            <Link
+              href={buildPageHref({ ...currentParams, status: 'pending' }, 1)}
+              onClick={(e) => { e.preventDefault(); handleFilterChange({ status: 'pending' }); }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-warning/10 text-warning border border-warning/30 hover:bg-warning/20"
+            >
+              {pendingCount} pending review
+            </Link>
           )}
-
-          <div className="flex flex-col md:flex-row md:items-center gap-3">
-            <input value={searchValue} onChange={e => onSearchChange(e.target.value)} placeholder="Search by name..." className="flex-1 h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20" />
-            <div className="flex items-center gap-1.5">
-              {statusOptions.map(s => (
-                <button key={s} onClick={() => handleFilterChange({ status: s !== 'all' ? s : undefined })} className={`px-3 py-1.5 rounded-md text-sm border capitalize ${currentStatus === s ? 'text-brand-primary border-brand-primary/30 bg-brand-primary/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="glass-panel overflow-hidden">
-            <div className="bg-surface-2 px-4 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">All Contests</h2>
-            </div>
-            <div className="px-4 py-2 border-b border-border">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                buildHref={buildHref}
-                displayPage={displayPage}
-                loading={isLoading}
-                onPageChange={handlePageChange}
-              />
-            </div>
-            <DataTable<Row> columns={columns} rows={rows} rowKey={(r) => r.id} loading={isLoading} skeletonRowCount={20} />
-          </div>
-
         </div>
-      </ManagerGuard>
+
+        {actionMessage && (
+          <div className="p-2.5 rounded-md bg-surface-2 border border-border text-sm flex justify-between items-center text-foreground">
+            <span>{actionMessage}</span>
+            <button onClick={() => setActionMessage(null)} className="text-text-muted hover:text-foreground text-lg leading-none">×</button>
+          </div>
+        )}
+
+        <div className="flex flex-col md:flex-row md:items-center gap-3">
+          <input value={searchValue} onChange={e => onSearchChange(e.target.value)} placeholder="Search by name..." className="flex-1 h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20" />
+          <div className="flex items-center gap-1.5">
+            {statusOptions.map(s => (
+              <button key={s} onClick={() => handleFilterChange({ status: s !== 'all' ? s : undefined })} className={`px-3 py-1.5 rounded-md text-sm border capitalize ${currentStatus === s ? 'text-brand-primary border-brand-primary/30 bg-brand-primary/10' : 'text-text-muted border-border hover:bg-surface-2'}`}>
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="glass-panel overflow-hidden">
+          <div className="bg-surface-2 px-4 py-3 border-b border-border">
+            <h2 className="text-sm font-semibold text-foreground">{staffStatusLabel(currentStatus)} Contests</h2>
+          </div>
+          <div className="px-4 py-2 border-b border-border">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              buildHref={buildHref}
+              displayPage={displayPage}
+              loading={isLoading}
+              onPageChange={handlePageChange}
+            />
+          </div>
+          <DataTable<Row> columns={columns} rows={rows} rowKey={(r) => r.id} loading={isLoading} skeletonRowCount={20} />
+        </div>
+
+      </div>
     </AuthGuard>
   );
 }

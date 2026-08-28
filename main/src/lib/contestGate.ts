@@ -1,6 +1,7 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { AppSupabaseClient } from '@/types/supabase';
+import { CONTEST_GATE_COLUMNS } from '@/lib/queries/contests';
 import { getContestStatus } from '@/utils/contestStatus';
-import { checkTimerExpiry } from '@/utils/timerCheck';
+import { readTimer } from '@/lib/contestTimer';
 import { isActiveAdmin, isActiveManager } from '@/lib/staffAuth';
 
 /**
@@ -38,23 +39,13 @@ import { isActiveAdmin, isActiveManager } from '@/lib/staffAuth';
  *   `is_active = true` on the `admins` / `managers` row; a bare membership check
  *   would hand a deactivated manager their access back.
  *
- * - **Every lookup here fails closed.** `checkTimerExpiry` treats a missing
- *   timer, or any error reading it, as `expired`. The two queries in this file
+ * - **Every lookup here fails closed.** `readTimer` treats a missing timer, an
+ *   unreadable one, or any error reading it, as `expired`. The two queries here
  *   do the same: a failed `contest_problems` read throws rather than reporting
  *   "belongs to no contest", and a failed `contests` read returns `hidden`
  *   rather than `standalone()`. Both discarded their errors in all three
  *   original copies, and both discards opened the contest.
  */
-
-/** The `contests` columns the gate needs. Status is computed, never stored. */
-const CONTEST_COLUMNS = 'id, is_active, starts_at, ends_at';
-
-interface GateContestRow {
-  id: string;
-  is_active: boolean;
-  starts_at: string | null;
-  ends_at: string | null;
-}
 
 /**
  * What the caller is allowed to do with the problem.
@@ -86,7 +77,7 @@ function standalone(): ContestGateResult {
  * problem and auth lookups instead of paying an extra round-trip for it.
  */
 export async function getContestIdsForProblem(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   problemId: string,
 ): Promise<string[]> {
   const { data, error } = await supabase
@@ -117,12 +108,12 @@ export async function getContestIdsForProblem(
  * @param userId the signed-in user, or `null` for an anonymous caller
  */
 export async function checkContestGate(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   { contestIds, userId }: { contestIds: string[]; userId: string | null },
 ): Promise<ContestGateResult> {
   if (contestIds.length === 0) return standalone();
 
-  const { data, error } = await supabase.from('contests').select(CONTEST_COLUMNS).in('id', contestIds);
+  const { data, error } = await supabase.from('contests').select(CONTEST_GATE_COLUMNS).in('id', contestIds);
 
   // FAIL CLOSED. `contestIds` is non-empty here, so this problem provably belongs
   // to at least one contest. A discarded error yields no rows, hence no
@@ -138,7 +129,7 @@ export async function checkContestGate(
   // Status is computed once per contest and reused, so a contest whose start
   // bell rings mid-request cannot be read as `upcoming` by one check and
   // `ongoing` by the next.
-  const contests = ((data || []) as unknown as GateContestRow[]).map((contest) => ({
+  const contests = (data || []).map((contest) => ({
     contest,
     status: getContestStatus(contest),
   }));
@@ -165,7 +156,7 @@ export async function checkContestGate(
         .eq('user_id', userId)
         .eq('contest_id', contest.id)
         .maybeSingle(),
-      checkTimerExpiry(supabase, userId, contest.id),
+      readTimer(supabase, userId, contest.id),
     ]);
 
     if (participantResult.data) {

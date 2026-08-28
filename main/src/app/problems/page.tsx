@@ -2,22 +2,14 @@ import { redirect } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabaseServer';
 import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
 import ProblemsClient from './ProblemsClient';
+import { CONTEST_GATE_COLUMNS } from '@/lib/queries/contests';
+import { PROBLEM_LIST_COLUMNS } from '@/lib/queries/problems';
 import { ProblemListItem } from '@/types/problem';
 import { getContestStatus } from '@/utils/contestStatus';
 
 export type HotProblem = ProblemListItem & { submission_count: number };
 
 const PAGE_SIZE = 20;
-
-/**
- * The only columns this list is allowed to select. Every row here is serialised
- * into the RSC flight payload for `ProblemsClient`, twenty at a time plus five
- * hot rows, so the list pays for each column twenty-five times over — `content`
- * alone is a full Markdown statement. The answer key can no longer be reached
- * from this table at all (it lives in the staff-only `problem_tests`), but the
- * narrow list is still the rule: never widen this to `*`.
- */
-const LIST_COLUMNS = 'id, name, points, is_active, created_at';
 
 /** How many hot problems the rail actually renders. */
 const HOT_PROBLEM_COUNT = 5;
@@ -73,7 +65,7 @@ export default async function ProblemsPage({
   // be able to open the contest.
   const { data: allContests, error: contestsError } = await supabase
     .from('contests')
-    .select('id, is_active, starts_at, ends_at');
+    .select(CONTEST_GATE_COLUMNS);
 
   if (contestsError) {
     console.error('[ProblemsPage] contest lookup failed; refusing to render an unfiltered list:', contestsError);
@@ -86,7 +78,7 @@ export default async function ProblemsPage({
   // contest days early and walk in finished.
   const hiddenContestIds = (allContests || [])
     .filter(c => {
-      const status = getContestStatus(c as { is_active: boolean; starts_at: string | null; ends_at: string | null });
+      const status = getContestStatus(c);
       return status === 'ongoing' || status === 'upcoming';
     })
     .map(c => c.id);
@@ -110,7 +102,7 @@ export default async function ProblemsPage({
 
   let query = supabase
     .from('problems')
-    .select(LIST_COLUMNS, { count: 'exact' })
+    .select(PROBLEM_LIST_COLUMNS, { count: 'exact' })
     .eq('is_active', true)
     .order('created_at', { ascending: false });
 
@@ -139,7 +131,7 @@ export default async function ProblemsPage({
     redirect(buildPageHref({ search: search || undefined }, effectivePage));
   }
 
-  const problemList = (problems as unknown as ProblemListItem[]) || [];
+  const problemList = problems || [];
 
   // Hot problems: ranked in the database, never in JS.
   //
@@ -181,7 +173,7 @@ export default async function ProblemsPage({
       // an inner one on purpose and orphans simply drop out.
       let hotQuery = supabase
         .from('problems')
-        .select(LIST_COLUMNS)
+        .select(PROBLEM_LIST_COLUMNS)
         .in('id', candidateIds)
         .eq('is_active', true);
 
@@ -194,7 +186,7 @@ export default async function ProblemsPage({
       if (hotError) {
         console.error('[ProblemsPage] hot problems fetch error:', hotError);
       } else {
-        hotProblems = ((hotData as unknown as ProblemListItem[]) || [])
+        hotProblems = (hotData || [])
           .map(p => ({ ...p, submission_count: countById.get(p.id) ?? 0 }))
           // Mirrors the RPC's own `count desc, problem_id asc`, so the slice
           // below is deterministic instead of depending on `.in()`'s row order.

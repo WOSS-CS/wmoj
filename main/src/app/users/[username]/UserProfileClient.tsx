@@ -9,7 +9,7 @@ import type { HeatmapDay } from '@/components/SubmissionHeatmap';
 interface ProfileData {
   id: string;
   username: string;
-  created_at: string;
+  created_at: string | null;
   about_me: string | null;
   problems_solved: number;
   points: number;
@@ -22,7 +22,8 @@ interface UserProfileClientProps {
   heatmapData: HeatmapDay[];
 }
 
-function formatMemberSince(dateStr: string): string {
+function formatMemberSince(dateStr: string | null): string {
+  if (!dateStr) return '—';
   const d = new Date(dateStr);
   return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }

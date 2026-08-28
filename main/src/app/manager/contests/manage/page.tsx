@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { requireActiveManager } from '@/lib/staffAuth';
-import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref } from '@/lib/pagination';
+import { parsePage, computeRange, computeTotalPages, clampPage, buildPageHref, parseStaffStatus } from '@/lib/pagination';
+import { CONTEST_MANAGE_COLUMNS } from '@/lib/queries/contests';
 import ManagerManageContestsClient from './ManagerManageContestsClient';
 
 const PAGE_SIZE = 20;
@@ -15,20 +16,20 @@ export default async function ManagerManageContestsPage({
   const sp = await searchParams;
   const page = parsePage(sp.page);
   const search = typeof sp.search === 'string' ? sp.search.trim() : '';
-  const statusRaw = typeof sp.status === 'string' ? sp.status : 'all';
-  const status: 'all' | 'active' | 'pending' =
-    statusRaw === 'active' || statusRaw === 'pending' || statusRaw === 'inactive' ? statusRaw === 'inactive' ? 'pending' : statusRaw : 'all';
+  const status = parseStaffStatus(sp);
 
   const { count: pendingCount } = await supabase
     .from('contests')
-    .select('*', { count: 'exact', head: true })
+    // `head: true` returns no rows at all, so this asks for one column
+    // rather than every column the table will ever grow.
+    .select('id', { count: 'exact', head: true })
     .eq('is_active', false);
 
   const { from, to } = computeRange(page, PAGE_SIZE);
 
   let query = supabase
     .from('contests')
-    .select('id,name,length,is_active,updated_at,created_at,starts_at,ends_at,is_rated', { count: 'exact' })
+    .select(CONTEST_MANAGE_COLUMNS, { count: 'exact' })
     .order('created_at', { ascending: false });
 
   if (status === 'active') query = query.eq('is_active', true);

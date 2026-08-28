@@ -7,15 +7,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import Pagination from '@/components/Pagination';
 import { usePaginatedNavigation } from '@/hooks/usePaginatedNavigation';
-import { Contest } from '@/types/contest';
+import type { ContestListRow } from '@/lib/queries/contests';
 import { Badge } from '@/components/ui/Badge';
 import { getContestStatus, formatTimeUntil } from '@/utils/contestStatus';
 
 const PAST_PAGE_SIZE = 10;
 
 interface ContestsClientProps {
-  activeContests: Contest[];
-  pastContests: Contest[];
+  activeContests: ContestListRow[];
+  pastContests: ContestListRow[];
   pastTotalPages: number;
   pastCurrentPage: number;
   fetchError?: string;
@@ -49,7 +49,7 @@ export default function ContestsClient({
 
   const { displayPage: pastDisplayPage, isLoading: pastIsLoading, handlePageChange: handlePastPageChange, buildHref: buildPastHref } = usePaginatedNavigation({ currentPage: pastCurrentPage, totalPages: pastTotalPages, currentParams: {} });
 
-  const columns: Array<DataTableColumn<Contest>> = [
+  const columns: Array<DataTableColumn<ContestListRow>> = [
     {
       key: 'name', header: 'Contest', className: 'w-[45%]', sortable: true, sortAccessor: (r) => (r.name || '').toLowerCase(), render: (r) => (
         <div className="flex items-center gap-2">
@@ -103,7 +103,7 @@ export default function ContestsClient({
     },
   ];
 
-  const renderSection = (title: string, rows: Contest[], emptyMessage: string) => (
+  const renderSection = (title: string, rows: ContestListRow[], emptyMessage: string) => (
     <div className="glass-panel overflow-hidden">
       <div className="bg-surface-2 px-4 py-3 border-b border-border">
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
@@ -111,7 +111,7 @@ export default function ContestsClient({
       {rows.length === 0 ? (
         <p className="text-sm text-text-muted px-4 py-4">{emptyMessage}</p>
       ) : (
-        <DataTable<Contest> columns={columns} rows={rows} rowKey={(r) => r.id} headerVariant="gray" />
+        <DataTable<ContestListRow> columns={columns} rows={rows} rowKey={(r) => r.id} headerVariant="gray" />
       )}
     </div>
   );
@@ -153,17 +153,21 @@ export default function ContestsClient({
               <p className="text-sm text-text-muted px-4 py-4">No past contests yet.</p>
             ) : (
               <>
-                <div className="px-4 py-2 border-b border-border">
-                  <Pagination
-                    currentPage={pastCurrentPage}
-                    totalPages={pastTotalPages}
-                    buildHref={buildPastHref}
-                    displayPage={pastDisplayPage}
-                    loading={pastIsLoading}
-                    onPageChange={handlePastPageChange}
-                  />
-                </div>
-                <DataTable<Contest> columns={columns} rows={pastContests} rowKey={(r) => r.id} headerVariant="gray" loading={pastIsLoading} skeletonRowCount={PAST_PAGE_SIZE} emptyState={<p>No past contests on this page.</p>} />
+                {/* `Pagination` renders nothing for a single page; without this
+                    guard its padded wrapper still draws an empty strip. */}
+                {pastTotalPages > 1 && (
+                  <div className="px-4 py-2 border-b border-border">
+                    <Pagination
+                      currentPage={pastCurrentPage}
+                      totalPages={pastTotalPages}
+                      buildHref={buildPastHref}
+                      displayPage={pastDisplayPage}
+                      loading={pastIsLoading}
+                      onPageChange={handlePastPageChange}
+                    />
+                  </div>
+                )}
+                <DataTable<ContestListRow> columns={columns} rows={pastContests} rowKey={(r) => r.id} headerVariant="gray" loading={pastIsLoading} skeletonRowCount={PAST_PAGE_SIZE} emptyState={<p>No past contests on this page.</p>} />
               </>
             )}
           </div>

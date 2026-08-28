@@ -2,17 +2,18 @@ import { getServerSupabase } from '@/lib/supabaseServer';
 import { notFound, redirect } from 'next/navigation';
 import ContestDetailClient from './ContestDetailClient';
 import { canUserAccessContest } from '@/lib/contestAccess';
-import type { Contest } from '@/types/contest';
+import { CONTEST_DETAIL_COLUMNS, type ContestDetailRow } from '@/lib/queries/contests';
 
 interface EmbeddedProblem {
   id: string;
   name: string;
-  created_at: string;
+  /** `problems.created_at` is nullable; a row without one sorts first. */
+  created_at: string | null;
 }
 
-interface ContestProblemRow {
-  problem_id: string;
-  problems: EmbeddedProblem | EmbeddedProblem[] | null;
+/** Oldest first, with a missing `created_at` treated as the epoch. */
+function addedAtMs(problem: { created_at: string | null }): number {
+  return problem.created_at ? new Date(problem.created_at).getTime() : 0;
 }
 
 export default async function ContestPage({ params }: { params: Promise<{ id: string }> }) {
@@ -35,7 +36,7 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
       .maybeSingle(),
     supabase
       .from('contests')
-      .select('*')
+      .select(CONTEST_DETAIL_COLUMNS)
       .eq('id', id)
       .maybeSingle(),
     // Inner embed + is_active filter, matching /contests, /contests/[id]/view and
@@ -54,7 +55,7 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
     notFound();
   }
 
-  const contest = contestData as Contest;
+  const contest: ContestDetailRow = contestData;
 
   const hasAccess = await canUserAccessContest(supabase, contest, userId);
   if (!hasAccess) {
@@ -67,12 +68,12 @@ export default async function ContestPage({ params }: { params: Promise<{ id: st
   }
 
   // Extract problems from junction table result
-  const cpRows = (cpResult.data || []) as unknown as ContestProblemRow[];
+  const cpRows = cpResult.data || [];
   const problems = cpRows
     .map((row) => (Array.isArray(row.problems) ? row.problems[0] : row.problems))
     .filter((p): p is EmbeddedProblem => !!p)
     .map((p) => ({ id: p.id, name: p.name, created_at: p.created_at }))
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    .sort((a, b) => addedAtMs(a) - addedAtMs(b));
 
   return (
     <ContestDetailClient

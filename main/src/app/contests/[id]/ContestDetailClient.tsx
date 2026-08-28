@@ -6,10 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountdown } from '@/contexts/CountdownContext';
 import { AuthGuard } from '@/components/AuthGuard';
-import { RegularOnlyGuard } from '@/components/RegularOnlyGuard';
 import dynamic from 'next/dynamic';
 import { LoadingSpinner } from '@/components/AnimationWrapper';
-import type { Contest } from '@/types/contest';
+import type { ContestDetailRow } from '@/lib/queries/contests';
 import { Badge } from '@/components/ui/Badge';
 import { toast } from '@/components/ui/Toast';
 import { getContestStatus, CONTEST_STATUS_VARIANT, CONTEST_STATUS_LABEL } from '@/utils/contestStatus';
@@ -19,7 +18,7 @@ const MarkdownRenderer = dynamic(() => import('@/components/MarkdownRenderer').t
 interface ContestDetailClientProps {
   id: string;
   error?: string;
-  initialContest?: Contest;
+  initialContest?: ContestDetailRow;
   initialProblems?: { id: string; name: string }[];
 }
 
@@ -60,76 +59,74 @@ export default function ContestDetailClient({
 
   return (
     <AuthGuard requireAuth={true} allowAuthenticated={true}>
-      <RegularOnlyGuard>
-        <div className="max-w-5xl mx-auto space-y-6">
-          {/* Back nav */}
-          <Link href="/contests" className="text-sm text-text-muted hover:text-foreground inline-flex items-center gap-1.5">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
-            Back to Contests
-          </Link>
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Back nav */}
+        <Link href="/contests" className="text-sm text-text-muted hover:text-foreground inline-flex items-center gap-1.5">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
+          Back to Contests
+        </Link>
 
-          {error ? (
-            <div className="bg-error/10 border border-error/20 rounded-lg p-4">
-              <p className="text-sm text-error">{error}</p>
+        {error ? (
+          <div className="bg-error/10 border border-error/20 rounded-lg p-4">
+            <p className="text-sm text-error">{error}</p>
+          </div>
+        ) : (
+          <>
+            {/* Contest header */}
+            <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <h1 className="text-xl font-semibold text-foreground">{initialContest?.name}</h1>
+                  {status && <Badge variant={CONTEST_STATUS_VARIANT[status]}>{CONTEST_STATUS_LABEL[status]}</Badge>}
+                </div>
+
+                <div className="glass-panel p-5 mb-4">
+                  <MarkdownRenderer content={initialContest?.description || '*No description provided*'} />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <span className="inline-flex items-center gap-1.5 text-text-muted bg-surface-2 px-2.5 py-1 rounded-md border border-border">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {initialContest?.length} min
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-text-muted bg-surface-2 px-2.5 py-1 rounded-md border border-border">
+                    {initialProblems.length} problem{initialProblems.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 shrink-0">
+                <Link href={`/contests/${id}/leaderboard`} className="px-4 py-2 text-sm border border-border rounded-lg text-text-muted hover:text-foreground hover:bg-surface-2">
+                  Leaderboard
+                </Link>
+                <button onClick={handleLeaveContest} disabled={leaving} className="px-4 py-2 text-sm border border-error/20 rounded-lg text-error hover:bg-error/10 flex items-center gap-2">
+                  {leaving ? <LoadingSpinner size="sm" /> : null}
+                  Leave
+                </button>
+              </div>
             </div>
-          ) : (
-            <>
-              {/* Contest header */}
-              <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <h1 className="text-xl font-semibold text-foreground">{initialContest?.name}</h1>
-                    {status && <Badge variant={CONTEST_STATUS_VARIANT[status]}>{CONTEST_STATUS_LABEL[status]}</Badge>}
-                  </div>
 
-                  <div className="glass-panel p-5 mb-4">
-                    <MarkdownRenderer content={initialContest?.description || '*No description provided*'} />
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3 text-sm">
-                    <span className="inline-flex items-center gap-1.5 text-text-muted bg-surface-2 px-2.5 py-1 rounded-md border border-border">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      {initialContest?.length} min
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 text-text-muted bg-surface-2 px-2.5 py-1 rounded-md border border-border">
-                      {initialProblems.length} problem{initialProblems.length === 1 ? '' : 's'}
-                    </span>
-                  </div>
+            {/* Problems */}
+            <div>
+              <h2 className="text-base font-semibold text-foreground mb-4">Contest Problems</h2>
+              {initialProblems.length === 0 ? (
+                <div className="glass-panel p-6 text-center">
+                  <p className="text-sm text-text-muted">Problems will appear here when they&apos;re added.</p>
                 </div>
-
-                <div className="flex gap-2 shrink-0">
-                  <Link href={`/contests/${id}/leaderboard`} className="px-4 py-2 text-sm border border-border rounded-lg text-text-muted hover:text-foreground hover:bg-surface-2">
-                    Leaderboard
-                  </Link>
-                  <button onClick={handleLeaveContest} disabled={leaving} className="px-4 py-2 text-sm border border-error/20 rounded-lg text-error hover:bg-error/10 flex items-center gap-2">
-                    {leaving ? <LoadingSpinner size="sm" /> : null}
-                    Leave
-                  </button>
+              ) : (
+                <div className="space-y-2">
+                  {initialProblems.map((p) => (
+                    <Link key={p.id} href={`/problems/${p.id}`} className="flex items-center justify-between p-4 glass-panel hover:bg-surface-2 group">
+                      <span className="text-sm font-medium text-foreground">{p.name}</span>
+                      <span className="text-xs text-text-muted group-hover:text-brand-primary">Solve →</span>
+                    </Link>
+                  ))}
                 </div>
-              </div>
-
-              {/* Problems */}
-              <div>
-                <h2 className="text-base font-semibold text-foreground mb-4">Contest Problems</h2>
-                {initialProblems.length === 0 ? (
-                  <div className="glass-panel p-6 text-center">
-                    <p className="text-sm text-text-muted">Problems will appear here when they&apos;re added.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {initialProblems.map((p) => (
-                      <Link key={p.id} href={`/problems/${p.id}`} className="flex items-center justify-between p-4 glass-panel hover:bg-surface-2 group">
-                        <span className="text-sm font-medium text-foreground">{p.name}</span>
-                        <span className="text-xs text-text-muted group-hover:text-brand-primary">Solve →</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </RegularOnlyGuard>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </AuthGuard>
   );
 }

@@ -6,6 +6,11 @@ import {
   findUnownedProblems,
   validateContestCreate,
 } from '@/lib/contestValidation';
+import { STAFF_POLICY } from '@/lib/staffPolicy';
+
+// Every difference between this route and its twin in the other staff tree is
+// read from here — nothing else may differ.
+const POLICY = STAFF_POLICY.admin;
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,13 +47,17 @@ export async function POST(request: NextRequest) {
     const selectedIds: string[] = Array.isArray(problem_ids) ? [...new Set<string>(problem_ids)] : [];
 
     if (selectedIds.length > 0) {
-      const ownership = await findUnownedProblems(supabase, selectedIds, user.id);
-      if ('error' in ownership) return NextResponse.json({ error: ownership.error }, { status: 500 });
-      if (ownership.unowned.length > 0) {
-        return NextResponse.json(
-          { error: 'You can only add problems you created', problem_ids: ownership.unowned },
-          { status: 403 },
-        );
+      // `scopeToOwner`: a caller who only owns their own problems may only put
+      // their own problems in a contest. Managers own everything, so they skip it.
+      if (POLICY.scopeToOwner) {
+        const ownership = await findUnownedProblems(supabase, selectedIds, user.id);
+        if ('error' in ownership) return NextResponse.json({ error: ownership.error }, { status: 500 });
+        if (ownership.unowned.length > 0) {
+          return NextResponse.json(
+            { error: 'You can only add problems you created', problem_ids: ownership.unowned },
+            { status: 403 },
+          );
+        }
       }
 
       const eligibility = await checkContestProblemEligibility(supabase, {
@@ -69,7 +78,8 @@ export async function POST(request: NextRequest) {
           name: values.name,
           description: values.description,
           length: values.length,
-          is_active: false,
+          // `createsPending`: admin contests land pending, manager contests go live.
+          is_active: !POLICY.createsPending,
           created_by: user.id,
           starts_at: values.starts_at,
           ends_at: values.ends_at,
@@ -98,7 +108,9 @@ export async function POST(request: NextRequest) {
         console.error('Problem assignment error:', cpError);
         // Nothing here is transactional, so roll the contest back by hand rather
         // than leaving a problem-less contest behind a 500.
-        await supabase.from('contests').delete().eq('id', id).eq('created_by', user.id);
+        let rollback = supabase.from('contests').delete().eq('id', id);
+        if (POLICY.scopeToOwner) rollback = rollback.eq('created_by', user.id);
+        await rollback;
         return NextResponse.json(
           { error: 'Failed to assign problems to the contest' },
           { status: 500 }

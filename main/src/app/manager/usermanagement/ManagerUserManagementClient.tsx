@@ -1,7 +1,6 @@
 'use client';
 
 import { AuthGuard } from '@/components/AuthGuard';
-import { ManagerGuard } from '@/components/ManagerGuard';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import { Badge } from '@/components/ui/Badge';
 import Link from 'next/link';
@@ -13,8 +12,8 @@ interface ManagedUser {
   id: string;
   username: string;
   email: string;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
   submissionsCount?: number;
   isAdmin: boolean;
   isManager: boolean;
@@ -63,37 +62,35 @@ export default function ManagerUserManagementClient({
 
   return (
     <AuthGuard requireAuth allowAuthenticated>
-      <ManagerGuard>
-        <div className="w-full space-y-6">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">User Management</h1>
-            <p className="text-sm text-text-muted mt-1">View users and analyze their submissions.</p>
-          </div>
-
-          <input
-            value={searchValue} onChange={e => onSearchChange(e.target.value)}
-            placeholder="Search by username or email..."
-            className="w-full h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
-          />
-
-          <div className="glass-panel overflow-hidden">
-            <div className="bg-surface-2 px-4 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">All Users</h2>
-            </div>
-            <div className="px-4 py-2 border-b border-border">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                buildHref={buildHref}
-                displayPage={displayPage}
-                loading={isLoading}
-                onPageChange={handlePageChange}
-              />
-            </div>
-            <DataTable<Row> columns={columns} rows={rows} rowKey={(r) => r.id} loading={isLoading} skeletonRowCount={20} />
-          </div>
+      <div className="w-full space-y-6">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">User Management</h1>
+          <p className="text-sm text-text-muted mt-1">View users and analyze their submissions.</p>
         </div>
-      </ManagerGuard>
+
+        <input
+          value={searchValue} onChange={e => onSearchChange(e.target.value)}
+          placeholder="Search by username or email..."
+          className="w-full h-9 px-3 bg-surface-2 border border-border rounded-md text-sm text-foreground placeholder-text-muted/50 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+        />
+
+        <div className="glass-panel overflow-hidden">
+          <div className="bg-surface-2 px-4 py-3 border-b border-border">
+            <h2 className="text-sm font-semibold text-foreground">All Users</h2>
+          </div>
+          <div className="px-4 py-2 border-b border-border">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              buildHref={buildHref}
+              displayPage={displayPage}
+              loading={isLoading}
+              onPageChange={handlePageChange}
+            />
+          </div>
+          <DataTable<Row> columns={columns} rows={rows} rowKey={(r) => r.id} loading={isLoading} skeletonRowCount={20} />
+        </div>
+      </div>
     </AuthGuard>
   );
 }

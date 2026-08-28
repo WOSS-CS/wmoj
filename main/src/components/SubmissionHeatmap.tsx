@@ -9,7 +9,8 @@ export interface HeatmapDay {
 
 interface SubmissionHeatmapProps {
   data: HeatmapDay[];
-  accountCreatedAt: string;
+  /** `users.created_at`, which is nullable — see {@link SubmissionHeatmap}. */
+  accountCreatedAt: string | null;
 }
 
 const CELL_SIZE = 12;
@@ -84,7 +85,12 @@ export function SubmissionHeatmap({ data, accountCreatedAt }: SubmissionHeatmapP
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
 
-  const accountYear = new Date(accountCreatedAt).getFullYear();
+  // A profile with no `created_at` has no known first year. Falling back to the
+  // current year offers just this one in the picker, where `new Date(null)`
+  // would have offered every year back to 1970.
+  const accountYear = accountCreatedAt
+    ? new Date(accountCreatedAt).getFullYear()
+    : new Date().getFullYear();
   const currentYear = new Date().getFullYear();
   const yearOptions: string[] = [];
   for (let y = currentYear; y >= accountYear; y--) {

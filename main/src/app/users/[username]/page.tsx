@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabaseServer';
+import { USER_PROFILE_COLUMNS } from '@/lib/queries/users';
 import { isValidUsername } from '@/utils/validation';
 import UserProfileClient from './UserProfileClient';
 import type { HeatmapDay } from '@/components/SubmissionHeatmap';
@@ -7,7 +8,7 @@ import type { HeatmapDay } from '@/components/SubmissionHeatmap';
 interface ProfileData {
   id: string;
   username: string;
-  created_at: string;
+  created_at: string | null;
   about_me: string | null;
   problems_solved: number;
   points: number;
@@ -49,7 +50,7 @@ export default async function UserProfilePage({
   const pattern = username.replace(/[\\%_]/g, '\\$&');
   const { data: user, error: userError } = await supabase
     .from('users')
-    .select('id, username, created_at, about_me, problems_solved, points')
+    .select(USER_PROFILE_COLUMNS)
     .ilike('username', pattern)
     .maybeSingle();
 
@@ -90,6 +91,10 @@ export default async function UserProfilePage({
   // bucket key and the tooltip label have to agree on the day boundary.
   const countMap = new Map<string, number>();
   for (const sub of submissions || []) {
+    // `submissions.created_at` is nullable. The `.gte()` above already excludes
+    // NULLs — a NULL comparison is never true — and a row with no timestamp has
+    // no day to land on, so it is skipped rather than bucketed at the epoch.
+    if (!sub.created_at) continue;
     const date = new Date(sub.created_at).toISOString().split('T')[0];
     countMap.set(date, (countMap.get(date) || 0) + 1);
   }

@@ -1,36 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSupabaseFromToken } from '@/lib/supabaseServer';
-import { getTimerStatus } from '@/utils/timerCheck';
+import { requireUser } from '@/lib/requestAuth';
+import { readTimer } from '@/lib/contestTimer';
 
+/**
+ * The caller's countdown for one contest. A PURE READ — this handler issues no
+ * writes at all.
+ *
+ * It used to call `getTimerStatus`, which deleted the timer row, deleted the
+ * participant row and stamped `join_history.left_at` when it found the window
+ * closed; the countdown context calls this endpoint on every page load, so a
+ * GET was the app's main cleanup path. Ending a participation now belongs to
+ * `POST /leave` and to `sweep_expired_participation()`.
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    
-    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireUser(request);
+    if ('error' in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-    
-    const accessToken = authHeader.split(' ')[1];
-    const supabase = getServerSupabaseFromToken(accessToken);
+    const { supabase, userId } = auth;
 
-    // Verify authenticated user
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const reading = await readTimer(supabase, userId, id);
+    if (reading.expired) {
+      // Same body the destructive version returned on this path: no remaining
+      // time and no contest name to label a countdown that is not running.
+      return NextResponse.json({ isActive: false });
     }
-    const userId = authData.user.id;
 
-    // Get timer status
-    const timerStatus = await getTimerStatus(supabase, userId, id);
-    
+    const { data: contest, error: contestErr } = await supabase
+      .from('contests')
+      .select('name')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (contestErr) {
+      // Not fatal — the countdown is authoritative and the name is only a label.
+      console.error('Timer contest name lookup error:', contestErr);
+    }
+
     return NextResponse.json({
-      isActive: timerStatus.isActive,
-      remainingSeconds: timerStatus.remainingSeconds,
-      contestName: timerStatus.contestName
+      isActive: true,
+      remainingSeconds: reading.remainingSeconds,
+      contestName: contest?.name,
     });
   } catch (error) {
     console.error('Timer status error:', error);

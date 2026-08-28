@@ -2,25 +2,15 @@ import { getServerSupabase } from '@/lib/supabaseServer';
 import SubmitClient from './SubmitClient';
 import { canUserAccessProblem } from '@/lib/problemAccess';
 import { checkContestGate, getContestIdsForProblem } from '@/lib/contestGate';
+import { PROBLEM_SUBMIT_COLUMNS } from '@/lib/queries/problems';
 import { notFound, redirect } from 'next/navigation';
-
-/**
- * The only columns this page may select. This is the page students submit FROM,
- * and selecting the answer key here once put the expected stdout for every test
- * case into its page source. Those columns are gone from `problems` now — they
- * live in the staff-only `problem_tests`, readable only through
- * `lib/supabaseAdmin.ts` on the server — so the leak cannot be recreated from
- * this table. Everything below is used server-side for the access gate; only
- * `id` and `name` cross into the client. Never widen this to `*`.
- */
-const PROBLEM_COLUMNS = 'id, name, is_active, created_by, time_limit, memory_limit';
 
 export default async function SubmitPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await getServerSupabase();
 
   const [problemResult, authResult, contestIds] = await Promise.all([
-    supabase.from('problems').select(PROBLEM_COLUMNS).eq('id', id).single(),
+    supabase.from('problems').select(PROBLEM_SUBMIT_COLUMNS).eq('id', id).single(),
     supabase.auth.getUser(),
     getContestIdsForProblem(supabase, id),
   ]);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/adminAuth';
 import { validateProblemCreate } from '@/lib/problemValidation';
 import { insertProblemTests } from '@/lib/problemTests';
+import { STAFF_POLICY } from '@/lib/staffPolicy';
 
 // The graded data (input/output/checker/generator_file) lives ONLY in
 // `public.problem_tests`, which is staff-only. The four legacy columns were dropped
@@ -9,6 +10,10 @@ import { insertProblemTests } from '@/lib/problemTests';
 // anyone who asked. There is no second copy and no fallback: if the write below
 // fails, the problem has no test data at all, which is why it is undone rather than
 // left half-applied.
+
+// Every difference between this route and its twin in the other staff tree is
+// read from here — nothing else may differ.
+const POLICY = STAFF_POLICY.admin;
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +25,11 @@ export async function POST(request: NextRequest) {
     if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
     const { supabase, user } = auth;
 
-    const validated = validateProblemCreate(await request.json());
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+    const validated = validateProblemCreate(body);
     if ('error' in validated) {
       return NextResponse.json({ error: validated.error }, { status: validated.status });
     }
@@ -37,9 +46,9 @@ export async function POST(request: NextRequest) {
       .insert([
         {
           ...problem,
-          // Admin creations land pending. The manager twin does not name the column —
-          // that delta is deliberate (AGENTS.md).
-          is_active: false,
+          // `createsPending` pins the column false; without it the column is left
+          // unnamed and the table default decides.
+          ...(POLICY.createsPending ? { is_active: false } : {}),
           created_by: user.id
         }
       ])
