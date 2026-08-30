@@ -67,7 +67,7 @@ export default function ProblemDetailClient({ problem, testCaseCount, activeCont
 
               {/* Description */}
               <div className="min-h-[400px] max-w-none">
-                <MarkdownRenderer content={problem.content} />
+                <MarkdownRenderer content={problem.content} copyableCodeBlocks />
               </div>
             </div>
             <CommentsSection problemId={problem.id} initialComments={initialComments} />
